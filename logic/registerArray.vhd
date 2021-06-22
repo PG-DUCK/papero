@@ -41,9 +41,9 @@ begin
       else
         sRegisters <= sRegisters;       --default value, update if necessary
         WE_IF : if (iHPS_REG.we = '1') then
-          sRegisters(iHPS_REG.addr) <= iHPS_REG.reg;
+          sRegisters(slv2int(iHPS_REG.addr)) <= iHPS_REG.reg;
         elsif (iFPGA_REG.we = '1') then
-          sRegisters(iFPGA_REG.addr) <= iFPGA_REG.reg;
+          sRegisters(slv2int(iFPGA_REG.addr)) <= iFPGA_REG.reg;
         end if WE_IF;
       end if RST_IF;
     end if RCLK_IF;

@@ -1,7 +1,6 @@
 #Basic functions in the msdintf submodule
 logic/msdintf/basic_functions/sync_stage.vhd
 logic/msdintf/basic_functions/sync_edge.vhd
-logic/msdintf/basic_functions/STD_FIFO.vhd
 logic/msdintf/basic_functions/shift_register.vhd
 logic/msdintf/basic_functions/pulse_generator.vhd
 logic/msdintf/basic_functions/parametric_fifo_synch.vhd
@@ -13,5 +12,5 @@ logic/msdintf/basic_functions/clock_divider.vhd
 logic/msdintf/basic_functions/basic_package.vhd
 
 #Project-specific files
-logic/pgdaqPackage.vhd
-logic/registerArray.vhd
+logic/pgdaqPackage.vhd 08
+logic/registerArray.vhd 08
