@@ -45,7 +45,7 @@ package pgdaqPackage is
 
   -- Components ----------------------------------------------------------------
   --!Detects rising and falling edges of the input
-  component edge_detector is
+  component edge_detector_md is
     generic(
       channels : integer   := 1;
       R_vs_F   : std_logic := '0'
