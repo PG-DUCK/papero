@@ -1,7 +1,7 @@
 --!@file pgdaqPackage.vhd
 --!@brief Constants, components declarations, and functions
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
---!@copydoc
+--!@todo See copydoc documentation to avoid duplications
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -42,5 +42,28 @@ package pgdaqPackage is
     addr : std_logic_vector(cREG_ADDR-1 downto 0);   --!Address to be updated
     we   : std_logic;                                --!Write enable
   end record tRegIntf;
+	
+	-- Components ----------------------------------------------------------------
+	--!Detects rising and falling edges of the input
+	component edge_detector is
+    generic(
+				channels : integer := 1;
+				R_vs_F : std_logic := '0'
+			  );
+	 port(
+			iCLK     : in  std_logic;
+			iRST     : in  std_logic;
+			iD		   : in  std_logic_vector(channels - 1 downto 0);
+			oEDGE 	: out std_logic_vector(channels - 1 downto 0)
+			);
+	end component;
+	
+	--!Generates a single clock pulse when a button is pressed
+	component Key_Pulse_Gen is
+	port(KPG_CLK_in		: in std_logic;
+		  KPG_DATA_in		: in std_logic_vector(1 downto 0);
+		  KPG_DATA_out		: out std_logic_vector(1 downto 0)
+		 );
+	end component;
 
 end pgdaqPackage;

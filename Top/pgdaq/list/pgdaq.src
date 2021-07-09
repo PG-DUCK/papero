@@ -1,3 +1,26 @@
+#Top file: Hog searches for the top file with name format top_<project>.vhd
+logic/top_pgdaq.vhd
+
+#Packages
+logic/intel_package.vhd
+logic/pgdaqPackage.vhd 08
+logic/msdintf/basic_functions/basic_package.vhd
+
+#Project-specific files
+logic/registerArray.vhd 08
+logic/edge_detector_md.vhd
+logic/Key_Pulse_Gen.vhd
+
+
+#Qsys IPs: regenerate the IP for each new build
+#Add the qip if you want to generate it only once
+ip/soc_system/soc_system.qsys noadd --synthesis=VHDL
+
+#Other IPs
+ip/edge_detect/altera_edge_detector.v
+ip/debounce/debounce.v
+ip/altsource_probe/hps_reset.qip
+
 #Basic functions in the msdintf submodule
 logic/msdintf/basic_functions/sync_stage.vhd
 logic/msdintf/basic_functions/sync_edge.vhd
@@ -9,8 +32,3 @@ logic/msdintf/basic_functions/edge_detector.vhd
 logic/msdintf/basic_functions/delay_timer.vhd
 logic/msdintf/basic_functions/counter.vhd
 logic/msdintf/basic_functions/clock_divider.vhd
-logic/msdintf/basic_functions/basic_package.vhd
-
-#Project-specific files
-logic/pgdaqPackage.vhd 08
-logic/registerArray.vhd 08
