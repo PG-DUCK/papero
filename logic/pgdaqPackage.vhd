@@ -66,5 +66,35 @@ package pgdaqPackage is
       KPG_DATA_out : out std_logic_vector(1 downto 0)
       );
   end component;
+  
+  --! Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
+	component HighHold is
+	generic(
+			  channels : integer := 1;
+			  BAS_vs_BSS : std_logic := '0'
+			 );
+	port(
+		  CLK_in				: in std_logic;
+		  DATA_in			: in std_logic_vector(channels - 1 downto 0);
+		  DELAY_1_out		: out std_logic_vector(channels - 1 downto 0);
+		  DELAY_2_out 		: out std_logic_vector(channels - 1 downto 0);
+		  DELAY_3_out		: out std_logic_vector(channels - 1 downto 0);
+		  DELAY_4_out		: out std_logic_vector(channels - 1 downto 0)
+		 );
+	end component;
+	
+	--! Temporizza l'invio di impulsi sul read_enable della FIFO.
+	component WR_Timer is
+	port(
+		  WRT_CLK_in					: in std_logic;
+		  WRT_RST_in					: in std_logic;
+		  WRT_START_in					: in std_logic;
+		  WRT_STANDBY_in				: in std_logic;		  
+		  WRT_STOP_COUNT_VALUE_in		: in std_logic_vector(31 downto 0);
+		  WRT_out						: out std_logic;
+		  WRT_DECLINE_out				: out std_logic;
+		  WRT_END_COUNT_out				: out std_logic
+		 );
+end component;
 
 end pgdaqPackage;
