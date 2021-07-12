@@ -6,7 +6,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.NUMERIC_STD.all;
-use work.user_package.all;
+use work.pgdaqPackage.all;
 
 
 
