@@ -8,8 +8,14 @@ logic/msdintf/basic_functions/basic_package.vhd
 
 #Project-specific files
 logic/registerArray.vhd 08
+logic/Config_Receiver.vhd
+
+
+#Basic functions_md
 logic/edge_detector_md.vhd
 logic/Key_Pulse_Gen.vhd
+logic/HighHold.vhd
+logic/WR_Timer.vhd
 
 
 #Qsys IPs: regenerate the IP for each new build
