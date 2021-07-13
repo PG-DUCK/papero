@@ -138,7 +138,7 @@ begin
           --Send the address of the registers and check if completed
           when REGISTER_ADDRESS =>
             oFIFO_DATA <= int2slv(sRegCounter, oFIFO_DATA'length);
-            END_REG_IF : if (sRegCounter < cREG_WIDTH-1) then
+            END_REG_IF : if (sRegCounter < cREGISTERS-1) then
               sRegCounter <= sRegCounter + 1;
               sHkState    <= REGISTER_CONTENT;
             else
