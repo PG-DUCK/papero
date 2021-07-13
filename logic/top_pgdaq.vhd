@@ -124,37 +124,48 @@ signal hps_debug_reset        : std_logic;
 signal stm_hw_events          : std_logic_vector(27 downto 0);
 signal fpga_clk_50            : std_logic;
 
-signal gnd                        : std_logic := '0';
-signal neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);
-signal inverter_hps_cold_reset    : std_logic;  --FIX BUG MODEL SIM
-signal inverter_hps_warm_reset    : std_logic;  --FIX BUG MODEL SIM
-signal inverter_hps_debug_reset   : std_logic;  --FIX BUG MODEL SIM
+-- Set di segnali ausiliari
+signal gnd                        : std_logic := '0';					 -- massa
+signal neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
+signal neg_hps_fpga_reset_n		 : std_logic;							 -- segnale interno di RESET in logica positiva
+signal inverter_hps_cold_reset    : std_logic; 							 -- FIX BUG MODEL SIM
+signal inverter_hps_warm_reset    : std_logic; 							 -- FIX BUG MODEL SIM
+signal inverter_hps_debug_reset   : std_logic; 							 -- FIX BUG MODEL SIM
 
-signal fifo_f2h_data_in	 		 : std_logic_vector(31 downto 0);
-signal fifo_f2h_wr_en			 : std_logic;
-signal fifo_f2h_full				 : std_logic;
+-- Set di segnali per pilotare la fifo FPGA --> HPS
+signal fifo_f2h_data_in	 		 : std_logic_vector(31 downto 0);	 -- Data
+signal fifo_f2h_wr_en			 : std_logic;								 -- Write Enable
+signal fifo_f2h_full				 : std_logic;								 -- Fifo Full
 signal fifo_f2h_addr_csr		 : std_logic_vector(2 downto 0);
 signal fifo_f2h_rd_en_csr		 : std_logic;
 signal fifo_f2h_data_in_csr	 : std_logic_vector(31 downto 0);
 signal fifo_f2h_wr_en_csr		 : std_logic;
 signal fifo_f2h_data_out_csr	 : std_logic_vector(31 downto 0);
 
-signal fifo_h2f_data_out	 	 : std_logic_vector(31 downto 0);
-signal fifo_h2f_rd_en			 : std_logic;
-signal fifo_h2f_empty			 : std_logic;
+-- Set di segnali per pilotare la fifo HPS --> FPGA
+signal fifo_h2f_data_out	 	 : std_logic_vector(31 downto 0);	 -- Data
+signal fifo_h2f_rd_en			 : std_logic;								 -- Read Enable
+signal fifo_h2f_empty			 : std_logic;								 -- Fifo Empty
 signal fifo_h2f_addr_csr		 : std_logic_vector(2 downto 0);
 signal fifo_h2f_rd_en_csr		 : std_logic;
 signal fifo_h2f_data_in_csr	 : std_logic_vector(31 downto 0);
 signal fifo_h2f_wr_en_csr		 : std_logic;
 signal fifo_h2f_data_out_csr	 : std_logic_vector(31 downto 0);
 
+-- Set di segnali di interconnessione tra i moduli istanziati
+signal data_rx				 : std_logic_vector(31 downto 0);	-- Dato di configurazione del sistema DAQ in uscita dal Config_Receiver
+signal address_rx			 : std_logic_vector(15 downto 0);	-- Indirizzo del registro in cui memorizzare il dato di configurazione
+signal data_valid_rx		 : std_logic;								-- Consistenza del dato in uscita dal Config_Receiver. '1'--> ok, '0'-->ko.
+signal warning_rx			 : std_logic_vector(2 downto 0);		-- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
+
 begin
   -- connection of internal logics ----------------------------
   fpga_clk_50   <= FPGA_CLK1_50;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
 
-  neg_fpga_debounced_buttons <= not fpga_debounced_buttons;  -- Siccome i bottoni dell'FPGA lavorano in logica negata mentre i nostri moduli in logica positiva, invertiamo il loro comportamento.
-
+  neg_fpga_debounced_buttons	 <= not fpga_debounced_buttons;  -- Siccome i bottoni dell'FPGA lavorano in logica negata mentre i nostri moduli in logica positiva, invertiamo il loro comportamento.
+  neg_hps_fpga_reset_n			 <= not hps_fpga_reset_n;			-- Il reset fornito dal soc_system utilizza la logica negata. Invertiamo il valore per adattarlo ai nostri moduli, che invece lavorano in logica positva.
+	
   inverter_hps_cold_reset  <= not hps_cold_reset;   --FIX BUG MODEL SIM
   inverter_hps_warm_reset  <= not hps_warm_reset;   --FIX BUG MODEL SIM
   inverter_hps_debug_reset <= not hps_debug_reset;  --FIX BUG MODEL SIM
@@ -322,6 +333,52 @@ begin
       signal_in => hps_reset_req(2),
       pulse_out => hps_debug_reset
       );
-
+	
+	-- Ricevitore dati di configurazione
+	FIFO_h2f_receiver : Config_Receiver
+	port map(
+				CR_CLK_in 						=> fpga_clk_50,
+				CR_RST_in 						=> neg_hps_fpga_reset_n,
+				CR_FIFO_WAIT_REQUEST_in 	=> fifo_h2f_empty,
+				CR_DATA_in 						=> fifo_h2f_data_out,			
+				CR_FIFO_READ_EN_out			=> fifo_h2f_rd_en,
+				CR_DATA_out	 					=> data_rx,
+				CR_ADDRESS_out					=> address_rx,
+				CR_DATA_VALID_out				=> data_valid_rx,
+				CR_WARNING_out 				=> warning_rx
+			  );
+	
+--	-- Banco di registri dati di configurazione
+--	Config_Registers : registerArray
+--	port map(
+--				iCLK       => fpga_clk_50,
+--				iRST       => neg_hps_fpga_reset_n,
+--				iCNT       => ,
+--				oCNT       => ,
+--				oREG_ARRAY => ,
+--				iHPS_REG   => ,
+--				iFPGA_REG  => 
+--				);
+--	
+--	-- Trasmettitore dati di payload
+--	FIFO_f2h_transmitter : hkReader
+--	generic map(
+--					pFIFO_WIDTH => 32
+--					)
+--	port map(
+--				iCLK        => fpga_clk_50,
+--				iRST        => neg_hps_fpga_reset_n,
+--				iCNT        => ,
+--				oCNT        => ,
+--				iINT_START  => ,
+--				iFW_VER     => ,
+--				iREG_ARRAY  => ,
+--				oFIFO_DATA  => ,
+--				oFIFO_WR    => ,
+--				iFIFO_AFULL => 
+--				);
+	
 
 end architecture;
+
+
