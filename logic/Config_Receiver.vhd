@@ -3,17 +3,19 @@
 --!@details
 --!
 --!Read the incoming packets containing the instructions and write them to the
---! register array. The format is specified in PGDAQ_formats.xlsx:
+--! register array. The format is specified in PGDAQ_formats.xlsx: \n
 --!
---!SoP: Start-of-Packet x"AA55CA5A"
---!Len: Number of 32-bit payload words + 5
---!Ver: Firmware Version
---!Hdr: Fixed hader x"4EADE500"
---!     [31:0]  Register Content
---!     [31:24] parity bits, [23:16] Instruction, [15:0] Register Address
---!     ................
---!Trl: Trailer x"BADC0FEE"
---!CRC: CRC-32
+--! | Abbr  | Description | Default |
+--! |-------|-------------|---------|
+--! |SoP | Start-of-Packet | x"AA55CA5A" |
+--! |Len | Length | Number of 32-bit payload words + 5 |
+--! |Ver | Firmware Version | - |
+--! |Hdr | Fixed hader | x"4EADE500" |
+--! |    | [31:0]  Register Content | - |
+--! |    | [31:24] parity bits, [23:16] Instruction, [15:0] Register Address | - |
+--! |    | ................ | - |
+--! |Trl | Trailer | x"BADC0FEE" |
+--! |CRC | CRC-32 | - |
 --!
 --!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
 

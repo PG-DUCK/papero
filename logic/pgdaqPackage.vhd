@@ -13,23 +13,22 @@ use work.basic_package.all;
 --!@copydoc pgdaqPackage.vhd
 package pgdaqPackage is
   -- Constants -----------------------------------------------------------------
-  constant cREGISTERS : natural        := 32;
-  constant cREG_ADDR  : natural        := ceil_log2(cREGISTERS);
-  constant cREG_WIDTH : natural        := 32;
+  constant cREGISTERS : natural        := 32;	--!Total number of registers
+  constant cREG_ADDR  : natural        := ceil_log2(cREGISTERS); --!Register address width
+  constant cREG_WIDTH : natural        := 32; --!Register width
 
   --Housekeeping reader
-  constant cF2H_HK_SOP : std_logic_vector(31 downto 0) := x"55AADEAD";
-  constant cF2H_HK_HDR : std_logic_vector(31 downto 0) := x"4EADE500";
-  constant cF2H_HK_EOP : std_logic_vector(31 downto 0) := x"600DF00D";
-  constant cF2H_HK_PERIOD : natural
-                          := 50000000; --1 s in clock cycles; max: 2^32 (85 s)
+  constant cF2H_HK_SOP : std_logic_vector(31 downto 0) := x"55AADEAD"; --!Start of Packet for the FPGA-2-HPS FSM
+  constant cF2H_HK_HDR : std_logic_vector(31 downto 0) := x"4EADE500"; --!Fixed Header for the FPGA-2-HPS FSM
+  constant cF2H_HK_EOP : std_logic_vector(31 downto 0) := x"600DF00D"; --!End of Packet for the FPGA-2-HPS FSM
+  constant cF2H_HK_PERIOD : natural := 50000000; --!Period for internal counter to read HKs; max: 2^32 (85 s)
 
 
   -- Types ---------------------------------------------------------------------
   --!Register array; all registers are r/w for HPS and FPGA
   type tRegisterArray is array (0 to cREGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
-  constant cREG_NULL  : tRegisterArray := (others => (others => '0'));
+  constant cREG_NULL  : tRegisterArray := (others => (others => '0')); --!Null vector for register array
 
   --!Control interface for a generic block: input signals
   type tControlIn is record

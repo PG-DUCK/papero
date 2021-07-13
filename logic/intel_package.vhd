@@ -1,6 +1,6 @@
 --!@file intel_package.vhd
 --!@brief Components developed by Intel and instantiated in the logic
---!@detail All the components are in the ip folder
+--!@details All the components are in the ip folder
 
 library ieee;
 use ieee.std_logic_1164.all;

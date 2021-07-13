@@ -3,17 +3,19 @@
 --!@details
 --!
 --!Read the registers periodically and send the packet formatted as in
---! PGDAQ_formats.xlsx:
+--! PGDAQ_formats.xlsx: \n
 --!
---!SoP: Start-of-Packet x"55AADEAD"
---!Len: Number of 32-bit payload words + 5
---!Ver: Firmware Version
---!Hdr: Fixed hader x"4EADE500"
---!     Register Content
---!     [31:24] parity bits, [15:0] Register Address
---!     ................
---!Trl: Trailer x"600DF00D"
---!CRC: CRC-32
+--! | Abbr  | Description | Default |
+--! |-------|-------------|---------|
+--! |SoP | Start-of-Packet | x"55AADEAD" |
+--! |Len | Length | Number of 32-bit payload words + 5 |
+--! |Ver | Firmware Version | - |
+--! |Hdr | Fixed hader | x"4EADE500" |
+--! |    | Register Content | - |
+--! |    | [31:24] parity bits, [15:0] Register Address | - |
+--! |    | ................ | - |
+--! |Trl | Trailer | x"600DF00D" |
+--! |CRC | CRC-32 | - |
 --!
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
 
@@ -29,7 +31,7 @@ use work.pgdaqPackage.all;
 --!@copydoc hkReader.vhd
 entity hkReader is
   generic(
-    pFIFO_WIDTH : natural := 32
+    pFIFO_WIDTH : natural := 32 --!FIFO data width
     );
   port (
     iCLK        : in  std_logic;        --!Main clock
@@ -50,8 +52,8 @@ end entity hkReader;
 --!@copydoc hkReader.vhd
 architecture std of hkReader is
   -- Constants -----------------------------------------------------------------
-  constant cPKT_LEN         : natural                       := (cREGISTERS * 2) + 5;  --Number of registers + header + trailer
-  constant cF2H_HK_CRC_TEMP : std_logic_vector(31 downto 0) := x"f1c0f1c0";
+  constant cPKT_LEN         : natural                       := (cREGISTERS * 2) + 5;  --!Packet length: Number of registers + header + trailer
+  constant cF2H_HK_CRC_TEMP : std_logic_vector(31 downto 0) := x"f1c0f1c0"; --!Temporary CRC word
 
   -- Signals -------------------------------------------------------------------
   --FSM
