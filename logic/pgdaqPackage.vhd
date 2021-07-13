@@ -106,4 +106,24 @@ package pgdaqPackage is
 		 );
 end component;
 
+  component hkReader is
+  generic(
+    pFIFO_WIDTH : natural := 32
+    );
+  port (
+    iCLK        : in  std_logic;        --!Main clock
+    iRST        : in  std_logic;        --!Main reset
+    iCNT        : in  tControlIn;       --!Control input signals
+    oCNT        : out tControlOut;      --!Control output flags
+    iINT_START  : in  std_logic;        --!Enable for the internal start
+    --Register array
+    iFW_VER     : in  std_logic_vector(31 downto 0);  --!Firmware version from HoG
+    iREG_ARRAY  : in  tRegisterArray;   --!Register array input
+    --Output FIFO interface
+    oFIFO_DATA  : out std_logic_vector(pFIFO_WIDTH-1 downto 0);  --!Fifo Data in
+    oFIFO_WR    : out std_logic;        --!Fifo write-request in
+    iFIFO_AFULL : in  std_logic         --!Fifo almost-full flag
+    );
+  end component;
+
 end pgdaqPackage;

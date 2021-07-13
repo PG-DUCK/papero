@@ -55,7 +55,7 @@ architecture std of hkReader is
 
   -- Signals -------------------------------------------------------------------
   --FSM
-  type tHkStatus is (IDLE, SOP, LEN, FW_VER, HDR, REGISTER_CONTENT,
+  type tHkStatus is (IDLE, WAIT_FOR_FIFO, SOP, LEN, FW_VER, HDR, REGISTER_CONTENT,
                      REGISTER_ADDRESS, EOP, CRC);
   signal sHkState  : tHkStatus;
   signal sFsmError : std_logic;
@@ -64,7 +64,7 @@ architecture std of hkReader is
   signal sRegCounter : natural range 0 to (2**cREG_ADDR - 1);
 
   --Internal Start
-  signal sStartCounter : natural range 0 to (2**32 - 1);
+  signal sStartCounter : std_logic_vector(31 downto 0);
   signal sStart        : std_logic;
 
 begin
@@ -76,13 +76,14 @@ begin
   --!@return oFIFO_WR Write-request to the FIFO
   --!@todo can remove WAIT_FOR_FIFO waiting in case FIFO is not a-full
   --!@todo What if the address is greater than the maximum allowable?
+  --!@todo What if a start comes when busy?
   hkStateFSM_proc : process (iCLK)
   begin
     CLKIF : if (rising_edge(iCLK)) then
       RST_EN_IF : if (iRST = '1') then
         sFsmError   <= '0';
         sRegCounter <= 0;
-        oFIFO_WR    <= '1';
+        oFIFO_WR    <= '0';
         oFIFO_DATA  <= (others => '0');
         sHkState    <= IDLE;
 
@@ -186,14 +187,14 @@ begin
   begin
     CLK_IF_START : if (rising_edge(iCLK)) then
       RST_IF_START : if (iRST = '1') then
-        sStartCounter <= 0;
+        sStartCounter <= (others => '0');
         sStart        <= '0';
       elsif (iCNT.en = '1') then
-        if (sStartCounter < cF2H_HK_PERIOD-1) then
+        if (sStartCounter < int2slv(cF2H_HK_PERIOD-1, sStartCounter'length)) then
           sStartCounter <= sStartCounter + iINT_START;
           sStart        <= '0';
         else
-          sStartCounter <= 0;
+          sStartCounter <= (others => '0');
           sStart        <= '1';
         end if;
       end if RST_IF_START;
