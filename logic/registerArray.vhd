@@ -1,7 +1,6 @@
 --!@file registerArray.vhd
 --!@brief Configuration and telemetry registers
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
---!@copydoc
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -12,6 +11,7 @@ use ieee.math_real.all;
 use work.basic_package.all;
 use work.pgdaqPackage.all;
 
+--!@copydoc registerArray.vhd
 entity registerArray is
   port (
     iCLK       : in  std_logic;       --!Main clock
@@ -25,6 +25,7 @@ entity registerArray is
     );
 end registerArray;
 
+--!@copydoc registerArray.vhd
 architecture std of registerArray is
   signal sRegisters : tRegisterArray;
 begin
