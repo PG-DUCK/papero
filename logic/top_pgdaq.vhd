@@ -13,6 +13,23 @@ use work.pgdaqPackage.all;
 
 --!@copydoc top_pgdaq.vhd
 entity top_pgdaq is
+  generic (
+    --HoG: Global Generic Variables
+    GLOBAL_DATE : std_logic_vector(31 downto 0);
+    GLOBAL_TIME : std_logic_vector(31 downto 0);
+    GLOBAL_VER  : std_logic_vector(31 downto 0);
+    GLOBAL_SHA  : std_logic_vector(31 downto 0);
+    TOP_VER     : std_logic_vector(31 downto 0);
+    TOP_SHA     : std_logic_vector(31 downto 0);
+    CON_VER     : std_logic_vector(31 downto 0);
+    CON_SHA     : std_logic_vector(31 downto 0);
+    HOG_VER     : std_logic_vector(31 downto 0);
+    HOG_SHA     : std_logic_vector(31 downto 0);
+
+    --HoG: Project Specific Lists (One for each .src file in your Top/ folder)
+    PGDAQ_SHA : std_logic_vector(31 downto 0);
+    PGDAQ_VER : std_logic_vector(31 downto 0)
+    );
   port(
     --- CLOCK ------------------------------------------------------------------
     FPGA_CLK1_50 : in std_logic;
