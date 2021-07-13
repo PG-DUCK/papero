@@ -1,21 +1,36 @@
----------------------------------------------------------------------------
---------  RICEVITORE PER I DATI DI CONFIGURAZIONE DEL SISTEMA DAQ  --------
----------------------------------------------------------------------------
+--!@file Config_Receiver.vhd
+--!@brief Decode the input commands and write them to the array registers.
+--!@details
+--!
+--!Read the incoming packets containing the instructions and write them to the
+--! register array. The format is specified in PGDAQ_formats.xlsx:
+--!
+--!SoP: Start-of-Packet x"AA55CA5A"
+--!Len: Number of 32-bit payload words + 5
+--!Ver: Firmware Version
+--!Hdr: Fixed hader x"4EADE500"
+--!     [31:0]  Register Content
+--!     [31:24] parity bits, [23:16] Instruction, [15:0] Register Address
+--!     ................
+--!Trl: Trailer x"BADC0FEE"
+--!CRC: CRC-32
+--!
+--!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.NUMERIC_STD.all;
+
 use work.pgdaqPackage.all;
 
-
-
+--!@copydoc Config_Receiver.vhd
 entity Config_Receiver is
 	port(CR_CLK_in						: in std_logic;								-- Segnale di clock.
 		  CR_RST_in						: in std_logic;								-- Segnale di reset.
 		  CR_FIFO_WAIT_REQUEST_in	: in std_logic;								-- Segnale di Wait_Request in uscita dalla FIFO. Se Wait_Request=1 --> la FIFO è vuota.
 		  CR_DATA_in					: in std_logic_vector(31 downto 0);		-- Dati in uscita dalla FIFO.
-		  CR_FIFO_READ_EN_out		: out std_logic;								-- Segnale di Read_Enable in ingresso alla FIFO. Se Read_Enable=1 --> la FIFO estrarrà il primo dato che ha ricevuto in ingresso. 
+		  CR_FIFO_READ_EN_out		: out std_logic;								-- Segnale di Read_Enable in ingresso alla FIFO. Se Read_Enable=1 --> la FIFO estrarrà il primo dato che ha ricevuto in ingresso.
 		  CR_DATA_out					: out std_logic_vector(31 downto 0);	-- Dati in uscita dal ricevitore.
 		  CR_ADDRESS_out 				: out std_logic_vector(15 downto 0);	-- Indirizzo del registro in cui memorizzare il valore di "CR_DATA_out".
 		  CR_DATA_VALID_out			: out std_logic;								-- Segnale che attesta la validità dei dati in uscita dal ricevitore. Se Data_Valid=1 --> il valore di "CR_DATA_out" è consistente e può essere memorizzato.
@@ -23,8 +38,7 @@ entity Config_Receiver is
 		 );
 end Config_Receiver;
 
-
-
+--!@copydoc Config_Receiver.vhd
 architecture Behavior of Config_Receiver is
 type STATUS is (RESET, SYNCH, SEARCH_SOP, SEARCH_LEN, SEARCH_FWV, SEARCH_HEADER, ACQUISITION, SEARCH_COFEE, SEARCH_CRC, REBOUND, WARNING);	-- Il Config_Receiver è una macchina a stati costituita da 11 stati.
 signal PS, NS	: STATUS;			-- PS=Present Status, NS=Next Status.
@@ -94,7 +108,7 @@ signal data_ready					: std_logic;								-- Dato pronto per essere trasferito i
 
 begin
 	fifo_wait_request <= CR_FIFO_WAIT_REQUEST_in;		-- Assegnazione della porta di Wait_Request ad un segnale interno.
-	
+
 	-- Instanziamento dello User Edge Detector per generare gli impulsi di Read_Enable che identificano una specifica transizione da uno stato all'altro della macchina.
 	rise_edge_implementation : edge_detector_md
 	generic map(channels => 13, R_vs_F => '0')
@@ -127,7 +141,7 @@ begin
 				oEDGE(11)=> data_valid,
 				oEDGE(12)=> end_count_WRTimer_R
 			  );
-	
+
 	-- Instanziamento dello User Edge Detector per generare gli impulsi di "synch_pulse" per risincronizzare l'uscita della FIFO con l'ingresso del ricevitore quando la FIFO passa da vuota a non vuota.
 	fall_edge_implementation : edge_detector_md
 	generic map(channels => 2, R_vs_F => '1')
@@ -138,13 +152,13 @@ begin
 				oEDGE(0)	=> synch_pulse,
 				oEDGE(1)	=> synch_pulse_HH		-- Questa synch_pulse segue il segnale di fifo_wait_request tenuto alto per un ciclo aggiuntivo.
 			  );
-	
+
 	-- Instanziamento dell'HighHold per evitare che il "Wait_Request" rimanga alto per un solo ciclo di clock (ma almeno 2), situazione potenzialmente dannosa per la macchina.
 	Hold_Wait_Request : HighHold
 	generic map(channels => 1, BAS_vs_BSS => '1')
 	port map(CLK_in			 => CR_CLK_in,
 				DATA_in(0)		 => fifo_wait_request,
-				DELAY_1_out(0)	 => fifo_wait_request_HH			
+				DELAY_1_out(0)	 => fifo_wait_request_HH
 				);
 
 	-- Instanziamento del WR_Timer per generare gli impulsi di Read_Enable specifici per lo stato di "ACQUISITION".
@@ -158,8 +172,8 @@ begin
 				 WRT_DECLINE_out				 => decline_payload,
 				 WRT_END_COUNT_out			 => end_count_WRTimer
 				 );
-	
-	
+
+
 	-- Next State Evaluation
 	delta_proc : process (PS, fifo_wait_request, fifo_wait_request_HH, CR_DATA_in, payload_done, fast_payload_done, false_payload)
 	begin
@@ -214,7 +228,7 @@ begin
 				if (not(CR_DATA_in = trailer)) then
 					NS <= WARNING;
 				elsif ((CR_DATA_in = trailer) and (fifo_wait_request_HH = '0')) then
-					NS <= SEARCH_CRC;						
+					NS <= SEARCH_CRC;
 				else
 					NS <= SEARCH_COFEE;
 				end if;
@@ -238,7 +252,7 @@ begin
 				NS <= WARNING;
 		end case;
 	end process;
-	
+
 	-- State Synchronization. Sincronizza lo stato attuale della macchina con il fronte di salita del clock.
 	state_proc : process (CR_CLK_in)
 	begin
@@ -250,7 +264,7 @@ begin
 			end if;
 		end if;
 	end process;
-		
+
 	-- Internal Signals Switch Data Flow. Interruttore generale per abilitare o disabilitare i segnali di "enable".
 	internal_reset					 <= '1' when PS = RESET						 else '0';
 	synch_enable					 <= '1' when PS = SYNCH						 else '0';
@@ -348,11 +362,11 @@ begin
 				CR_DATA_VALID_out		 <= '0';
 		end case;
 	end process;
-	
+
 	-----------------------
 	-- Signal Processing --
 	-----------------------
-	
+
 	-- Save the Length of Packet. In questo processo si vuole memorizzare la lunghezza del pacchetto. Il valore è tenuto fino ad un nuovo stato di "RESET".
 	leng_proc : process (CR_CLK_in)
 	begin
@@ -364,7 +378,7 @@ begin
 			end if;
 		end if;
 	end process;
-	
+
 	-- Save the Firmware version of HPS. In questo processo si vuole memorizzare la versione del Firmware. Il valore è tenuto fino ad un nuovo stato di "RESET".
 	fwv_proc : process (CR_CLK_in)
 	begin
@@ -375,8 +389,8 @@ begin
 				firmware_version	 <= CR_DATA_in;
 			end if;
 		end if;
-	end process;		
-	
+	end process;
+
 	-- Search the "header" of Packet. In questo processo si vuole memorizzare l'occorrenza di un header errato di modo che quando andremo in "WARNING" sapremo riconoscere il tipo di errore che ci ha portati in quello stato.
 	head_proc : process (CR_CLK_in)
 	begin
@@ -388,7 +402,7 @@ begin
 			end if;
 		end if;
 	end process;
-	
+
 	-- L'acquisizione del payload nonché la verifica della sua correttezza viene fatta nei successivi due processi chiamati "core0" e "core1".
 	-- Acquisition of payolaod's Packet core0. Questo processo è in grado di discriminare la word di dato dalla word di parità del payload attraverso un segnale che viene chiamato download_phase.
 	Acq_Payload_core0_proc : process (CR_CLK_in)
@@ -400,7 +414,7 @@ begin
 				download_phase	 <= "00";
 				estimated_parity <= (others => '0');
 				payload_done	 <= '0';
-				fast_payload_done	 <= '0';	
+				fast_payload_done	 <= '0';
 			elsif ((payload_enable_WRT = '1') and ((download_phase = "00") or (download_phase = "11")) and (decline_payload = '0')) then
 				data_RX			 <= CR_DATA_in;
 				download_phase	 <= "01";			-- Nella phase "00" e "11" acquisisci il dato del payload e stima la sua parità.
@@ -423,7 +437,7 @@ begin
 			end if;
 		end if;
 	end process;
-				
+
 	-- Acquisition of payolaod's Packet core1. Questo processo inoltra il dato acquisito verso l'uscita (se la stima della parità coincide con la parità) ed alza il bit "data_ready".
 	Acq_Payload_core1_proc : process (CR_CLK_in)
 	begin
@@ -446,7 +460,7 @@ begin
 			end if;
 		end if;
 	end process;
-	
+
 	-- Search the "cofee" of Packet. In questo processo si vuole memorizzare l'occorrenza di un trailer errato di modo che quando andremo in "WARNING" sapremo riconoscere il tipo di errore che ci ha portati in quello stato.
 	cofee_proc : process (CR_CLK_in)
 	begin
@@ -458,7 +472,7 @@ begin
 			end if;
 		end if;
 	end process;
-	
+
 	-- Search the "crc" of Packet. In questo processo si vuole memorizzare l'occorrenza di un CRC errato di modo che quando andremo in "WARNING" sapremo riconoscere il tipo di errore che ci ha portati in quello stato.
 	crc_proc : process (CR_CLK_in)
 	begin
@@ -470,7 +484,7 @@ begin
 			end if;
 		end if;
 	end process;
-	
+
 	-- Flip Flop D per ritardare il segnale di "Wait_Request" della FIFO. Lo scopo è quello di evitare situazione potenzialmente dannose per la macchina causate da Wait_Request estremamente corti.
 	delay_Wait_Request_proc : process (CR_CLK_in)
 	begin
@@ -482,8 +496,6 @@ begin
 			end if;
 		end if;
 	end process;
-	
-	
+
+
 end Behavior;
-
-

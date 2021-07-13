@@ -1,4 +1,7 @@
 --!@file top_pgdaq.vhd
+--!brief Top module of the pgdaq FPGA gateware
+--!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
+--!@author Mattia Barbanera, mattia.barbanera@infn.it
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -8,7 +11,7 @@ use ieee.std_logic_unsigned.all;
 use work.intel_package.all;
 use work.pgdaqPackage.all;
 
---!@brief Top module in VHDL for the GHRD design
+--!@copydoc top_pgdaq.vhd
 entity top_pgdaq is
   port(
     --- CLOCK ------------------------------------------------------------------
@@ -91,6 +94,7 @@ entity top_pgdaq is
     );
 end entity top_pgdaq;
 
+--!@copydoc top_pgdaq.vhd
 architecture std of top_pgdaq is
 -------------------------------------------------------------
   signal hps_fpga_reset_n       : std_logic;
@@ -126,7 +130,7 @@ begin
   fpga_clk_50   <= FPGA_CLK1_50;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
 
-  neg_fpga_debounced_buttons <= not fpga_debounced_buttons;  -- Siccome i bottoni dell'FPGA lavorano in logica negata mentre i nostri moduli in logica positiva, invertiamo il loro comportamento.      
+  neg_fpga_debounced_buttons <= not fpga_debounced_buttons;  -- Siccome i bottoni dell'FPGA lavorano in logica negata mentre i nostri moduli in logica positiva, invertiamo il loro comportamento.
 
   inverter_hps_cold_reset  <= not hps_cold_reset;   --FIX BUG MODEL SIM
   inverter_hps_warm_reset  <= not hps_warm_reset;   --FIX BUG MODEL SIM
@@ -289,7 +293,7 @@ begin
       pulse_out => hps_debug_reset
       );
 
-  -- Instanziamento del Key Pulse Generator                      
+  -- Instanziamento del Key Pulse Generator
   Pulse_read_enable : Key_Pulse_Gen
     port map(KPG_CLK_in   => fpga_clk_50,
              KPG_DATA_in  => KEY,

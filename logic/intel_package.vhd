@@ -7,7 +7,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
---!@brief Components developed by Intel and instantiated in the logic
+--!@copydoc intel_package.vhd
 package intel_package is
 
 --!@brief SOC system developed by the "Platform designer" software
@@ -95,7 +95,7 @@ component soc_system is
   memory_mem_dm                         : out   std_logic_vector(3 downto 0);                     --                               .mem_dm
   memory_oct_rzqin                      : in    std_logic                     := '0';             --                               .oct_rzqin
   reset_reset_n                         : in    std_logic                     := '0';             --                          reset.reset_n
-  pio_tx_external_connection_export     : in    std_logic_vector(31 downto 0) := (others => '0')  --     pio_tx_external_connection.export	
+  pio_tx_external_connection_export     : in    std_logic_vector(31 downto 0) := (others => '0')  --     pio_tx_external_connection.export
   );
 end component soc_system;
 

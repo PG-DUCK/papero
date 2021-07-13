@@ -1,4 +1,6 @@
 --!@file Key_Pulse_Gen.vhd
+--!@brief Genera un impulso ad ogni pressione di un pulsante
+--!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
@@ -8,6 +10,7 @@ use IEEE.NUMERIC_STD.all;
 use work.intel_package.all;
 use work.pgdaqPackage.all;
 
+--!@copydoc Key_Pulse_Gen.vhd
 entity Key_Pulse_Gen is
   port(KPG_CLK_in   : in  std_logic;
        KPG_DATA_in  : in  std_logic_vector(1 downto 0);
@@ -15,6 +18,7 @@ entity Key_Pulse_Gen is
        );
 end Key_Pulse_Gen;
 
+--!@copydoc Key_Pulse_Gen.vhd
 architecture Behavior of Key_Pulse_Gen is
 
   signal vcc                : std_logic                    := '1';
@@ -49,5 +53,3 @@ begin
 
 
 end Behavior;
-
-

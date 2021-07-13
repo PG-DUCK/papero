@@ -1,7 +1,7 @@
 --!@file pgdaqPackage.vhd
 --!@brief Constants, components declarations, and functions
+--!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
---!@todo See copydoc documentation to avoid duplications
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -10,6 +10,7 @@ use ieee.std_logic_unsigned.all;
 
 use work.basic_package.all;
 
+--!@copydoc pgdaqPackage.vhd
 package pgdaqPackage is
   -- Constants -----------------------------------------------------------------
   constant cREGISTERS : natural        := 32;

@@ -1,6 +1,6 @@
-----------------------------------------------------------------------------
---------  GENERATORE DI IMPULSI PER ESTRARRE UN PAYLOAD DALLA FIFO  --------
-----------------------------------------------------------------------------
+--!@file WR_Timer.vhd
+--!@brief Generatore di impulsi per estrarre un payload dalla FIFO
+--!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
@@ -8,22 +8,20 @@ use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.NUMERIC_STD.all;
 use work.pgdaqPackage.all;
 
-
-
+--!@copydoc WR_Timer.vhd
 entity WR_Timer is
 	port(WRT_CLK_in					: in std_logic;			-- Segnale di clock.
 		  WRT_RST_in					: in std_logic;			-- Segnale di reset.
 		  WRT_START_in					: in std_logic;			-- Segnale di "payload_enable" prodotto dal Config_Receiver. Vale '1' solo se PS=ACQUISITION.
-		  WRT_STANDBY_in				: in std_logic;			-- Segnale di Wait_Request in uscita dalla FIFO. Se Wait_Request=1 --> la FIFO è vuota.  
+		  WRT_STANDBY_in				: in std_logic;			-- Segnale di Wait_Request in uscita dalla FIFO. Se Wait_Request=1 --> la FIFO è vuota.
 		  WRT_STOP_COUNT_VALUE_in	: in std_logic_vector(31 downto 0);		-- Lunghezza del payload + 5.
-		  WRT_out						: out std_logic;			-- Impulsi di Read_Enable per acquisire il payload dalla FIFO. Se Read_Enable=1 --> la FIFO estrarrà il primo dato che ha ricevuto in ingresso. 
+		  WRT_out						: out std_logic;			-- Impulsi di Read_Enable per acquisire il payload dalla FIFO. Se Read_Enable=1 --> la FIFO estrarrà il primo dato che ha ricevuto in ingresso.
 		  WRT_DECLINE_out				: out std_logic;			-- Segnale per avvisare il Config_Receiver che dovrà rifiutare il dato in uscita dalla FIFO. Vale '1' solo se il dato del payload è da rifiutare.
 		  WRT_END_COUNT_out			: out std_logic			-- Fine della trasmissione degli impulsi di Read_Enable per acquisire il payload.
 		 );
 end WR_Timer;
 
-
-
+--!@copydoc WR_Timer.vhd
 architecture Behavior of WR_Timer is
 signal reset					: std_logic;		-- Segnale interno di reset.
 signal start					: std_logic;		-- Segnale interno "payload_enable". E' "alto" solo se ci troviamo nello stato di "ACQUISITION" della macchina a stati.
@@ -38,7 +36,7 @@ signal general_counter 		: std_logic_vector(31 downto 0);	-- Contatore del numer
 signal bug_flag				: std_logic;		-- Flag per la segnalazione di una situazione potenzialmente dannosa che porta ad errore.
 
 
-begin	
+begin
 	reset		 <= WRT_RST_in;			-- Assegnazione della porta di WRT_RST_in ad un segnale interno.
 	start		 <= WRT_START_in;			-- Assegnazione della porta di WRT_START_in ad un segnale interno.
 	standby	 <= WRT_STANDBY_in;		-- Assegnazione della porta di WRT_STANDBY_in ad un segnale interno.
@@ -53,7 +51,7 @@ begin
 				oEDGE(0)	=> start_R,
 				oEDGE(1)	=> standby_R
 			  );
-			  
+
 	-- Instanziamento dello User Edge Detector per generare il segnale di "standby_F".
 	fall_edge_implementation : edge_detector_md
 	generic map(channels => 1, R_vs_F => '1')
@@ -62,8 +60,8 @@ begin
 				iD(0)		=> standby,
 				oEDGE(0)	=> standby_F
 			  );
-	
-	
+
+
 	-- Processo per la gestione del "general_counter".
 	counter_proc : process (WRT_CLK_in)
 	begin
@@ -82,7 +80,7 @@ begin
 			end if;
 		end if;
 	end process;
-	
+
 	output_proc : process (WRT_CLK_in)
 	begin
 		if rising_edge(WRT_CLK_in) then
@@ -99,13 +97,13 @@ begin
 			end if;
 		end if;
 	end process;
-	
-	
+
+
 	-- Data Flow per il controllo dell'uscita
 	WRT_output			 <= (output and (not reset) and start) or start_R or standby_F;
 	WRT_out				 <= WRT_output;	-- L'uscita è data da "output" (a meno che il reset non sia alto), a cui va aggiunto "start_R" in modo da inviare subito un impulso di "Read_Enable" non appena payload_enable=1 , e "standby_F" in modo da inviare subito un impulso di "Read_Enable" non appena "Wait_Request"=0.
 	WRT_END_COUNT_out	 <= end_count;
 	WRT_DECLINE_out	 <= standby_F;
-	
-	
+
+
 end Behavior;
