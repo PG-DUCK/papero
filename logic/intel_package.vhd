@@ -16,6 +16,14 @@ component soc_system is
   button_pio_external_connection_export : in    std_logic_vector(1 downto 0)  := (others => '0'); -- button_pio_external_connection.export
   clk_clk                               : in    std_logic                     := '0';             --                            clk.clk
   dipsw_pio_external_connection_export  : in    std_logic_vector(3 downto 0)  := (others => '0'); --  dipsw_pio_external_connection.export
+  fifo_fpga_to_hps_in_writedata         : in    std_logic_vector(31 downto 0) := (others => '0'); --            fifo_fpga_to_hps_in.writedata
+  fifo_fpga_to_hps_in_write             : in    std_logic                     := '0';             --                               .write
+  fifo_fpga_to_hps_in_waitrequest       : out   std_logic;                                        --                               .waitrequest
+  fifo_fpga_to_hps_in_csr_address       : in    std_logic_vector(2 downto 0)  := (others => '0'); --        fifo_fpga_to_hps_in_csr.address
+  fifo_fpga_to_hps_in_csr_read          : in    std_logic                     := '0';             --                               .read
+  fifo_fpga_to_hps_in_csr_writedata     : in    std_logic_vector(31 downto 0) := (others => '0'); --                               .writedata
+  fifo_fpga_to_hps_in_csr_write         : in    std_logic                     := '0';             --                               .write
+  fifo_fpga_to_hps_in_csr_readdata      : out   std_logic_vector(31 downto 0);                    --                               .readdata
   fifo_hps_to_fpga_out_readdata         : out   std_logic_vector(31 downto 0);                    --           fifo_hps_to_fpga_out.readdata
   fifo_hps_to_fpga_out_read             : in    std_logic                     := '0';             --                               .read
   fifo_hps_to_fpga_out_waitrequest      : out   std_logic;                                        --                               .waitrequest
@@ -94,8 +102,7 @@ component soc_system is
   memory_mem_odt                        : out   std_logic;                                        --                               .mem_odt
   memory_mem_dm                         : out   std_logic_vector(3 downto 0);                     --                               .mem_dm
   memory_oct_rzqin                      : in    std_logic                     := '0';             --                               .oct_rzqin
-  reset_reset_n                         : in    std_logic                     := '0';             --                          reset.reset_n
-  pio_tx_external_connection_export     : in    std_logic_vector(31 downto 0) := (others => '0')  --     pio_tx_external_connection.export
+  reset_reset_n                         : in    std_logic                     := '0'             --                          reset.reset_n
   );
 end component soc_system;
 
