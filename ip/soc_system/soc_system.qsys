@@ -111,7 +111,7 @@
          type = "int";
       }
    }
-   element fifo_HPS_to_FPGA
+   element fifo_FPGA_to_HPS
    {
       datum _sortIndex
       {
@@ -119,11 +119,35 @@
          type = "int";
       }
    }
+   element fifo_FPGA_to_HPS.out
+   {
+      datum baseAddress
+      {
+         value = "64";
+         type = "String";
+      }
+   }
+   element fifo_FPGA_to_HPS.out_csr
+   {
+      datum baseAddress
+      {
+         value = "0";
+         type = "String";
+      }
+   }
+   element fifo_HPS_to_FPGA
+   {
+      datum _sortIndex
+      {
+         value = "12";
+         type = "int";
+      }
+   }
    element fifo_HPS_to_FPGA.in
    {
       datum baseAddress
       {
-         value = "48";
+         value = "68";
          type = "String";
       }
    }
@@ -131,7 +155,7 @@
    {
       datum baseAddress
       {
-         value = "0";
+         value = "32";
          type = "String";
       }
    }
@@ -258,22 +282,6 @@
          type = "boolean";
       }
    }
-   element pio_TX
-   {
-      datum _sortIndex
-      {
-         value = "12";
-         type = "int";
-      }
-   }
-   element pio_TX.s1
-   {
-      datum baseAddress
-      {
-         value = "32";
-         type = "String";
-      }
-   }
    element sysid_qsys
    {
       datum _sortIndex
@@ -314,7 +322,7 @@
  <parameter name="hideFromIPCatalog" value="false" />
  <parameter name="lockedInterfaceDefinition" value="" />
  <parameter name="maxAdditionalLatency" value="1" />
- <parameter name="projectName">top_pgdaq.qpf</parameter>
+ <parameter name="projectName">DE10_NANO_SoC_GHRD.qpf</parameter>
  <parameter name="sopcBorderPoints" value="false" />
  <parameter name="systemHash" value="0" />
  <parameter name="testBenchDutName" value="" />
@@ -331,6 +339,16 @@
    name="dipsw_pio_external_connection"
    internal="dipsw_pio.external_connection"
    type="conduit"
+   dir="end" />
+ <interface
+   name="fifo_fpga_to_hps_in"
+   internal="fifo_FPGA_to_HPS.in"
+   type="avalon"
+   dir="end" />
+ <interface
+   name="fifo_fpga_to_hps_in_csr"
+   internal="fifo_FPGA_to_HPS.in_csr"
+   type="avalon"
    dir="end" />
  <interface
    name="fifo_hps_to_fpga_out"
@@ -374,11 +392,6 @@
    type="conduit"
    dir="end" />
  <interface name="memory" internal="hps_0.memory" type="conduit" dir="end" />
- <interface
-   name="pio_tx_external_connection"
-   internal="pio_TX.external_connection"
-   type="conduit"
-   dir="end" />
  <interface name="reset" internal="clk_0.clk_in_reset" type="reset" dir="end" />
  <module
    name="ILC"
@@ -438,6 +451,31 @@
   <parameter name="USE_PLI" value="0" />
  </module>
  <module
+   name="fifo_FPGA_to_HPS"
+   kind="altera_avalon_fifo"
+   version="20.1"
+   enabled="1">
+  <parameter name="avalonMMAvalonMMDataWidth" value="32" />
+  <parameter name="avalonMMAvalonSTDataWidth" value="32" />
+  <parameter name="bitsPerSymbol" value="16" />
+  <parameter name="channelWidth" value="8" />
+  <parameter name="deviceFamilyString" value="Cyclone V" />
+  <parameter name="errorWidth" value="8" />
+  <parameter name="fifoDepth" value="1024" />
+  <parameter name="fifoInputInterfaceOptions" value="AVALONMM_WRITE" />
+  <parameter name="fifoOutputInterfaceOptions" value="AVALONMM_READ" />
+  <parameter name="showHiddenFeatures" value="false" />
+  <parameter name="singleClockMode" value="false" />
+  <parameter name="singleResetMode" value="false" />
+  <parameter name="symbolsPerBeat" value="2" />
+  <parameter name="useBackpressure" value="true" />
+  <parameter name="useIRQ" value="false" />
+  <parameter name="usePacket" value="true" />
+  <parameter name="useReadControl" value="true" />
+  <parameter name="useRegister" value="false" />
+  <parameter name="useWriteControl" value="true" />
+ </module>
+ <module
    name="fifo_HPS_to_FPGA"
    kind="altera_avalon_fifo"
    version="20.1"
@@ -448,7 +486,7 @@
   <parameter name="channelWidth" value="8" />
   <parameter name="deviceFamilyString" value="Cyclone V" />
   <parameter name="errorWidth" value="8" />
-  <parameter name="fifoDepth" value="8" />
+  <parameter name="fifoDepth" value="1024" />
   <parameter name="fifoInputInterfaceOptions" value="AVALONMM_WRITE" />
   <parameter name="fifoOutputInterfaceOptions" value="AVALONMM_READ" />
   <parameter name="showHiddenFeatures" value="false" />
@@ -1071,20 +1109,6 @@
   <parameter name="USE_AUTO_ADDRESS_WIDTH" value="1" />
   <parameter name="USE_RESPONSE" value="0" />
  </module>
- <module name="pio_TX" kind="altera_avalon_pio" version="20.1" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="50000000" />
-  <parameter name="direction" value="Input" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="32" />
- </module>
  <module
    name="sysid_qsys"
    kind="altera_avalon_sysid_qsys"
@@ -1134,7 +1158,7 @@
    start="mm_bridge_0.m0"
    end="fifo_HPS_to_FPGA.in">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0030" />
+  <parameter name="baseAddress" value="0x0044" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1142,6 +1166,24 @@
    version="20.1"
    start="mm_bridge_0.m0"
    end="fifo_HPS_to_FPGA.in_csr">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0020" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="20.1"
+   start="mm_bridge_0.m0"
+   end="fifo_FPGA_to_HPS.out">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0040" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="20.1"
+   start="mm_bridge_0.m0"
+   end="fifo_FPGA_to_HPS.out_csr">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
@@ -1167,11 +1209,6 @@
    end="button_pio.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x5000" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection kind="avalon" version="20.1" start="mm_bridge_0.m0" end="pio_TX.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0020" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1268,7 +1305,11 @@
    end="f2sdram_only_master.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="mm_bridge_0.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="ILC.clk" />
- <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_TX.clk" />
+ <connection
+   kind="clock"
+   version="20.1"
+   start="clk_0.clk"
+   end="fifo_FPGA_to_HPS.clk_in" />
  <connection
    kind="clock"
    version="20.1"
@@ -1299,6 +1340,11 @@
    version="20.1"
    start="hps_0.h2f_user0_clock"
    end="fifo_HPS_to_FPGA.clk_in" />
+ <connection
+   kind="clock"
+   version="20.1"
+   start="hps_0.h2f_user0_clock"
+   end="fifo_FPGA_to_HPS.clk_out" />
  <connection
    kind="interrupt"
    version="20.1"
@@ -1378,18 +1424,23 @@
    kind="reset"
    version="20.1"
    start="clk_0.clk_reset"
-   end="pio_TX.reset" />
+   end="fifo_HPS_to_FPGA.reset_in" />
  <connection
    kind="reset"
    version="20.1"
    start="clk_0.clk_reset"
-   end="fifo_HPS_to_FPGA.reset_in" />
+   end="fifo_FPGA_to_HPS.reset_in" />
  <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="ILC.reset_n" />
  <connection
    kind="reset"
    version="20.1"
    start="clk_0.clk_reset"
    end="fifo_HPS_to_FPGA.reset_out" />
+ <connection
+   kind="reset"
+   version="20.1"
+   start="clk_0.clk_reset"
+   end="fifo_FPGA_to_HPS.reset_out" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
 </system>

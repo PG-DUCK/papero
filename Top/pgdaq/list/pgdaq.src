@@ -9,6 +9,7 @@ logic/msdintf/basic_functions/basic_package.vhd
 #Project-specific files
 logic/registerArray.vhd 08
 logic/Config_Receiver.vhd
+logic/hkReader.vhd
 
 
 #Basic functions_md
