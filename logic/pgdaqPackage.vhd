@@ -16,6 +16,14 @@ package pgdaqPackage is
   constant cREG_ADDR  : natural        := ceil_log2(cREGISTERS);
   constant cREG_WIDTH : natural        := 32;
 
+  --Housekeeping reader
+  constant cF2H_HK_SOP : std_logic_vector(31 downto 0) := x"55AADEAD";
+  constant cF2H_HK_HDR : std_logic_vector(31 downto 0) := x"4EADE500";
+  constant cF2H_HK_EOP : std_logic_vector(31 downto 0) := x"600DF00D";
+  constant cF2H_HK_PERIOD : natural
+                          := 50000000; --1 s in clock cycles; max: 2^32 (85 s)
+
+
   -- Types ---------------------------------------------------------------------
   --!Register array; all registers are r/w for HPS and FPGA
   type tRegisterArray is array (0 to cREGISTERS-1) of
@@ -66,7 +74,7 @@ package pgdaqPackage is
       KPG_DATA_out : out std_logic_vector(1 downto 0)
       );
   end component;
-  
+
   --! Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
 	component HighHold is
 	generic(
@@ -82,14 +90,14 @@ package pgdaqPackage is
 		  DELAY_4_out		: out std_logic_vector(channels - 1 downto 0)
 		 );
 	end component;
-	
+
 	--! Temporizza l'invio di impulsi sul read_enable della FIFO.
 	component WR_Timer is
 	port(
 		  WRT_CLK_in					: in std_logic;
 		  WRT_RST_in					: in std_logic;
 		  WRT_START_in					: in std_logic;
-		  WRT_STANDBY_in				: in std_logic;		  
+		  WRT_STANDBY_in				: in std_logic;
 		  WRT_STOP_COUNT_VALUE_in		: in std_logic_vector(31 downto 0);
 		  WRT_out						: out std_logic;
 		  WRT_DECLINE_out				: out std_logic;
