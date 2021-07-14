@@ -76,7 +76,7 @@ package pgdaqPackage is
       );
   end component;
 
-  --! Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
+  --!Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
   component HighHold is
   generic(
 		    channels : integer := 1;
@@ -92,7 +92,7 @@ package pgdaqPackage is
 		);
   end component;
 
-  --! Temporizza l'invio di impulsi sul read_enable della FIFO.
+  --!Temporizza l'invio di impulsi sul read_enable della FIFO.
   component WR_Timer is
   port(
 		  WRT_CLK_in					: in std_logic;
@@ -106,7 +106,7 @@ package pgdaqPackage is
 		 );
 	end component;
 
-  --! Ricevitore dati di configurazione
+  --!Ricevitore dati di configurazione
   component Config_Receiver is
 	port(CR_CLK_in						: in std_logic;
 		  CR_RST_in						: in std_logic;
@@ -120,7 +120,7 @@ package pgdaqPackage is
 		 );
 	end component;
   
-  --! Banco di registri per i dati di configurazione
+  --!Banco di registri per i dati di configurazione
   component registerArray is
   port (
     iCLK       : in  std_logic;       --!Main clock
@@ -134,7 +134,7 @@ package pgdaqPackage is
     );
 	end component;
   
-  --! Trasmettitore dati di telemetria
+  --!Trasmettitore dati di telemetria
   component hkReader is
   generic(
     pFIFO_WIDTH : natural := 32
@@ -154,5 +154,26 @@ package pgdaqPackage is
     iFIFO_AFULL : in  std_logic         --!Fifo almost-full flag
     );
   end component;
+  
+  --!Interfaccia di comunicazione tra FPGA e HPS
+  component HPS_intf is
+	port(
+		iCLK_intf			: in  std_logic;								--!Main clock
+		iRST_intf			: in  std_logic;								--!Main reset
+		iFWV_intf 		   : in  std_logic_vector(31 downto 0);	--!Main firmware version
+		--FIFO H2F
+		iFIFO_H2F_WR		: in  std_logic;								--!Wait Request fifo_RX
+		iFIFO_H2F_DATA		: in  std_logic_vector(31 downto 0);	--!Data RX
+		oFIFO_H2F_RE		: out std_logic;								--!Read Enable
+		oFIFO_H2F_WARN		: out std_logic_vector(2 downto 0);		--!Warning
+		--registerArray
+		iREGISTER_ARRAY	: in tRegIntf;									--!Registers interface (for FPGA)
+		--FIFO F2H
+		iHKREADER_START	: in  std_logic;								--!Start acquisition of hkReader
+		iFIFO_F2H_WR		: in  std_logic;								--!Wait Request fifo_TX
+		oFIFO_F2H_WE		: out std_logic;								--!Write Enable
+		oFIFO_F2H_DATA		: out std_logic_vector(31 downto 0)		--!Data TX
+		);
+	end component;
 
 end pgdaqPackage;
