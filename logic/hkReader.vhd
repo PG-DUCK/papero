@@ -31,7 +31,8 @@ use work.pgdaqPackage.all;
 --!@copydoc hkReader.vhd
 entity hkReader is
   generic(
-    pFIFO_WIDTH : natural := 32 --!FIFO data width
+    pFIFO_WIDTH : natural := 32; --!FIFO data width
+    pPARITY     : string  := "EVEN" --!Parity polarity ("EVEN" or "ODD")
     );
   port (
     iCLK        : in  std_logic;        --!Main clock
@@ -69,6 +70,9 @@ architecture std of hkReader is
   signal sStartCounter : std_logic_vector(31 downto 0);
   signal sStart        : std_logic;
 
+  --Parity
+  signal sParity  : std_logic_vector(3 downto 0);
+
 begin
 
   --!@brief FSM to send an HK packet. A-full is checked only at the beginning.
@@ -80,6 +84,7 @@ begin
   --!@todo What if the address is greater than the maximum allowable?
   --!@todo What if a start comes when busy?
   hkStateFSM_proc : process (iCLK)
+    variable vAddrParity : std_logic_vector(1 downto 0);
   begin
     CLKIF : if (rising_edge(iCLK)) then
       RST_EN_IF : if (iRST = '1') then
@@ -87,6 +92,7 @@ begin
         sRegCounter <= 0;
         oFIFO_WR    <= '0';
         oFIFO_DATA  <= (others => '0');
+        sParity     <= (others => '0');
         sHkState    <= IDLE;
 
       elsif (iCNT.en = '1') then
@@ -94,6 +100,7 @@ begin
         sRegCounter <= 0;
         oFIFO_WR    <= '1';
         oFIFO_DATA  <= (others => '0');
+        sParity     <= (others => '0');
         case (sHkState) is
           --Wait for a start and check if
           when IDLE =>
@@ -136,10 +143,23 @@ begin
             sRegCounter <= sRegCounter;
             oFIFO_DATA  <= iREG_ARRAY(sRegCounter);
             sHkState    <= REGISTER_ADDRESS;
+            sParity(0)     <= parity8bit(pPARITY,
+                                iREG_ARRAY(sRegCounter)(7 downto 0));
+            sParity(1)     <= parity8bit(pPARITY,
+                                iREG_ARRAY(sRegCounter)(15 downto 8));
+            sParity(2)     <= parity8bit(pPARITY,
+                                iREG_ARRAY(sRegCounter)(23 downto 16));
+            sParity(3)     <= parity8bit(pPARITY,
+                                iREG_ARRAY(sRegCounter)(31 downto 24));
 
           --Send the address of the registers and check if completed
           when REGISTER_ADDRESS =>
-            oFIFO_DATA <= int2slv(sRegCounter, oFIFO_DATA'length);
+            vAddrParity(0) := parity8bit(pPARITY,
+                                        int2slv(sRegCounter, 16)(7 downto 0));
+            vAddrParity(1) := parity8bit(pPARITY,
+                                        int2slv(sRegCounter, 16)(15 downto 8));
+            oFIFO_DATA <= "00" & vAddrParity & sParity & x"00"
+                          & int2slv(sRegCounter, 16);
             END_REG_IF : if (sRegCounter < cREGISTERS-1) then
               sRegCounter <= sRegCounter + 1;
               sHkState    <= REGISTER_CONTENT;

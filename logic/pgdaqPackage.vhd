@@ -21,8 +21,7 @@ package pgdaqPackage is
   constant cF2H_HK_SOP : std_logic_vector(31 downto 0) := x"55AADEAD"; --!Start of Packet for the FPGA-2-HPS FSM
   constant cF2H_HK_HDR : std_logic_vector(31 downto 0) := x"4EADE500"; --!Fixed Header for the FPGA-2-HPS FSM
   constant cF2H_HK_EOP : std_logic_vector(31 downto 0) := x"600DF00D"; --!End of Packet for the FPGA-2-HPS FSM
-  constant cF2H_HK_PERIOD : natural := 50000000; --!Period for internal counter to read HKs; max: 2^32 (85 s)
-
+  constant cF2H_HK_PERIOD : natural := 100; --!Period for internal counter to read HKs; max: 2^32 (85 s)
 
   -- Types ---------------------------------------------------------------------
   --!Register array; all registers are r/w for HPS and FPGA
@@ -105,9 +104,11 @@ package pgdaqPackage is
 		 );
 end component;
 
+  --!Reads the HK and sends them in a packet
   component hkReader is
   generic(
-    pFIFO_WIDTH : natural := 32
+    pFIFO_WIDTH : natural := 32; --!FIFO data width
+    pPARITY     : string  := "EVEN" --!Parity polarity ("EVEN" or "ODD")
     );
   port (
     iCLK        : in  std_logic;        --!Main clock
@@ -125,4 +126,37 @@ end component;
     );
   end component;
 
+  -- Functions -----------------------------------------------------------------
+  --!@brief Compute the parity bit of an 8-bit data with both polarities
+  --!@param[in] p String containing the polarity, "EVEN" or "ODD"
+  --!@param[in] d Input 8-bit data
+  --!@return  Parity bit of the incoming 8-bit data
+  function parity8bit (p : string ; d : std_logic_vector(7 downto 0)) return std_logic;
+
 end pgdaqPackage;
+
+--!@copydoc pgdaqPackage.vhd
+package body pgdaqPackage is
+  function parity8bit (p : string ; d : std_logic_vector(7 downto 0)) return std_logic is
+    variable xor_first_level : std_logic_vector(3 downto 0);
+    variable xor_second_level : std_logic_vector(1 downto 0);
+    variable xor_third_level : std_logic;
+  begin
+    xor_first_level(0) := d(0) xor d(1);
+    xor_first_level(1) := d(2) xor d(3);
+    xor_first_level(2) := d(4) xor d(5);
+    xor_first_level(3) := d(6) xor d(7);
+
+    xor_second_level(0) := xor_first_level(0) xor xor_first_level(1);
+    xor_second_level(1) := xor_first_level(2) xor xor_first_level(3);
+
+    if p = "ODD" then
+      xor_third_level := not (xor_second_level(0) xor xor_second_level(1));
+    elsif p = "EVEN" then
+      xor_third_level := xor_second_level(0) xor xor_second_level(1);
+    end if;
+
+    return xor_third_level;
+  end function;
+
+end package body;
