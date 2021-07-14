@@ -158,6 +158,7 @@ signal address_rx			 : std_logic_vector(15 downto 0);	-- Indirizzo del registro 
 signal data_valid_rx		 : std_logic;								-- Consistenza del dato in uscita dal Config_Receiver. '1'--> ok, '0'-->ko.
 signal warning_rx			 : std_logic_vector(2 downto 0);		-- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
 signal receiver_output	 : tRegIntf;
+signal sRegArray			 : tRegisterArray;
 
 begin
   -- connection of internal logics ----------------------------
@@ -348,37 +349,37 @@ begin
 				CR_DATA_VALID_out				=> receiver_output.we,
 				CR_WARNING_out 				=> warning_rx
 			  );
-	receiver_output.addr <= address_rx(4 downto 0);
+	receiver_output.addr <= address_rx(cREG_ADDR - 1 downto 0);
 	
---	-- Banco di registri dati di configurazione
---	Config_Registers : registerArray
---	port map(
---				iCLK       => fpga_clk_50,
---				iRST       => neg_hps_fpga_reset_n,
---				iCNT       => ,
---				oCNT       => ,
---				oREG_ARRAY => ,
---				iHPS_REG   => receiver_output,
---				iFPGA_REG  => 
---				);
---	
---	-- Trasmettitore dati di payload
---	FIFO_f2h_transmitter : hkReader
---	generic map(
---					pFIFO_WIDTH => 32
---					)
---	port map(
---				iCLK        => fpga_clk_50,
---				iRST        => neg_hps_fpga_reset_n,
---				iCNT        => ,
---				oCNT        => ,
---				iINT_START  => ,
---				iFW_VER     => ,
---				iREG_ARRAY  => ,
---				oFIFO_DATA  => ,
---				oFIFO_WR    => ,
---				iFIFO_AFULL => 
---				);
+	-- Banco di registri dati di configurazione
+	Config_Registers : registerArray
+	port map(
+				iCLK       => fpga_clk_50,
+				iRST       => neg_hps_fpga_reset_n,
+				iCNT       => ('1', '1'),
+				oCNT       => open,
+				oREG_ARRAY => sRegArray,
+				iHPS_REG   => receiver_output,
+				iFPGA_REG  => ((others => '0'),(others => '0'), '0')
+				);
+	
+	-- Trasmettitore dati di payload
+	FIFO_f2h_transmitter : hkReader
+	generic map(
+					pFIFO_WIDTH => 32
+					)
+	port map(
+				iCLK        => fpga_clk_50,
+				iRST        => neg_hps_fpga_reset_n,
+				iCNT        => ('1', '0'),
+				oCNT        => open,
+				iINT_START  => '1',
+				iFW_VER     => PGDAQ_SHA,
+				iREG_ARRAY  => sRegArray,
+				oFIFO_DATA  => fifo_f2h_data_in,
+				oFIFO_WR    => fifo_f2h_wr_en,
+				iFIFO_AFULL => fifo_f2h_full		--@todo Ricreare progetto Qsys esportando il segnale di "Almostfull"
+				);
 	
 
 end architecture;
