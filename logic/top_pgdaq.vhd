@@ -157,6 +157,7 @@ signal data_rx				 : std_logic_vector(31 downto 0);	-- Dato di configurazione de
 signal address_rx			 : std_logic_vector(15 downto 0);	-- Indirizzo del registro in cui memorizzare il dato di configurazione
 signal data_valid_rx		 : std_logic;								-- Consistenza del dato in uscita dal Config_Receiver. '1'--> ok, '0'-->ko.
 signal warning_rx			 : std_logic_vector(2 downto 0);		-- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
+signal receiver_output	 : tRegIntf;
 
 begin
   -- connection of internal logics ----------------------------
@@ -342,11 +343,12 @@ begin
 				CR_FIFO_WAIT_REQUEST_in 	=> fifo_h2f_empty,
 				CR_DATA_in 						=> fifo_h2f_data_out,			
 				CR_FIFO_READ_EN_out			=> fifo_h2f_rd_en,
-				CR_DATA_out	 					=> data_rx,
+				CR_DATA_out	 					=> receiver_output.reg,
 				CR_ADDRESS_out					=> address_rx,
-				CR_DATA_VALID_out				=> data_valid_rx,
+				CR_DATA_VALID_out				=> receiver_output.we,
 				CR_WARNING_out 				=> warning_rx
 			  );
+	receiver_output.addr <= address_rx(4 downto 0);
 	
 --	-- Banco di registri dati di configurazione
 --	Config_Registers : registerArray
@@ -356,7 +358,7 @@ begin
 --				iCNT       => ,
 --				oCNT       => ,
 --				oREG_ARRAY => ,
---				iHPS_REG   => ,
+--				iHPS_REG   => receiver_output,
 --				iFPGA_REG  => 
 --				);
 --	
