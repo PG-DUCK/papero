@@ -75,25 +75,25 @@ package pgdaqPackage is
       );
   end component;
 
-  --! Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
-	component HighHold is
-	generic(
-			  channels : integer := 1;
-			  BAS_vs_BSS : std_logic := '0'
-			 );
-	port(
-		  CLK_in				: in std_logic;
-		  DATA_in			: in std_logic_vector(channels - 1 downto 0);
-		  DELAY_1_out		: out std_logic_vector(channels - 1 downto 0);
-		  DELAY_2_out 		: out std_logic_vector(channels - 1 downto 0);
-		  DELAY_3_out		: out std_logic_vector(channels - 1 downto 0);
-		  DELAY_4_out		: out std_logic_vector(channels - 1 downto 0)
-		 );
-	end component;
+  --!Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
+  component HighHold is
+  generic(
+		    channels : integer := 1;
+		    BAS_vs_BSS : std_logic := '0'
+		   );
+  port(
+	    CLK_in				: in std_logic;
+		 DATA_in			: in std_logic_vector(channels - 1 downto 0);
+		 DELAY_1_out		: out std_logic_vector(channels - 1 downto 0);
+		 DELAY_2_out 		: out std_logic_vector(channels - 1 downto 0);
+		 DELAY_3_out		: out std_logic_vector(channels - 1 downto 0);
+		 DELAY_4_out		: out std_logic_vector(channels - 1 downto 0)
+		);
+  end component;
 
-	--! Temporizza l'invio di impulsi sul read_enable della FIFO.
-	component WR_Timer is
-	port(
+  --!Temporizza l'invio di impulsi sul read_enable della FIFO.
+  component WR_Timer is
+  port(
 		  WRT_CLK_in					: in std_logic;
 		  WRT_RST_in					: in std_logic;
 		  WRT_START_in					: in std_logic;
@@ -103,8 +103,37 @@ package pgdaqPackage is
 		  WRT_DECLINE_out				: out std_logic;
 		  WRT_END_COUNT_out				: out std_logic
 		 );
-end component;
+	end component;
 
+  --!Ricevitore dati di configurazione
+  component Config_Receiver is
+	port(CR_CLK_in						: in std_logic;
+		  CR_RST_in						: in std_logic;
+		  CR_FIFO_WAIT_REQUEST_in	: in std_logic;
+		  CR_DATA_in					: in std_logic_vector(31 downto 0);
+		  CR_FIFO_READ_EN_out		: out std_logic;
+		  CR_DATA_out					: out std_logic_vector(31 downto 0);
+		  CR_ADDRESS_out 				: out std_logic_vector(15 downto 0);
+		  CR_DATA_VALID_out			: out std_logic;
+		  CR_WARNING_out				: out std_logic_vector(2 downto 0)
+		 );
+	end component;
+  
+  --!Banco di registri per i dati di configurazione
+  component registerArray is
+  port (
+    iCLK       : in  std_logic;       --!Main clock
+    iRST       : in  std_logic;       --!Main reset
+    iCNT       : in  tControlIn;      --!Control input signals
+    oCNT       : out tControlOut;     --!Control output flags
+    --Register array
+    oREG_ARRAY : out tRegisterArray;  --!Register array, 32-bit cREGISTERS-deep
+    iHPS_REG   : in  tRegIntf;        --!HPS interface
+    iFPGA_REG  : in  tRegIntf         --!FPGA interface
+    );
+	end component;
+  
+  --!Trasmettitore dati di telemetria
   component hkReader is
   generic(
     pFIFO_WIDTH : natural := 32
@@ -124,5 +153,26 @@ end component;
     iFIFO_AFULL : in  std_logic         --!Fifo almost-full flag
     );
   end component;
+  
+  --!Interfaccia di comunicazione tra FPGA e HPS
+  component HPS_intf is
+	port(
+		iCLK_intf			: in  std_logic;								--!Main clock
+		iRST_intf			: in  std_logic;								--!Main reset
+		iFWV_intf 		   : in  std_logic_vector(31 downto 0);	--!Main firmware version
+		--FIFO H2F
+		iFIFO_H2F_WR		: in  std_logic;								--!Wait Request fifo_RX
+		iFIFO_H2F_DATA		: in  std_logic_vector(31 downto 0);	--!Data RX
+		oFIFO_H2F_RE		: out std_logic;								--!Read Enable
+		oFIFO_H2F_WARN		: out std_logic_vector(2 downto 0);		--!Warning
+		--registerArray
+		iREGISTER_ARRAY	: in tRegIntf;									--!Registers interface (for FPGA)
+		--FIFO F2H
+		iHKREADER_START	: in  std_logic;								--!Start acquisition of hkReader
+		iFIFO_F2H_WR		: in  std_logic;								--!Wait Request fifo_TX
+		oFIFO_F2H_WE		: out std_logic;								--!Write Enable
+		oFIFO_F2H_DATA		: out std_logic_vector(31 downto 0)		--!Data TX
+		);
+	end component;
 
 end pgdaqPackage;

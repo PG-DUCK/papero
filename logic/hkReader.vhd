@@ -169,19 +169,14 @@ begin
     end if CLKIF;
   end process hkStateFSM_proc;
 
-  --!@todo Improve error checking and reset
-  --!@brief Combinatorial FSM to decide the control output
-  --!@return oCNT signals
-  control_out_proc : process (all)
-  begin
-    oCNT.busy <= '1'when sHkState /= IDLE else
-                 '0';
+  -- Assignaments of oCNT
+    oCNT.busy <= '1' when sHkState /= IDLE else 
+					  '0';
     oCNT.error <= sFsmError;
     oCNT.reset <= '1' when iRST = '1' else
                   '0';
-    oCNT.compl <= '1'when sHkState = CRC else
+    oCNT.compl <= '1' when sHkState = CRC else
                   '0';
-  end process control_out_proc;
 
   --!@brief Internal periodic start
   --!@param[in] iCLK  Clock, used on rising edge
