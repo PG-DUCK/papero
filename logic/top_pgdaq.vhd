@@ -15,20 +15,20 @@ use work.pgdaqPackage.all;
 entity top_pgdaq is
   generic (
     --HoG: Global Generic Variables
-    GLOBAL_DATE : std_logic_vector(31 downto 0);
-    GLOBAL_TIME : std_logic_vector(31 downto 0);
-    GLOBAL_VER  : std_logic_vector(31 downto 0);
-    GLOBAL_SHA  : std_logic_vector(31 downto 0);
-    TOP_VER     : std_logic_vector(31 downto 0);
-    TOP_SHA     : std_logic_vector(31 downto 0);
-    CON_VER     : std_logic_vector(31 downto 0);
-    CON_SHA     : std_logic_vector(31 downto 0);
-    HOG_VER     : std_logic_vector(31 downto 0);
-    HOG_SHA     : std_logic_vector(31 downto 0);
+    GLOBAL_DATE : std_logic_vector(31 downto 0) := (others => '0');
+    GLOBAL_TIME : std_logic_vector(31 downto 0) := (others => '0');
+    GLOBAL_VER  : std_logic_vector(31 downto 0) := (others => '0');
+    GLOBAL_SHA  : std_logic_vector(31 downto 0) := (others => '0');
+    TOP_VER     : std_logic_vector(31 downto 0) := (others => '0');
+    TOP_SHA     : std_logic_vector(31 downto 0) := (others => '0');
+    CON_VER     : std_logic_vector(31 downto 0) := (others => '0');
+    CON_SHA     : std_logic_vector(31 downto 0) := (others => '0');
+    HOG_VER     : std_logic_vector(31 downto 0) := (others => '0');
+    HOG_SHA     : std_logic_vector(31 downto 0) := (others => '0');
 
     --HoG: Project Specific Lists (One for each .src file in your Top/ folder)
-    PGDAQ_SHA : std_logic_vector(31 downto 0);
-    PGDAQ_VER : std_logic_vector(31 downto 0)
+    PGDAQ_SHA : std_logic_vector(31 downto 0) := (others => '0');
+    PGDAQ_VER : std_logic_vector(31 downto 0) := (others => '0')
     );
   port(
     --- CLOCK ------------------------------------------------------------------
@@ -114,41 +114,56 @@ end entity top_pgdaq;
 --!@copydoc top_pgdaq.vhd
 architecture std of top_pgdaq is
 -------------------------------------------------------------
-  signal hps_fpga_reset_n       : std_logic;
-  signal fpga_debounced_buttons : std_logic_vector(1 downto 0);
-  signal fpga_led_internal      : std_logic_vector(6 downto 0);
-  signal hps_reset_req          : std_logic_vector(2 downto 0);
-  signal hps_cold_reset         : std_logic;
-  signal hps_warm_reset         : std_logic;
-  signal hps_debug_reset        : std_logic;
-  signal stm_hw_events          : std_logic_vector(27 downto 0);
-  signal fpga_clk_50            : std_logic;
+signal hps_fpga_reset_n       : std_logic;
+signal fpga_debounced_buttons : std_logic_vector(1 downto 0);
+signal fpga_led_internal      : std_logic_vector(6 downto 0);
+signal hps_reset_req          : std_logic_vector(2 downto 0);
+signal hps_cold_reset         : std_logic;
+signal hps_warm_reset         : std_logic;
+signal hps_debug_reset        : std_logic;
+signal stm_hw_events          : std_logic_vector(27 downto 0);
+signal fpga_clk_50            : std_logic;
 
-  signal gnd                        : std_logic := '0';
-  signal neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);
-  signal inverter_hps_cold_reset    : std_logic;  --FIX BUG MODEL SIM
-  signal inverter_hps_warm_reset    : std_logic;  --FIX BUG MODEL SIM
-  signal inverter_hps_debug_reset   : std_logic;  --FIX BUG MODEL SIM
+-- Set di segnali ausiliari
+signal gnd                        : std_logic := '0';					 -- massa
+signal neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
+signal neg_hps_fpga_reset_n		 : std_logic;							 -- segnale interno di RESET in logica positiva
+signal inverter_hps_cold_reset    : std_logic; 							 -- FIX BUG MODEL SIM
+signal inverter_hps_warm_reset    : std_logic; 							 -- FIX BUG MODEL SIM
+signal inverter_hps_debug_reset   : std_logic; 							 -- FIX BUG MODEL SIM
 
-  signal s_pio_tx          : std_logic_vector(31 downto 0);
-  signal s_KEY_R           : std_logic_vector(1 downto 0);
-  signal zero              : std_logic_vector(7 downto 0) := (others => '0');
-  signal fifo_data_out     : std_logic_vector(31 downto 0);
-  signal fifo_rd_en        : std_logic;
-  signal fifo_empty        : std_logic;
-  signal fifo_addr_csr     : std_logic_vector(2 downto 0);
-  signal fifo_rd_en_csr    : std_logic;
-  signal fifo_data_in_csr  : std_logic_vector(31 downto 0);
-  signal fifo_wr_en_csr    : std_logic;
-  signal fifo_data_out_csr : std_logic_vector(31 downto 0);
+-- Set di segnali per pilotare la fifo FPGA --> HPS
+signal fifo_f2h_data_in	 		 : std_logic_vector(31 downto 0);	 -- Data
+signal fifo_f2h_wr_en			 : std_logic;								 -- Write Enable
+signal fifo_f2h_full				 : std_logic;								 -- Fifo Full
+signal fifo_f2h_addr_csr		 : std_logic_vector(2 downto 0);
+signal fifo_f2h_rd_en_csr		 : std_logic;
+signal fifo_f2h_data_in_csr	 : std_logic_vector(31 downto 0);
+signal fifo_f2h_wr_en_csr		 : std_logic;
+signal fifo_f2h_data_out_csr	 : std_logic_vector(31 downto 0);
+
+-- Set di segnali per pilotare la fifo HPS --> FPGA
+signal fifo_h2f_data_out	 	 : std_logic_vector(31 downto 0);	 -- Data
+signal fifo_h2f_rd_en			 : std_logic;								 -- Read Enable
+signal fifo_h2f_empty			 : std_logic;								 -- Fifo Empty
+signal fifo_h2f_addr_csr		 : std_logic_vector(2 downto 0);
+signal fifo_h2f_rd_en_csr		 : std_logic;
+signal fifo_h2f_data_in_csr	 : std_logic_vector(31 downto 0);
+signal fifo_h2f_wr_en_csr		 : std_logic;
+signal fifo_h2f_data_out_csr	 : std_logic_vector(31 downto 0);
+
+-- Set di segnali di interconnessione tra i moduli istanziati
+signal warning_rx			 : std_logic_vector(2 downto 0);		-- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
+
 
 begin
   -- connection of internal logics ----------------------------
   fpga_clk_50   <= FPGA_CLK1_50;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
 
-  neg_fpga_debounced_buttons <= not fpga_debounced_buttons;  -- Siccome i bottoni dell'FPGA lavorano in logica negata mentre i nostri moduli in logica positiva, invertiamo il loro comportamento.
-
+  neg_fpga_debounced_buttons	 <= not fpga_debounced_buttons;  -- Siccome i bottoni dell'FPGA lavorano in logica negata mentre i nostri moduli in logica positiva, invertiamo il loro comportamento.
+  neg_hps_fpga_reset_n			 <= not hps_fpga_reset_n;			-- Il reset fornito dal soc_system utilizza la logica negata. Invertiamo il valore per adattarlo ai nostri moduli, che invece lavorano in logica positva.
+	
   inverter_hps_cold_reset  <= not hps_cold_reset;   --FIX BUG MODEL SIM
   inverter_hps_warm_reset  <= not hps_warm_reset;   --FIX BUG MODEL SIM
   inverter_hps_debug_reset <= not hps_debug_reset;  --FIX BUG MODEL SIM
@@ -241,18 +256,25 @@ begin
     hps_0_f2h_stm_hw_events_stm_hwevents  => stm_hw_events,  -- hps_0_f2h_stm_hw_events.stm_hwevents
     hps_0_f2h_warm_reset_req_reset_n      => inverter_hps_warm_reset,  -- hps_0_f2h_warm_reset_req.reset_n                   (BUG MODEL SIM FIXED)
 
-    --User Partion
-    pio_tx_external_connection_export => s_pio_tx,  -- pio_tx_external_connection.export
-
-    fifo_hps_to_fpga_out_readdata      => fifo_data_out,  -- fifo_fpga_to_hps_in.writedata
-    fifo_hps_to_fpga_out_read          => fifo_rd_en,     -- .write
-    fifo_hps_to_fpga_out_waitrequest   => fifo_empty,     -- .waitrequest
-    fifo_hps_to_fpga_out_csr_address   => fifo_addr_csr,  -- fifo_fpga_to_hps_in_csr.address
-    fifo_hps_to_fpga_out_csr_read      => fifo_rd_en_csr,    -- .read
-    fifo_hps_to_fpga_out_csr_writedata => fifo_data_in_csr,  -- .writedata
-    fifo_hps_to_fpga_out_csr_write     => fifo_wr_en_csr,    -- .write
-    fifo_hps_to_fpga_out_csr_readdata  => fifo_data_out_csr  -- .readdata
-    );
+    --Fifo Partion
+	 fifo_fpga_to_hps_in_writedata		 => fifo_f2h_data_in, 			 --	  fifo_fpga_to_hps_in.writedata
+	 fifo_fpga_to_hps_in_write				 => fifo_f2h_wr_en,     		 -- 								.write
+	 fifo_fpga_to_hps_in_waitrequest		 => fifo_f2h_full,				 -- 								.waitrequest
+	 fifo_fpga_to_hps_in_csr_address		 => fifo_f2h_addr_csr,			 -- fifo_fpga_to_hps_in_csr.address
+ 	 fifo_fpga_to_hps_in_csr_read			 => fifo_f2h_rd_en_csr,		    -- 								.read
+	 fifo_fpga_to_hps_in_csr_writedata	 => fifo_f2h_data_in_csr,		 -- 								.writedata
+	 fifo_fpga_to_hps_in_csr_write		 => fifo_f2h_wr_en_csr,			 -- 								.write
+	 fifo_fpga_to_hps_in_csr_readdata	 => fifo_f2h_data_out_csr,		 -- 								.readdata
+		  
+	 fifo_hps_to_fpga_out_readdata		 => fifo_h2f_data_out,			 --	  fifo_fpga_to_hps_in.writedata
+	 fifo_hps_to_fpga_out_read				 => fifo_h2f_rd_en,         	 -- 						      .write
+	 fifo_hps_to_fpga_out_waitrequest	 => fifo_h2f_empty,				 --						 	   .waitrequest
+	 fifo_hps_to_fpga_out_csr_address	 => fifo_h2f_addr_csr,			 -- fifo_fpga_to_hps_in_csr.address
+	 fifo_hps_to_fpga_out_csr_read		 => fifo_h2f_rd_en_csr,			 --							   .read
+	 fifo_hps_to_fpga_out_csr_writedata	 => fifo_h2f_data_in_csr,		 -- 								.writedata
+	 fifo_hps_to_fpga_out_csr_write		 => fifo_h2f_wr_en_csr,			 -- 								.write
+	 fifo_hps_to_fpga_out_csr_readdata	 => fifo_h2f_data_out_csr		 -- 								.readdata
+	 );
 
   --!@brief Debounce logic to clean out glitches within 1ms
   debounce_inst : debounce generic map(
@@ -309,19 +331,24 @@ begin
       signal_in => hps_reset_req(2),
       pulse_out => hps_debug_reset
       );
-
-  -- Instanziamento del Key Pulse Generator
-  Pulse_read_enable : Key_Pulse_Gen
-    port map(KPG_CLK_in   => fpga_clk_50,
-             KPG_DATA_in  => KEY,
-             KPG_DATA_out => s_KEY_R
-             );
-
-
-  -- Data Flow per il controllo della FIFO
-  s_pio_tx   <= fifo_data_out;
-  fifo_rd_en <= s_KEY_R(1);
-  LED        <= zero - fifo_empty;
-
-
+		
+	-- Interfaccia di comunicazione tra FPGA e HPS per i dati di controllo
+	HPS_interface : HPS_intf
+	port map(
+				iCLK_intf			=> fpga_clk_50,
+				iRST_intf			=> neg_hps_fpga_reset_n,
+				iFWV_intf			=> PGDAQ_SHA,
+				iFIFO_H2F_WR		=> fifo_h2f_empty,
+				iFIFO_H2F_DATA		=> fifo_h2f_data_out,
+				oFIFO_H2F_RE		=> fifo_h2f_rd_en,
+				oFIFO_H2F_WARN		=> warning_rx,
+				iREGISTER_ARRAY	=> ((others => '0'),(others => '0'), '0'),
+				iHKREADER_START	=> '1',
+				iFIFO_F2H_WR		=> fifo_f2h_full,
+				oFIFO_F2H_WE		=> fifo_f2h_wr_en,
+				oFIFO_F2H_DATA		=> fifo_f2h_data_in
+				);
+	
 end architecture;
+
+

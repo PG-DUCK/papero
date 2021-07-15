@@ -21,7 +21,7 @@ package pgdaqPackage is
   constant cF2H_HK_SOP    : std_logic_vector(31 downto 0) := x"55AADEAD";  --!Start of Packet for the FPGA-2-HPS FSM
   constant cF2H_HK_HDR    : std_logic_vector(31 downto 0) := x"4EADE500";  --!Fixed Header for the FPGA-2-HPS FSM
   constant cF2H_HK_EOP    : std_logic_vector(31 downto 0) := x"600DF00D";  --!End of Packet for the FPGA-2-HPS FSM
-  constant cF2H_HK_PERIOD : natural                       := 50000000;     --!Period for internal counter to read HKs; max: 2^32 (85 s)
+  constant cF2H_HK_PERIOD : natural                       := 50000000;  --!Period for internal counter to read HKs; max: 2^32 (85 s)
 
   -- Types ---------------------------------------------------------------------
   --!Register array; all registers are r/w for HPS and FPGA
@@ -52,10 +52,10 @@ package pgdaqPackage is
 
   --!CRC32 interface (do not use it as port)
   type tCrc32 is record
-    rst : std_logic;
-    en : std_logic;                       --!Write enable
-    data : std_logic_vector(31 downto 0); --!Input data
-    crc : std_logic_vector(31 downto 0);  --!CRC32 out
+    rst  : std_logic;
+    en   : std_logic;                      --!Write enable
+    data : std_logic_vector(31 downto 0);  --!Input data
+    crc  : std_logic_vector(31 downto 0);  --!CRC32 out
   end record tCrc32;
 
   -- Components ----------------------------------------------------------------
@@ -82,7 +82,7 @@ package pgdaqPackage is
       );
   end component;
 
-  --! Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
+  --!Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
   component HighHold is
     generic(
       channels   : integer   := 1;
@@ -98,7 +98,7 @@ package pgdaqPackage is
       );
   end component;
 
-  --! Temporizza l'invio di impulsi sul read_enable della FIFO.
+  --!Temporizza l'invio di impulsi sul read_enable della FIFO.
   component WR_Timer is
     port(
       WRT_CLK_in              : in  std_logic;
@@ -109,6 +109,34 @@ package pgdaqPackage is
       WRT_out                 : out std_logic;
       WRT_DECLINE_out         : out std_logic;
       WRT_END_COUNT_out       : out std_logic
+      );
+  end component;
+
+  --!Ricevitore dati di configurazione
+  component Config_Receiver is
+    port(CR_CLK_in               : in  std_logic;
+         CR_RST_in               : in  std_logic;
+         CR_FIFO_WAIT_REQUEST_in : in  std_logic;
+         CR_DATA_in              : in  std_logic_vector(31 downto 0);
+         CR_FIFO_READ_EN_out     : out std_logic;
+         CR_DATA_out             : out std_logic_vector(31 downto 0);
+         CR_ADDRESS_out          : out std_logic_vector(15 downto 0);
+         CR_DATA_VALID_out       : out std_logic;
+         CR_WARNING_out          : out std_logic_vector(2 downto 0)
+         );
+  end component;
+
+  --!Banco di registri per i dati di configurazione
+  component registerArray is
+    port (
+      iCLK       : in  std_logic;       --!Main clock
+      iRST       : in  std_logic;       --!Main reset
+      iCNT       : in  tControlIn;      --!Control input signals
+      oCNT       : out tControlOut;     --!Control output flags
+      --Register array
+      oREG_ARRAY : out tRegisterArray;  --!Register array, 32-bit cREGISTERS-deep
+      iHPS_REG   : in  tRegIntf;        --!HPS interface
+      iFPGA_REG  : in  tRegIntf         --!FPGA interface
       );
   end component;
 
@@ -145,6 +173,27 @@ package pgdaqPackage is
       );
   end component;
 
+  --!Interfaccia di comunicazione tra FPGA e HPS
+  component HPS_intf is
+    port(
+      iCLK_intf       : in  std_logic;  --!Main clock
+      iRST_intf       : in  std_logic;  --!Main reset
+      iFWV_intf       : in  std_logic_vector(31 downto 0);  --!Main firmware version
+      --FIFO H2F
+      iFIFO_H2F_WR    : in  std_logic;  --!Wait Request fifo_RX
+      iFIFO_H2F_DATA  : in  std_logic_vector(31 downto 0);  --!Data RX
+      oFIFO_H2F_RE    : out std_logic;  --!Read Enable
+      oFIFO_H2F_WARN  : out std_logic_vector(2 downto 0);   --!Warning
+      --registerArray
+      iREGISTER_ARRAY : in  tRegIntf;   --!Registers interface (for FPGA)
+      --FIFO F2H
+      iHKREADER_START : in  std_logic;  --!Start acquisition of hkReader
+      iFIFO_F2H_WR    : in  std_logic;  --!Wait Request fifo_TX
+      oFIFO_F2H_WE    : out std_logic;  --!Write Enable
+      oFIFO_F2H_DATA  : out std_logic_vector(31 downto 0)   --!Data TX
+      );
+  end component;
+
   -- Functions -----------------------------------------------------------------
   --!@brief Compute the parity bit of an 8-bit data with both polarities
   --!@param[in] p String containing the polarity, "EVEN" or "ODD"
@@ -161,10 +210,10 @@ package body pgdaqPackage is
   begin
     if p = "ODD" then
       x := not (d(0) xor d(1) xor d(2) xor d(3)
-               xor d(4) xor d(5) xor d(6) xor d(7));
+                xor d(4) xor d(5) xor d(6) xor d(7));
     elsif p = "EVEN" then
       x := d(0) xor d(1) xor d(2) xor d(3)
-        xor d(4) xor d(5) xor d(6) xor d(7);
+           xor d(4) xor d(5) xor d(6) xor d(7);
     end if;
     return x;
   end function;
