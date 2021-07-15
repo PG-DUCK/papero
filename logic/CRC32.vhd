@@ -26,7 +26,7 @@ use ieee.std_logic_1164.all;
 --!@copydoc CRC32.vhd
 entity CRC32 is
   generic(
-    pINITIAL_VAL = std_logic_vector(31 downto 0) := x"FFFFFFFF"
+    pINITIAL_VAL : std_logic_vector(31 downto 0) := x"FFFFFFFF"
     );
   port (
     iCLK    : in  std_logic;

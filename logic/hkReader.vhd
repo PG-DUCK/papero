@@ -53,15 +53,19 @@ end entity hkReader;
 --!@copydoc hkReader.vhd
 architecture std of hkReader is
   -- Constants -----------------------------------------------------------------
-  constant cPKT_LEN         : natural                       := (cREGISTERS * 2) + 5;  --!Packet length: Number of registers + header + trailer
-  constant cF2H_HK_CRC_TEMP : std_logic_vector(31 downto 0) := x"f1c0f1c0"; --!Temporary CRC word
+  --!Packet length: 2*Number of registers + header + trailer
+  constant cPKT_LEN         : natural := (cREGISTERS * 2) + 5;
 
   -- Signals -------------------------------------------------------------------
   --FSM
-  type tHkStatus is (IDLE, WAIT_FOR_FIFO, SOP, LEN, FW_VER, HDR, REGISTER_CONTENT,
-                     REGISTER_ADDRESS, EOP, CRC);
+  type tHkStatus is (IDLE, WAIT_FOR_FIFO, SOP, LEN, FW_VER, HDR,
+                     REGISTER_CONTENT, REGISTER_ADDRESS, EOP, CRC);
   signal sHkState  : tHkStatus;
   signal sFsmError : std_logic;
+
+  --Output FIFO
+  signal sFifoData : std_logic_vector(pFIFO_WIDTH-1 downto 0);
+  signal sFifoWr   : std_logic;
 
   --Register counter
   signal sRegCounter : natural range 0 to (2**cREG_ADDR - 1);
@@ -73,13 +77,17 @@ architecture std of hkReader is
   --Parity
   signal sParity  : std_logic_vector(3 downto 0);
 
-begin
+  --CRC32
+  signal sCrc : tCrc32;
 
+begin
+  oFIFO_DATA <= sFifoData;
+  oFIFO_WR   <= sFifoWr;
   --!@brief FSM to send an HK packet. A-full is checked only at the beginning.
   --!@param[in] iCLK Clock, used on rising edge
   --!@return sHkState Next state of the FSM
-  --!@return oFIFO_DATA Data to be written to the output FIFO
-  --!@return oFIFO_WR Write-request to the FIFO
+  --!@return sFifoData Data to be written to the output FIFO
+  --!@return sFifoWr Write-request to the FIFO
   --!@todo can remove WAIT_FOR_FIFO waiting in case FIFO is not a-full
   --!@todo What if the address is greater than the maximum allowable?
   --!@todo What if a start comes when busy?
@@ -90,28 +98,28 @@ begin
       RST_EN_IF : if (iRST = '1') then
         sFsmError   <= '0';
         sRegCounter <= 0;
-        oFIFO_WR    <= '0';
-        oFIFO_DATA  <= (others => '0');
+        sFifoWr    <= '0';
+        sFifoData  <= (others => '0');
         sParity     <= (others => '0');
         sHkState    <= IDLE;
 
       elsif (iCNT.en = '1') then
         --default values, to be overwritten when necessary
         sRegCounter <= 0;
-        oFIFO_WR    <= '1';
-        oFIFO_DATA  <= (others => '0');
+        sFifoWr    <= '1';
+        sFifoData  <= (others => '0');
         sParity     <= (others => '0');
         case (sHkState) is
           --Wait for a start and check if
           when IDLE =>
-            oFIFO_WR <= '0';
+            sFifoWr <= '0';
             START_IF : if (iCNT.start = '1' or sStart = '1') then
               sHkState <= WAIT_FOR_FIFO;
             end if START_IF;
 
           --Wait until the FIFO is not almost-full
           when WAIT_FOR_FIFO =>
-            oFIFO_WR <= '0';
+            sFifoWr <= '0';
             WAIT_AFULL_IF : if iFIFO_AFULL = '1' then
               sHkState <= WAIT_FOR_FIFO;
             else
@@ -120,28 +128,28 @@ begin
 
           --Send the Start-of-Packet word
           when SOP =>
-            oFIFO_DATA <= cF2H_HK_SOP;
+            sFifoData <= cF2H_HK_SOP;
             sHkState   <= LEN;
 
           --Send the length word
           when LEN =>
-            oFIFO_DATA <= int2slv(cPKT_LEN, oFIFO_DATA'length);
+            sFifoData <= int2slv(cPKT_LEN, sFifoData'length);
             sHkState   <= FW_VER;
 
           --Send the hog firmware version word
           when FW_VER =>
-            oFIFO_DATA <= iFW_VER;
+            sFifoData <= iFW_VER;
             sHkState   <= HDR;
 
           --Send the header word
           when HDR =>
-            oFIFO_DATA <= cF2H_HK_HDR;
+            sFifoData <= cF2H_HK_HDR;
             sHkState   <= REGISTER_CONTENT;
 
           --Send the content of the registers
           when REGISTER_CONTENT =>
             sRegCounter <= sRegCounter;
-            oFIFO_DATA  <= iREG_ARRAY(sRegCounter);
+            sFifoData  <= iREG_ARRAY(sRegCounter);
             sHkState    <= REGISTER_ADDRESS;
             sParity(0)     <= parity8bit(pPARITY,
                                 iREG_ARRAY(sRegCounter)(7 downto 0));
@@ -158,7 +166,7 @@ begin
                                         int2slv(sRegCounter, 16)(7 downto 0));
             vAddrParity(1) := parity8bit(pPARITY,
                                         int2slv(sRegCounter, 16)(15 downto 8));
-            oFIFO_DATA <= "00" & vAddrParity & sParity & x"00"
+            sFifoData <= "00" & vAddrParity & sParity & x"00"
                           & int2slv(sRegCounter, 16);
             END_REG_IF : if (sRegCounter < cREGISTERS-1) then
               sRegCounter <= sRegCounter + 1;
@@ -170,17 +178,17 @@ begin
 
           --Send the End-of-Packet word
           when EOP =>
-            oFIFO_DATA <= cF2H_HK_EOP;
+            sFifoData <= cF2H_HK_EOP;
             sHkState   <= CRC;
 
           --Send the CRC word
           when CRC =>
-            oFIFO_DATA <= cF2H_HK_CRC_TEMP;  --Temporary CRC word
+            sFifoData <= sCrc.crc;
             sHkState   <= IDLE;
 
           --State not foreseen
           when others =>
-            oFIFO_WR  <= '0';
+            sFifoWr  <= '0';
             sFsmError <= '1';           --Reset only with a reset
             sHkState  <= IDLE;
 
@@ -189,19 +197,14 @@ begin
     end if CLKIF;
   end process hkStateFSM_proc;
 
-  --!@todo Improve error checking and reset
-  --!@brief Combinatorial FSM to decide the control output
-  --!@return oCNT signals
-  control_out_proc : process (all)
-  begin
-    oCNT.busy <= '1'when sHkState /= IDLE else
-                 '0';
-    oCNT.error <= sFsmError;
-    oCNT.reset <= '1' when iRST = '1' else
-                  '0';
-    oCNT.compl <= '1'when sHkState = CRC else
-                  '0';
-  end process control_out_proc;
+  --oCNT Assignment
+  oCNT.busy <= '1'when sHkState /= IDLE else
+               '0';
+  oCNT.error <= sFsmError;
+  oCNT.reset <= '1' when iRST = '1' else
+                '0';
+  oCNT.compl <= '1'when sHkState = CRC else
+                '0';
 
   --!@brief Internal periodic start
   --!@param[in] iCLK  Clock, used on rising edge
@@ -222,5 +225,24 @@ begin
       end if RST_IF_START;
     end if CLK_IF_START;
   end process IntStart_proc;
+
+  sCrc.rst <= '1' when sHkState = IDLE else
+              '0';
+  sCrc.en <= sFifoWr when  sHkState = HDR
+                        or sHkState = REGISTER_CONTENT
+                        or sHkState = REGISTER_ADDRESS
+                        or sHkState = EOP else
+             '0';
+  sCrc.data <= sFifoData;
+  --!Compute the CRC32 for packet content (except for SoP, Len, and EoP)
+  CRC32_compute : CRC32
+  port map (
+    iCLK    => iCLK,
+    iRST    => sCrc.rst,
+    iCRC_EN => sCrc.en,
+    iDATA   => sCrc.data,
+    oCRC    => sCrc.crc
+    );
+
 
 end architecture std;

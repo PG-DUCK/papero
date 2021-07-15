@@ -13,21 +13,21 @@ use work.basic_package.all;
 --!@copydoc pgdaqPackage.vhd
 package pgdaqPackage is
   -- Constants -----------------------------------------------------------------
-  constant cREGISTERS : natural        := 32;	--!Total number of registers
-  constant cREG_ADDR  : natural        := ceil_log2(cREGISTERS); --!Register address width
-  constant cREG_WIDTH : natural        := 32; --!Register width
+  constant cREGISTERS : natural := 32;  --!Total number of registers
+  constant cREG_ADDR  : natural := ceil_log2(cREGISTERS);  --!Register address width
+  constant cREG_WIDTH : natural := 32;  --!Register width
 
   --Housekeeping reader
-  constant cF2H_HK_SOP : std_logic_vector(31 downto 0) := x"55AADEAD"; --!Start of Packet for the FPGA-2-HPS FSM
-  constant cF2H_HK_HDR : std_logic_vector(31 downto 0) := x"4EADE500"; --!Fixed Header for the FPGA-2-HPS FSM
-  constant cF2H_HK_EOP : std_logic_vector(31 downto 0) := x"600DF00D"; --!End of Packet for the FPGA-2-HPS FSM
-  constant cF2H_HK_PERIOD : natural := 100; --!Period for internal counter to read HKs; max: 2^32 (85 s)
+  constant cF2H_HK_SOP    : std_logic_vector(31 downto 0) := x"55AADEAD";  --!Start of Packet for the FPGA-2-HPS FSM
+  constant cF2H_HK_HDR    : std_logic_vector(31 downto 0) := x"4EADE500";  --!Fixed Header for the FPGA-2-HPS FSM
+  constant cF2H_HK_EOP    : std_logic_vector(31 downto 0) := x"600DF00D";  --!End of Packet for the FPGA-2-HPS FSM
+  constant cF2H_HK_PERIOD : natural                       := 50000000;     --!Period for internal counter to read HKs; max: 2^32 (85 s)
 
   -- Types ---------------------------------------------------------------------
   --!Register array; all registers are r/w for HPS and FPGA
   type tRegisterArray is array (0 to cREGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
-  constant cREG_NULL  : tRegisterArray := (others => (others => '0')); --!Null vector for register array
+  constant cREG_NULL : tRegisterArray := (others => (others => '0'));  --!Null vector for register array
 
   --!Control interface for a generic block: input signals
   type tControlIn is record
@@ -49,6 +49,14 @@ package pgdaqPackage is
     addr : std_logic_vector(cREG_ADDR-1 downto 0);   --!Address to be updated
     we   : std_logic;                                --!Write enable
   end record tRegIntf;
+
+  --!CRC32 interface (do not use it as port)
+  type tCrc32 is record
+    rst : std_logic;
+    en : std_logic;                       --!Write enable
+    data : std_logic_vector(31 downto 0); --!Input data
+    crc : std_logic_vector(31 downto 0);  --!CRC32 out
+  end record tCrc32;
 
   -- Components ----------------------------------------------------------------
   --!Detects rising and falling edges of the input
@@ -75,55 +83,66 @@ package pgdaqPackage is
   end component;
 
   --! Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
-	component HighHold is
-	generic(
-			  channels : integer := 1;
-			  BAS_vs_BSS : std_logic := '0'
-			 );
-	port(
-		  CLK_in				: in std_logic;
-		  DATA_in			: in std_logic_vector(channels - 1 downto 0);
-		  DELAY_1_out		: out std_logic_vector(channels - 1 downto 0);
-		  DELAY_2_out 		: out std_logic_vector(channels - 1 downto 0);
-		  DELAY_3_out		: out std_logic_vector(channels - 1 downto 0);
-		  DELAY_4_out		: out std_logic_vector(channels - 1 downto 0)
-		 );
-	end component;
+  component HighHold is
+    generic(
+      channels   : integer   := 1;
+      BAS_vs_BSS : std_logic := '0'
+      );
+    port(
+      CLK_in      : in  std_logic;
+      DATA_in     : in  std_logic_vector(channels - 1 downto 0);
+      DELAY_1_out : out std_logic_vector(channels - 1 downto 0);
+      DELAY_2_out : out std_logic_vector(channels - 1 downto 0);
+      DELAY_3_out : out std_logic_vector(channels - 1 downto 0);
+      DELAY_4_out : out std_logic_vector(channels - 1 downto 0)
+      );
+  end component;
 
-	--! Temporizza l'invio di impulsi sul read_enable della FIFO.
-	component WR_Timer is
-	port(
-		  WRT_CLK_in					: in std_logic;
-		  WRT_RST_in					: in std_logic;
-		  WRT_START_in					: in std_logic;
-		  WRT_STANDBY_in				: in std_logic;
-		  WRT_STOP_COUNT_VALUE_in		: in std_logic_vector(31 downto 0);
-		  WRT_out						: out std_logic;
-		  WRT_DECLINE_out				: out std_logic;
-		  WRT_END_COUNT_out				: out std_logic
-		 );
-end component;
+  --! Temporizza l'invio di impulsi sul read_enable della FIFO.
+  component WR_Timer is
+    port(
+      WRT_CLK_in              : in  std_logic;
+      WRT_RST_in              : in  std_logic;
+      WRT_START_in            : in  std_logic;
+      WRT_STANDBY_in          : in  std_logic;
+      WRT_STOP_COUNT_VALUE_in : in  std_logic_vector(31 downto 0);
+      WRT_out                 : out std_logic;
+      WRT_DECLINE_out         : out std_logic;
+      WRT_END_COUNT_out       : out std_logic
+      );
+  end component;
 
   --!Reads the HK and sends them in a packet
   component hkReader is
-  generic(
-    pFIFO_WIDTH : natural := 32; --!FIFO data width
-    pPARITY     : string  := "EVEN" --!Parity polarity ("EVEN" or "ODD")
-    );
-  port (
-    iCLK        : in  std_logic;        --!Main clock
-    iRST        : in  std_logic;        --!Main reset
-    iCNT        : in  tControlIn;       --!Control input signals
-    oCNT        : out tControlOut;      --!Control output flags
-    iINT_START  : in  std_logic;        --!Enable for the internal start
-    --Register array
-    iFW_VER     : in  std_logic_vector(31 downto 0);  --!Firmware version from HoG
-    iREG_ARRAY  : in  tRegisterArray;   --!Register array input
-    --Output FIFO interface
-    oFIFO_DATA  : out std_logic_vector(pFIFO_WIDTH-1 downto 0);  --!Fifo Data in
-    oFIFO_WR    : out std_logic;        --!Fifo write-request in
-    iFIFO_AFULL : in  std_logic         --!Fifo almost-full flag
-    );
+    generic(
+      pFIFO_WIDTH : natural := 32;      --!FIFO data width
+      pPARITY     : string  := "EVEN"   --!Parity polarity ("EVEN" or "ODD")
+      );
+    port (
+      iCLK        : in  std_logic;      --!Main clock
+      iRST        : in  std_logic;      --!Main reset
+      iCNT        : in  tControlIn;     --!Control input signals
+      oCNT        : out tControlOut;    --!Control output flags
+      iINT_START  : in  std_logic;      --!Enable for the internal start
+      --Register array
+      iFW_VER     : in  std_logic_vector(31 downto 0);  --!Firmware version from HoG
+      iREG_ARRAY  : in  tRegisterArray;                 --!Register array input
+      --Output FIFO interface
+      oFIFO_DATA  : out std_logic_vector(pFIFO_WIDTH-1 downto 0);  --!Fifo Data in
+      oFIFO_WR    : out std_logic;      --!Fifo write-request in
+      iFIFO_AFULL : in  std_logic       --!Fifo almost-full flag
+      );
+  end component;
+
+  --!@copydoc CRC32.vhd
+  component CRC32 is
+    port (
+      iCLK    : in  std_logic;          --!Main Clock (used at rising edge)
+      iRST    : in  std_logic;          --!Main Reset (synchronous)
+      iCRC_EN : in  std_logic;          --!Enable
+      iDATA   : in  std_logic_vector (31 downto 0);  --!Input to compute the CRC on
+      oCRC    : out std_logic_vector (31 downto 0)   --!CRC32 of the sequence
+      );
   end component;
 
   -- Functions -----------------------------------------------------------------
@@ -131,32 +150,23 @@ end component;
   --!@param[in] p String containing the polarity, "EVEN" or "ODD"
   --!@param[in] d Input 8-bit data
   --!@return  Parity bit of the incoming 8-bit data
-  function parity8bit (p : string ; d : std_logic_vector(7 downto 0)) return std_logic;
+  function parity8bit (p : string; d : std_logic_vector(7 downto 0)) return std_logic;
 
 end pgdaqPackage;
 
 --!@copydoc pgdaqPackage.vhd
 package body pgdaqPackage is
-  function parity8bit (p : string ; d : std_logic_vector(7 downto 0)) return std_logic is
-    variable xor_first_level : std_logic_vector(3 downto 0);
-    variable xor_second_level : std_logic_vector(1 downto 0);
-    variable xor_third_level : std_logic;
+  function parity8bit (p : string; d : std_logic_vector(7 downto 0)) return std_logic is
+    variable x : std_logic;
   begin
-    xor_first_level(0) := d(0) xor d(1);
-    xor_first_level(1) := d(2) xor d(3);
-    xor_first_level(2) := d(4) xor d(5);
-    xor_first_level(3) := d(6) xor d(7);
-
-    xor_second_level(0) := xor_first_level(0) xor xor_first_level(1);
-    xor_second_level(1) := xor_first_level(2) xor xor_first_level(3);
-
     if p = "ODD" then
-      xor_third_level := not (xor_second_level(0) xor xor_second_level(1));
+      x := not (d(0) xor d(1) xor d(2) xor d(3)
+               xor d(4) xor d(5) xor d(6) xor d(7));
     elsif p = "EVEN" then
-      xor_third_level := xor_second_level(0) xor xor_second_level(1);
+      x := d(0) xor d(1) xor d(2) xor d(3)
+        xor d(4) xor d(5) xor d(6) xor d(7);
     end if;
-
-    return xor_third_level;
+    return x;
   end function;
 
 end package body;
