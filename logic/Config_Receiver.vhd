@@ -420,16 +420,16 @@ begin
       elsif ((payload_enable_WRT = '1') and ((download_phase = "00") or (download_phase = "11")) and (decline_payload = '0')) then
         data_RX             <= CR_DATA_in;
         download_phase      <= "01";  -- Nella phase "00" e "11" acquisisci il dato del payload e stima la sua parità.
-        estimated_parity(0) <= CR_DATA_in(0) xor CR_DATA_in(1) xor CR_DATA_in(2) xor CR_DATA_in(3) xor CR_DATA_in(4) xor CR_DATA_in(5) xor CR_DATA_in(6) xor CR_DATA_in(7);
-        estimated_parity(1) <= CR_DATA_in(8) xor CR_DATA_in(9) xor CR_DATA_in(10) xor CR_DATA_in(11) xor CR_DATA_in(12) xor CR_DATA_in(13) xor CR_DATA_in(14) xor CR_DATA_in(15);
-        estimated_parity(2) <= CR_DATA_in(16) xor CR_DATA_in(17) xor CR_DATA_in(18) xor CR_DATA_in(19) xor CR_DATA_in(20) xor CR_DATA_in(21) xor CR_DATA_in(22) xor CR_DATA_in(23);
-        estimated_parity(3) <= CR_DATA_in(24) xor CR_DATA_in(25) xor CR_DATA_in(26) xor CR_DATA_in(27) xor CR_DATA_in(28) xor CR_DATA_in(29) xor CR_DATA_in(30) xor CR_DATA_in(31);
+        estimated_parity(0) <= parity8bit("EVEN", CR_DATA_in(7 downto 0));
+        estimated_parity(1) <= parity8bit("EVEN", CR_DATA_in(15 downto 8));
+        estimated_parity(2) <= parity8bit("EVEN", CR_DATA_in(23 downto 16));
+        estimated_parity(3) <= parity8bit("EVEN", CR_DATA_in(31 downto 24));
       elsif ((payload_enable_WRT = '1') and (download_phase = "01") and (decline_payload = '0')) then
         address_RX          <= CR_DATA_in(15 downto 0);
         parity              <= CR_DATA_in(31 downto 24);
         download_phase      <= "11";  -- Nella phase "01" acquisisci l'indirizzo del registro e la parità. Inoltre stima la parità della word stessa.
-        estimated_parity(4) <= CR_DATA_in(0) xor CR_DATA_in(1) xor CR_DATA_in(2) xor CR_DATA_in(3) xor CR_DATA_in(4) xor CR_DATA_in(5) xor CR_DATA_in(6) xor CR_DATA_in(7);
-        estimated_parity(5) <= CR_DATA_in(8) xor CR_DATA_in(9) xor CR_DATA_in(10) xor CR_DATA_in(11) xor CR_DATA_in(12) xor CR_DATA_in(13) xor CR_DATA_in(14) xor CR_DATA_in(15);
+        estimated_parity(4) <= parity8bit("EVEN", CR_DATA_in(7 downto 0));
+        estimated_parity(5) <= parity8bit("EVEN", CR_DATA_in(15 downto 8));
       elsif ((payload_enable = '1') and (end_count_WRTimer_R = '1')) then
         if (fifo_wait_request_d = '0') then
           fast_payload_done <= '1';  -- Se il segnale di "end_count" si alza, considera l'acquisizione dati terminata con successo. E visto che "fifo_wait_request_d" è alto, passa fin da subito nello stato successivo della macchina.
