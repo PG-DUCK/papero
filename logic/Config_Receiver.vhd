@@ -32,11 +32,12 @@ entity Config_Receiver is
        CR_RST_in               : in  std_logic;  -- Segnale di reset.
        CR_FIFO_WAIT_REQUEST_in : in  std_logic;  -- Segnale di Wait_Request in uscita dalla FIFO. Se Wait_Request=1 --> la FIFO è vuota.
        CR_DATA_in              : in  std_logic_vector(31 downto 0);  -- Dati in uscita dalla FIFO.
-       CR_FIFO_READ_EN_out     : out std_logic;  -- Segnale di Read_Enable in ingresso alla FIFO. Se Read_Enable=1 --> la FIFO estrarrà il primo dato che ha ricevuto in ingresso.
+       CR_FWV_in					 : in  std_logic_vector(31 downto 0);	-- Firmware Version (Generato da Hog come SHA dell'ultimo commit).
+		 CR_FIFO_READ_EN_out     : out std_logic;  -- Segnale di Read_Enable in ingresso alla FIFO. Se Read_Enable=1 --> la FIFO estrarrà il primo dato che ha ricevuto in ingresso.
        CR_DATA_out             : out std_logic_vector(31 downto 0);  -- Dati in uscita dal ricevitore.
        CR_ADDRESS_out          : out std_logic_vector(15 downto 0);  -- Indirizzo del registro in cui memorizzare il valore di "CR_DATA_out".
        CR_DATA_VALID_out       : out std_logic;  -- Segnale che attesta la validità dei dati in uscita dal ricevitore. Se Data_Valid=1 --> il valore di "CR_DATA_out" è consistente e può essere memorizzato.
-       CR_WARNING_out          : out std_logic_vector(2 downto 0)  -- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
+       CR_WARNING_out          : out std_logic_vector(2 downto 0)  -- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato oppure se la firmware version è errata).
        );
 end Config_Receiver;
 
@@ -58,6 +59,7 @@ architecture Behavior of Config_Receiver is
   signal fifo_wait_request_HH : std_logic;  -- fifo_wait_request tenuta "alta" per un ciclo di clock aggiuntivo.
   signal synch_pulse          : std_logic;  -- Lo stato della FIFO è passato da vuoto a non vuoto.
   signal synch_pulse_HH       : std_logic;  -- Lo stato della FIFO è passato da vuoto a non vuoto (sulla base di Wait_Request_HH).
+  signal fwv_missed				: std_logic;  -- La word di FirmWare Version non è corretta.
   signal header_missed        : std_logic;  -- La word di Header non è corretta.
   signal payload_done         : std_logic;  -- Il payload è stato acquisito correttamente.
   signal fast_payload_done    : std_logic;  -- Il payload è stato acquisito correttamente. Passa fin da subito nello stato successivo.
@@ -84,6 +86,7 @@ architecture Behavior of Config_Receiver is
   signal start_packet_enable_R : std_logic;
   signal length_enable_R       : std_logic;
   signal fwv_enable_R          : std_logic;
+  signal fwv_missed_R          : std_logic;
   signal header_enable_R       : std_logic;
   signal payload_enable_R      : std_logic;
   signal payload_enable_WRT    : std_logic;
@@ -95,7 +98,6 @@ architecture Behavior of Config_Receiver is
 
 -- Set di segnali utili per il Signal Processing.
   signal length_packet     : std_logic_vector(31 downto 0);  -- Lunghezza del payload + 5.
-  signal firmware_version  : std_logic_vector(31 downto 0);  -- Versione del Firmware utilizzata per trasmettere dati da HPS.
   signal data              : std_logic_vector(31 downto 0);  -- Dati contenuti nel payload.
   signal address           : std_logic_vector(15 downto 0);  -- Indirizzo contenuto nel payload.
   signal data_RX           : std_logic_vector(31 downto 0);  -- Dati ricevuti la cui correttezza è da verificare.
@@ -113,7 +115,7 @@ begin
 
   -- Instanziamento dello User Edge Detector per generare gli impulsi di Read_Enable che identificano una specifica transizione da uno stato all'altro della macchina.
   rise_edge_implementation : edge_detector_md
-    generic map(channels => 13, R_vs_F => '0')
+    generic map(channels => 14, R_vs_F => '0')
     port map(iCLK      => CR_CLK_in,
              iRST      => gnd,
              iD(0)     => internal_reset,
@@ -121,27 +123,29 @@ begin
              iD(2)     => start_packet_enable,
              iD(3)     => length_enable,
              iD(4)     => fwv_enable,
-             iD(5)     => header_enable,
-             iD(6)     => payload_enable,
-             iD(7)     => cofee_enable,
-             iD(8)     => crc_enable,
-             iD(9)     => rebound_enable,
-             iD(10)    => warning_enable,
-             iD(11)    => data_ready,
-             iD(12)    => end_count_WRTimer,
+				 iD(5)     => fwv_missed,
+             iD(6)     => header_enable,
+             iD(7)     => payload_enable,
+             iD(8)     => cofee_enable,
+             iD(9)     => crc_enable,
+             iD(10)    => rebound_enable,
+             iD(11)    => warning_enable,
+             iD(12)    => data_ready,
+             iD(13)    => end_count_WRTimer,
              oEDGE(0)  => internal_reset_R,
              oEDGE(1)  => synch_enable_R,
              oEDGE(2)  => start_packet_enable_R,
              oEDGE(3)  => length_enable_R,
              oEDGE(4)  => fwv_enable_R,
-             oEDGE(5)  => header_enable_R,
-             oEDGE(6)  => payload_enable_R,
-             oEDGE(7)  => cofee_enable_R,
-             oEDGE(8)  => crc_enable_R,
-             oEDGE(9)  => rebound_enable_R,
-             oEDGE(10) => warning_enable_R,
-             oEDGE(11) => data_valid,
-             oEDGE(12) => end_count_WRTimer_R
+				 oEDGE(5)  => fwv_missed_R,
+             oEDGE(6)  => header_enable_R,
+             oEDGE(7)  => payload_enable_R,
+             oEDGE(8)  => cofee_enable_R,
+             oEDGE(9)  => crc_enable_R,
+             oEDGE(10) => rebound_enable_R,
+             oEDGE(11) => warning_enable_R,
+             oEDGE(12) => data_valid,
+             oEDGE(13) => end_count_WRTimer_R
              );
 
   -- Instanziamento dello User Edge Detector per generare gli impulsi di "synch_pulse" per risincronizzare l'uscita della FIFO con l'ingresso del ricevitore quando la FIFO passa da vuota a non vuota.
@@ -203,7 +207,7 @@ begin
           ns <= SEARCH_LEN;
         end if;
       when SEARCH_FWV =>  -- Sei in SEARCH_FWV. Se nella FIFO c'è qualcosa, passa nello stato successivo, altrimenti rimani qui.
-        if (fifo_wait_request_HH = '0') then
+        if (fifo_wait_request_HH = '0') then		--@!todo Andare in warning se fwv è errata
           ns <= SEARCH_HEADER;
         else
           ns <= SEARCH_FWV;
@@ -310,13 +314,17 @@ begin
         CR_DATA_VALID_out   <= '0';
       when SEARCH_FWV =>
         CR_FIFO_READ_EN_out <= fwv_enable_R or synch_pulse_HH;
-        CR_WARNING_out      <= (others => '0');
+        CR_WARNING_out(0)	 <= '0';
+		  CR_WARNING_out(1)	 <= '0';
+		  CR_WARNING_out(2)	 <= fwv_missed_R;
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
       when SEARCH_HEADER =>
         CR_FIFO_READ_EN_out <= header_enable_R or synch_pulse_HH;
-        CR_WARNING_out      <= (others => '0');
+        CR_WARNING_out(0)	 <= '0';
+		  CR_WARNING_out(1)	 <= '0';
+		  CR_WARNING_out(2)	 <= fwv_missed_R;
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
@@ -381,14 +389,14 @@ begin
     end if;
   end process;
 
-  -- Save the Firmware version of HPS. In questo processo si vuole memorizzare la versione del Firmware. Il valore è tenuto fino ad un nuovo stato di "RESET".
+  -- Search the Firmware version of HPS. In questo processo si vuole memorizzare l'occorrenza di una versione errate del Firmware di modo che quando andremo in "SEARCH_HEADER" lo segnaliamo alzando il bit di errore generico del sulla porta "CR_WARNING_out".
   fwv_proc : process (CR_CLK_in)
   begin
     if rising_edge(CR_CLK_in) then
       if (internal_reset = '1') then
-        firmware_version <= (others => '0');
-      elsif (fwv_enable_R = '1') then
-        firmware_version <= CR_DATA_in;
+        fwv_missed <= '0';
+      elsif ((fwv_enable_R = '1') and (not(CR_DATA_in = CR_FWV_in))) then
+        fwv_missed <= '1';
       end if;
     end if;
   end process;

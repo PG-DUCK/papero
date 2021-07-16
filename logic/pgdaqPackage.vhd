@@ -118,6 +118,7 @@ package pgdaqPackage is
          CR_RST_in               : in  std_logic;
          CR_FIFO_WAIT_REQUEST_in : in  std_logic;
          CR_DATA_in              : in  std_logic_vector(31 downto 0);
+			CR_FWV_in					: in  std_logic_vector(31 downto 0);
          CR_FIFO_READ_EN_out     : out std_logic;
          CR_DATA_out             : out std_logic_vector(31 downto 0);
          CR_ADDRESS_out          : out std_logic_vector(15 downto 0);
