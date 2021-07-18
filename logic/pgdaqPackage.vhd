@@ -165,6 +165,9 @@ package pgdaqPackage is
 
   --!@copydoc CRC32.vhd
   component CRC32 is
+  generic(
+    pINITIAL_VAL : std_logic_vector(31 downto 0) := x"FFFFFFFF"
+    );
     port (
       iCLK    : in  std_logic;          --!Main Clock (used at rising edge)
       iRST    : in  std_logic;          --!Main Reset (synchronous)
