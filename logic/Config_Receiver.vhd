@@ -51,7 +51,8 @@ architecture Behavior of Config_Receiver is
   constant header          : std_logic_vector(31 downto 0) := x"4EADE500";  -- Header word.
   constant trailer         : std_logic_vector(31 downto 0) := x"BADC0FEE";  -- Bad Cofee.
   constant trailer_crc     : std_logic_vector(31 downto 0) := x"FFFFFFFF";  -- Parola di default usata al posto del CRC.
-  constant gnd             : std_logic                     := '0';
+  constant gnd             : std_logic                     := '0';			 -- Singola linea a massa.
+  constant zero    	      : std_logic_vector(31 downto 0) := (others => '0');	-- 32 linee a massa.
 
 -- Set di segnali che si attivano al verificarsi di un dato evento.
   signal fifo_wait_request    : std_logic;  -- La FIFO è vuota.
@@ -104,15 +105,21 @@ architecture Behavior of Config_Receiver is
   signal address_RX        : std_logic_vector(15 downto 0);  -- Indirizzo ricevuto la correttezza è da verificare.
   signal parity            : std_logic_vector(7 downto 0);  -- Bit di parità del pacchetto.
   signal estimated_parity  : std_logic_vector(7 downto 0);  -- Bit di parità stimati dal ricevitore.
+  signal estimated_CRC32	: std_logic_vector(31 downto 0);  -- Codice a Ridondanza Ciclica stimato dal ricevitore.
+  signal CRC32_on				: std_logic;							-- Abilitazione del modulo per il calcolo del codice a ridondanza ciclica.
   signal download_phase    : std_logic_vector(1 downto 0);  -- Fase di scaricamento del payload.
   signal decline_payload   : std_logic;  -- Dato del payload da rifiutare.
   signal end_count_WRTimer : std_logic;  -- Fine della trasmissione degli impulsi di Read_Enable per acquisire il payload.
   signal data_valid        : std_logic;  -- Consistenza del dato in uscita dal ricevitore.
-  signal data_ready        : std_logic;  -- Dato pronto per essere trasferito in uscita dal ricevitore.
-
+  signal data_ready        : std_logic;  -- Dato pronto per essere trasferito in uscita dal ricevitore. 
+  signal CRC32_DATA_in		: std_logic_vector(31 downto 0);	-- Segnale dati in ingresso al modulo per il calcolo del codice a ridondanza ciclica.
+  
 begin
-  fifo_wait_request <= CR_FIFO_WAIT_REQUEST_in;  -- Assegnazione della porta di Wait_Request ad un segnale interno.
-
+  -- Assegnazione egnali interni al Config_Receiver
+  fifo_wait_request	<= CR_FIFO_WAIT_REQUEST_in;  -- Assegnazione della porta di Wait_Request ad un segnale interno.
+  CRC32_on				<= fwv_enable_R or header_enable_R or (payload_enable_WRT and (not decline_payload) and payload_enable) or length_enable_R;	-- or end_count_WRTimer_R;		-- Abilitazione del modulo CRC32 (SEARCH_FWV, SEARCH_HEADER, ACQUISITION)
+  CRC32_DATA_in		<= CR_DATA_in or (zero - length_enable);	-- L'ingresso al modulo CRC32 sarà pari ad un valore di default (0XFFFFFFFF) nello stato "SEARCH_LEN", e sarà pari all'ingresso del Config_Receiver negli stati "SEARCH_FWV", "SEARCH_HEADER", "ACQUISITION". Altrove non interessa.
+  
   -- Instanziamento dello User Edge Detector per generare gli impulsi di Read_Enable che identificano una specifica transizione da uno stato all'altro della macchina.
   rise_edge_implementation : edge_detector_md
     generic map(channels => 14, R_vs_F => '0')
@@ -178,6 +185,19 @@ begin
               WRT_DECLINE_out         => decline_payload,
               WRT_END_COUNT_out       => end_count_WRTimer
               );
+	
+  -- Compute the CRC32 for packet content (except for SoP, Len, and EoP)
+  Calcolo_CRC32 : CRC32
+  generic map(
+		pINITIAL_VAL => x"FFFFFFFF"
+		)
+  port map(
+    iCLK    => CR_CLK_in,
+    iRST    => internal_reset,
+    iCRC_EN => CRC32_on,
+    iDATA   => CRC32_DATA_in,
+    oCRC    => estimated_CRC32
+    );
 
 
   -- Next State Evaluation
@@ -221,12 +241,12 @@ begin
           ns <= SEARCH_HEADER;
         end if;
       when ACQUISITION =>  -- Sei in ACQUISITION. Se hai ricevuto tutto correttamente vai nello stato successivo, altrimenti in caso di errore vai in "WARNING".
-        if (fast_payload_done = '1') then
+        if (false_payload = '1') then
+          ns <= warning;
+		  elsif (fast_payload_done = '1') then
           ns <= SEARCH_COFEE;
         elsif ((payload_done = '1') and (fifo_wait_request_HH = '0')) then
           ns <= SEARCH_COFEE;
-        elsif (false_payload = '1') then
-          ns <= warning;
         else
           ns <= ACQUISITION;
         end if;
@@ -239,7 +259,7 @@ begin
           ns <= SEARCH_COFEE;
         end if;
       when SEARCH_CRC =>  -- Sei in SEARCH_CRC. Se il CRC ricevuto è sbagliato vai in warning perchè significa che il pacchetto è corrotto. Altrimenti vai in "RESET" e predisponiti per la ricezione di un nuovo pacchetto.
-        if (CR_DATA_in = trailer_crc) then
+        if (CR_DATA_in = estimated_CRC32) then
           ns <= RESET;
         else
           ns <= warning;
@@ -357,9 +377,9 @@ begin
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
-        if (false_payload = '1') then
+        if ((false_payload = '1') or (crc_missed = '1')) then
           CR_WARNING_out <= "001";
-        elsif ((header_missed = '1') or (cofee_missed = '1') or (crc_missed = '1')) then
+        elsif ((header_missed = '1') or (cofee_missed = '1')) then
           CR_WARNING_out <= "010";
         else
           CR_WARNING_out <= "100";
@@ -489,7 +509,7 @@ begin
     if rising_edge(CR_CLK_in) then
       if (internal_reset = '1') then
         crc_missed <= '0';
-      elsif ((crc_enable_R = '1') and (not(CR_DATA_in = trailer_crc))) then
+		elsif ((crc_enable_R = '1') and (not(CR_DATA_in = estimated_CRC32))) then
         crc_missed <= '1';
       end if;
     end if;
