@@ -112,13 +112,11 @@ architecture Behavior of Config_Receiver is
   signal end_count_WRTimer : std_logic;  -- Fine della trasmissione degli impulsi di Read_Enable per acquisire il payload.
   signal data_valid        : std_logic;  -- Consistenza del dato in uscita dal ricevitore.
   signal data_ready        : std_logic;  -- Dato pronto per essere trasferito in uscita dal ricevitore. 
-  signal CRC32_DATA_in		: std_logic_vector(31 downto 0);	-- Segnale dati in ingresso al modulo per il calcolo del codice a ridondanza ciclica.
   
 begin
   -- Assegnazione egnali interni al Config_Receiver
   fifo_wait_request	<= CR_FIFO_WAIT_REQUEST_in;  -- Assegnazione della porta di Wait_Request ad un segnale interno.
-  CRC32_on				<= fwv_enable_R or header_enable_R or (payload_enable_WRT and (not decline_payload) and payload_enable) or length_enable_R;	-- or end_count_WRTimer_R;		-- Abilitazione del modulo CRC32 (SEARCH_FWV, SEARCH_HEADER, ACQUISITION)
-  CRC32_DATA_in		<= CR_DATA_in or (zero - length_enable);	-- L'ingresso al modulo CRC32 sarà pari ad un valore di default (0XFFFFFFFF) nello stato "SEARCH_LEN", e sarà pari all'ingresso del Config_Receiver negli stati "SEARCH_FWV", "SEARCH_HEADER", "ACQUISITION". Altrove non interessa.
+  CRC32_on				<= fwv_enable_R or header_enable_R or (payload_enable_WRT and (not decline_payload) and payload_enable);			-- Abilitazione del modulo CRC32 (SEARCH_FWV, SEARCH_HEADER, ACQUISITION)
   
   -- Instanziamento dello User Edge Detector per generare gli impulsi di Read_Enable che identificano una specifica transizione da uno stato all'altro della macchina.
   rise_edge_implementation : edge_detector_md
@@ -195,7 +193,7 @@ begin
     iCLK    => CR_CLK_in,
     iRST    => internal_reset,
     iCRC_EN => CRC32_on,
-    iDATA   => CRC32_DATA_in,
+    iDATA   => CR_DATA_in,
     oCRC    => estimated_CRC32
     );
 
