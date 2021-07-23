@@ -179,22 +179,25 @@ package pgdaqPackage is
 
   --!Interfaccia di comunicazione tra FPGA e HPS
   component HPS_intf is
+	 generic(
+		AF_HK_FIFO		 : natural := 949									--!Almost_Full threshold for HouseKeeping FIFO
+		);	
     port(
-      iCLK_intf       : in  std_logic;  --!Main clock
-      iRST_intf       : in  std_logic;  --!Main reset
-      iFWV_intf       : in  std_logic_vector(31 downto 0);  --!Main firmware version
+      iCLK_intf       : in  std_logic;									--!Main clock
+      iRST_intf       : in  std_logic;  								--!Main reset
+      iFWV_intf       : in  std_logic_vector(31 downto 0);  	--!Main firmware version
       --FIFO H2F
-      iFIFO_H2F_WR    : in  std_logic;  --!Wait Request fifo_RX
-      iFIFO_H2F_DATA  : in  std_logic_vector(31 downto 0);  --!Data RX
-      oFIFO_H2F_RE    : out std_logic;  --!Read Enable
-      oFIFO_H2F_WARN  : out std_logic_vector(2 downto 0);   --!Warning
+      iFIFO_H2F_WR    : in  std_logic;  								--!Wait Request fifo_RX
+      iFIFO_H2F_DATA  : in  std_logic_vector(31 downto 0);  	--!Data RX
+      oFIFO_H2F_RE    : out std_logic;  								--!Read Enable
+      oFIFO_H2F_WARN  : out std_logic_vector(2 downto 0);   	--!Warning
       --registerArray
-      iREGISTER_ARRAY : in  tRegIntf;   --!Registers interface (for FPGA)
+      iREGISTER_ARRAY : in  tRegIntf;   								--!Registers interface (for FPGA)
       --FIFO F2H
-      iHKREADER_START : in  std_logic;  --!Start acquisition of hkReader
-      iFIFO_F2H_WR    : in  std_logic;  --!Wait Request fifo_TX
-      oFIFO_F2H_WE    : out std_logic;  --!Write Enable
-      oFIFO_F2H_DATA  : out std_logic_vector(31 downto 0)   --!Data TX
+      iHKREADER_START : in  std_logic;  								--!Start acquisition of hkReader
+      iFIFO_F2H_LEVEL : in  std_logic_vector(31 downto 0);		--!Level of HouseKeeping FIFO
+      oFIFO_F2H_WE    : out std_logic;  								--!Write Enable
+      oFIFO_F2H_DATA  : out std_logic_vector(31 downto 0)   	--!Data TX
       );
   end component;
 

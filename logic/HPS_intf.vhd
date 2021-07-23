@@ -11,6 +11,9 @@ use work.pgdaqPackage.all;
 
 --!@copydoc HPS_intf.vhd
 entity HPS_intf is
+	generic(
+		AF_HK_FIFO	 		: natural := 949										--!Almost_Full threshold for HouseKeeping FIFO
+		);																			-- AF_HK_FIFO = 1021 - (6 + 32*2) - 2 = 949
 	port(
 		iCLK_intf			: in  std_logic;								--!Main clock
 		iRST_intf			: in  std_logic;								--!Main reset
@@ -24,7 +27,7 @@ entity HPS_intf is
 		iREGISTER_ARRAY	: in tRegIntf;									--!Registers interface (for FPGA)
 		--FIFO F2H
 		iHKREADER_START	: in  std_logic;								--!Start acquisition of hkReader
-		iFIFO_F2H_WR		: in  std_logic;								--!Wait Request fifo_TX
+		iFIFO_F2H_LEVEL	: in	std_logic_vector(31 downto 0);	--!Level of HouseKeeping FIFO
 		oFIFO_F2H_WE		: out std_logic;								--!Write Enable
 		oFIFO_F2H_DATA		: out std_logic_vector(31 downto 0)		--!Data TX
 		);
@@ -38,6 +41,7 @@ signal address_rx			 : std_logic_vector(15 downto 0);	-- Indirizzo del registro 
 signal warning_rx			 : std_logic_vector(2 downto 0);		-- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
 signal receiver_output	 : tRegIntf;								-- Interfaccia d'uscita del Config_Receiver (dati+controllo).
 signal sRegArray			 : tRegisterArray;						-- Array di dati in uscita dal registerArray.
+signal sFifoAfull			 : std_logic;								-- Segnale di "Almost Full della FIFO".
 
 begin
 	-- Ricevitore dati di configurazione
@@ -70,9 +74,6 @@ begin
 	
 	-- Trasmettitore dati di telemetria
 	FIFO_f2h_transmitter : hkReader
-	generic map(
-					pFIFO_WIDTH => 32
-					)
 	port map(
 				iCLK        => iCLK_intf,
 				iRST        => iRST_intf,
@@ -83,8 +84,19 @@ begin
 				iREG_ARRAY  => sRegArray,
 				oFIFO_DATA  => oFIFO_F2H_DATA,
 				oFIFO_WR    => oFIFO_F2H_WE,
-				iFIFO_AFULL => iFIFO_F2H_WR		--@todo Ricreare progetto Qsys esportando il segnale di "Almostfull"
+				iFIFO_AFULL => sFifoAfull
 				);
+	
+	-- Generazione del segnale di Almost Full della Fifo di Housekeeping in funzione del livello di riempimento della stessa
+	Almost_Full_proc : process (iFIFO_F2H_LEVEL)
+	begin
+		if (iFIFO_F2H_LEVEL > AF_HK_FIFO - 1) then
+			sFifoAfull <= '1';	-- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> sFifoAfull = '1'
+		else
+			sFifoAfull <= '0';	-- Altrimenti, sFifoAfull = '0'
+		end if;
+	end process;
+	
 	
 end architecture;
 

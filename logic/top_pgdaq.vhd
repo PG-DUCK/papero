@@ -125,12 +125,11 @@ signal stm_hw_events          : std_logic_vector(27 downto 0);
 signal fpga_clk_50            : std_logic;
 
 -- Set di segnali ausiliari
-signal gnd                        : std_logic := '0';					 -- massa
-signal neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
-signal neg_hps_fpga_reset_n		 : std_logic;							 -- segnale interno di RESET in logica positiva
-signal inverter_hps_cold_reset    : std_logic; 							 -- FIX BUG MODEL SIM
-signal inverter_hps_warm_reset    : std_logic; 							 -- FIX BUG MODEL SIM
-signal inverter_hps_debug_reset   : std_logic; 							 -- FIX BUG MODEL SIM
+signal 	neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
+signal 	neg_hps_fpga_reset_n		   : std_logic;							 -- segnale interno di RESET in logica positiva
+signal 	inverter_hps_cold_reset    : std_logic; 							 -- FIX BUG MODEL SIM
+signal 	inverter_hps_warm_reset    : std_logic; 							 -- FIX BUG MODEL SIM
+signal 	inverter_hps_debug_reset   : std_logic; 							 -- FIX BUG MODEL SIM
 
 -- Set di segnali per pilotare la fifo FPGA --> HPS
 signal fifo_f2h_data_in	 		 : std_logic_vector(31 downto 0);	 -- Data
@@ -334,6 +333,7 @@ begin
 		
 	-- Interfaccia di comunicazione tra FPGA e HPS per i dati di controllo
 	HPS_interface : HPS_intf
+	generic map(AF_HK_FIFO => 949)
 	port map(
 				iCLK_intf			=> fpga_clk_50,
 				iRST_intf			=> neg_hps_fpga_reset_n,
@@ -344,10 +344,16 @@ begin
 				oFIFO_H2F_WARN		=> warning_rx,
 				iREGISTER_ARRAY	=> ((others => '0'),(others => '0'), '0'),
 				iHKREADER_START	=> '1',
-				iFIFO_F2H_WR		=> fifo_f2h_full,
+				iFIFO_F2H_LEVEL	=> fifo_f2h_data_out_csr,
 				oFIFO_F2H_WE		=> fifo_f2h_wr_en,
 				oFIFO_F2H_DATA		=> fifo_f2h_data_in
 				);
+	
+	
+	-- Data Flow per il controllo della FIFO di Housekeeping
+	fifo_f2h_addr_csr		<= "000";	--> fifo_f2h_data_out_csr = Level_Fifo
+	fifo_f2h_rd_en_csr	<= '1';		--> Aggiorna Level_Fifo ogni ciclo di clock
+	
 	
 end architecture;
 
