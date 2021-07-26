@@ -199,7 +199,53 @@ package pgdaqPackage is
       oFIFO_F2H_DATA  : out std_logic_vector(31 downto 0)   	--!Data TX
       );
   end component;
-
+  
+	--!@copydoc FFD.vhd
+	--!Unità di base per realizzare gli shift register dei moduli PRBS
+	component FFD is
+		port(
+			iCLK		: in std_logic;
+			iRST		: in std_logic;
+			iENABLE	: in std_logic;
+			iD			: in std_logic;
+			oQ			: out std_logic
+			);
+	end component;
+	
+	--!@copydoc PRBS14.vhd
+	--!Modulo per la generazione di dati pseudo-casuali a 14 bit
+	component PRBS14 is
+		port(
+			iCLK			: in std_logic;
+			iRST			: in std_logic;
+			iPRBS14_en	: in std_logic;
+			oDATA			: out std_logic_vector(13 downto 0)
+			);
+	end component;
+	
+	--!@copydoc PRBS32.vhd
+	--!Modulo per la generazione di dati pseudo-casuali a 32 bit
+	component PRBS32 is
+		port(
+			iCLK			: in std_logic;
+			iRST			: in std_logic;
+			iPRBS32_en	: in std_logic;
+			oDATA			: out std_logic_vector(31 downto 0)
+			);
+	end component;
+	
+	--!@copydoc Test_Unit.vhd
+	--!Unità di test per verificare il funzionamento della sola scheda DAQ
+	component Test_Unit is
+		port(
+			iCLK			: in std_logic;								-- Porta per il clock
+			iRST			: in std_logic;								-- Porta per il reset
+			iEN			: in std_logic;								-- Porta per l'abilitazione della unità di test
+			oDATA			: out std_logic_vector(31 downto 0);	-- Numero binario a 32 bit pseudo-casuale
+			oDATA_VALID	: out std_logic								-- Segnale che attesta la validità dei dati in uscita dalla Test_Unit. Se oDATA_VALID=1 --> il valore di "oDATA" è consistente
+			);
+	end component;
+	
   -- Functions -----------------------------------------------------------------
   --!@brief Compute the parity bit of an 8-bit data with both polarities
   --!@param[in] p String containing the polarity, "EVEN" or "ODD"
