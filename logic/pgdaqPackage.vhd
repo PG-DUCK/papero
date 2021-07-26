@@ -107,7 +107,6 @@ package pgdaqPackage is
       WRT_STANDBY_in          : in  std_logic;
       WRT_STOP_COUNT_VALUE_in : in  std_logic_vector(31 downto 0);
       WRT_out                 : out std_logic;
-      WRT_DECLINE_out         : out std_logic;
       WRT_END_COUNT_out       : out std_logic
       );
   end component;

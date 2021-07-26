@@ -108,15 +108,14 @@ architecture Behavior of Config_Receiver is
   signal estimated_CRC32	: std_logic_vector(31 downto 0);  -- Codice a Ridondanza Ciclica stimato dal ricevitore.
   signal CRC32_on				: std_logic;							-- Abilitazione del modulo per il calcolo del codice a ridondanza ciclica.
   signal download_phase    : std_logic_vector(1 downto 0);  -- Fase di scaricamento del payload.
-  signal decline_payload   : std_logic;  -- Dato del payload da rifiutare.
   signal end_count_WRTimer : std_logic;  -- Fine della trasmissione degli impulsi di Read_Enable per acquisire il payload.
   signal data_valid        : std_logic;  -- Consistenza del dato in uscita dal ricevitore.
   signal data_ready        : std_logic;  -- Dato pronto per essere trasferito in uscita dal ricevitore. 
   
 begin
   -- Assegnazione egnali interni al Config_Receiver
-  fifo_wait_request	<= CR_FIFO_WAIT_REQUEST_in;  -- Assegnazione della porta di Wait_Request ad un segnale interno.
-  CRC32_on				<= fwv_enable_R or header_enable_R or (payload_enable_WRT and (not decline_payload) and payload_enable);			-- Abilitazione del modulo CRC32 (SEARCH_FWV, SEARCH_HEADER, ACQUISITION)
+  fifo_wait_request	<= CR_FIFO_WAIT_REQUEST_in;  		-- Assegnazione della porta di Wait_Request ad un segnale interno.
+  CRC32_on				<= fwv_enable_R or header_enable_R or (payload_enable_WRT and payload_enable);		-- Abilitazione del modulo CRC32 (SEARCH_FWV, SEARCH_HEADER, ACQUISITION)
   
   -- Instanziamento dello User Edge Detector per generare gli impulsi di Read_Enable che identificano una specifica transizione da uno stato all'altro della macchina.
   rise_edge_implementation : edge_detector_md
@@ -180,7 +179,6 @@ begin
               WRT_STANDBY_in          => fifo_wait_request_HH,
               WRT_STOP_COUNT_VALUE_in => length_packet,
               WRT_out                 => payload_enable_WRT,
-              WRT_DECLINE_out         => decline_payload,
               WRT_END_COUNT_out       => end_count_WRTimer
               );
 	
@@ -443,14 +441,14 @@ begin
         estimated_parity  <= (others => '0');
         payload_done      <= '0';
         fast_payload_done <= '0';
-      elsif ((payload_enable_WRT = '1') and ((download_phase = "00") or (download_phase = "11")) and (decline_payload = '0')) then
+      elsif ((payload_enable_WRT = '1') and ((download_phase = "00") or (download_phase = "11"))) then
         data_RX             <= CR_DATA_in;
         download_phase      <= "01";  -- Nella phase "00" e "11" acquisisci il dato del payload e stima la sua parità.
         estimated_parity(0) <= parity8bit("EVEN", CR_DATA_in(7 downto 0));
         estimated_parity(1) <= parity8bit("EVEN", CR_DATA_in(15 downto 8));
         estimated_parity(2) <= parity8bit("EVEN", CR_DATA_in(23 downto 16));
         estimated_parity(3) <= parity8bit("EVEN", CR_DATA_in(31 downto 24));
-      elsif ((payload_enable_WRT = '1') and (download_phase = "01") and (decline_payload = '0')) then
+      elsif ((payload_enable_WRT = '1') and (download_phase = "01")) then
         address_RX          <= CR_DATA_in(15 downto 0);
         parity              <= CR_DATA_in(31 downto 24);
         download_phase      <= "11";  -- Nella phase "01" acquisisci l'indirizzo del registro e la parità. Inoltre stima la parità della word stessa.
