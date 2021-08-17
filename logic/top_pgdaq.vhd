@@ -10,6 +10,8 @@ use ieee.std_logic_unsigned.all;
 
 use work.intel_package.all;
 use work.pgdaqPackage.all;
+use work.basic_package.all;
+
 
 --!@copydoc top_pgdaq.vhd
 entity top_pgdaq is
@@ -162,7 +164,15 @@ signal fifo_h2f_wr_en_csr		 : std_logic;
 signal fifo_h2f_data_out_csr	 : std_logic_vector(31 downto 0);
 
 -- Set di segnali di interconnessione tra i moduli istanziati
-signal warning_rx			 : std_logic_vector(2 downto 0);		-- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
+signal warning_rx			 		: std_logic_vector(2 downto 0);		-- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
+signal sFIFO_DATA_sup_out		: std_logic_vector(31 downto 0);		-- Dati in uscita dalla FIFO a monte del FastData_Transmitter
+signal sFIFO_EMPTY_sup			: std_logic;								-- "Empty" della FIFO a monte del FastData_Transmitter
+signal sFIFO_AEMPTY_sup			: std_logic;								-- "Almost Empty" della FIFO a monte del FastData_Transmitter
+signal sFIFO_RE_sup				: std_logic;								-- "Read Enable" della FIFO a monte del FastData_Transmitter
+signal sFIFO_AFULL_inf			: std_logic;								-- "Almost Full" della FIFO a valle del FastData_Transmitter
+signal sFIFO_AFULL_sup			: std_logic;								-- "Almost Full" della FIFO a monte del FastData_Transmitter
+signal sDATA						: std_logic_vector(31 downto 0);		-- Dato pseudocasuale in uscita dal generatore PRBS a 32 bit
+signal sDATA_VALID				: std_logic;								-- Consistenza del dato pseudocasuale in uscita dal generatore PRBS a 32 bit
 
 
 begin
@@ -368,10 +378,86 @@ begin
 				oFIFO_F2H_DATA		=> fifo_f2h_data_in
 				);
 	
+	-- Generatore di dati pseudocasuali a 32 bit
+	data_generator_proc : Test_Unit
+	port map(
+				iCLK			=> fpga_clk_50,
+				iRST			=> neg_hps_fpga_reset_n,
+				iEN			=> not sFIFO_AFULL_sup,
+				oDATA			=> sDATA,
+				oDATA_VALID	=> sDATA_VALID
+				);
+	
+	-- FIFO a cavallo tra il PRBS e il FastData_Transmitter
+	fifo_monte : parametric_fifo_synch
+	generic map(
+					 pWIDTH       => 32,
+					 pDEPTH       => 4096,
+					 pUSEDW_WIDTH => ceil_log2(4096),
+					 pAEMPTY_VAL  => 2,
+					 pAFULL_VAL   => 4092,
+					 pSHOW_AHEAD  => "OFF" 
+					)
+	port map(
+				iCLK    => fpga_clk_50,
+				iRST    => neg_hps_fpga_reset_n,
+				-- control interface
+				oAEMPTY => sFIFO_AEMPTY_sup,
+				oEMPTY  => sFIFO_EMPTY_sup,
+				oAFULL  => sFIFO_AFULL_sup,
+				iRD_REQ => sFIFO_RE_sup,
+				iWR_REQ => sDATA_VALID,
+				-- data interface
+				iDATA   => sDATA,
+				oQ      => sFIFO_DATA_sup_out
+				);
+	
+	-- Trasmettitore dati veloci
+	 FIFO_f2h_fast_transmitter : FastData_Transmitter
+	 port map(
+			    iCLK 					=> fpga_clk_50,
+			    iRST 					=> neg_hps_fpga_reset_n,
+			    -- Enable
+			    iEN 						=> '1',
+			    -- Settings Packet
+			    iSettingLength 		=> x"0000006e",	
+			    iFirmwareVersion 	=> x"12345678",
+			    iSettingTrigNum		=> x"00000001",
+			    iSettingTrigDet	 	=> x"23",
+			    iSettingTrigID		=> x"45",
+			    iSettingIntTime		=> x"1a1a1a1a1b1b1b1b",
+			    iSettingExtTime 		=> x"2a2a2a2a2b2b2b2b",
+			    -- Fifo Management
+			    iFIFO_DATA				=> sFIFO_DATA_sup_out,
+			    iFIFO_EMPTY 			=> sFIFO_EMPTY_sup,
+			    iFIFO_AEMPTY			=> sFIFO_AEMPTY_sup,
+			    oFIFO_RE 				=> sFIFO_RE_sup,
+			    oFIFO_DATA 			=> fast_fifo_f2h_data_in,
+			    iFIFO_AFULL 			=> sFIFO_AFULL_inf,
+			    oFIFO_WE				=> fast_fifo_f2h_wr_en,
+			    -- Output Flag
+			    oBUSY	 				=> open,
+			    oWARNING				=> open
+			    );
+	
+	-- Generazione del segnale di Almost Full della FIFO a valle del FastData_Transmitter in funzione del livello di riempimento della stessa
+	Almost_Full_proc : process (fast_fifo_f2h_data_out_csr)
+	begin
+		if (fast_fifo_f2h_data_out_csr > 4096 - 4 - 1) then
+			sFIFO_AFULL_inf <= '1';	-- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> sFIFO_AFULL_inf = '1'
+		else
+			sFIFO_AFULL_inf <= '0';	-- Altrimenti, sFifoAfull = '0'
+		end if;
+	end process;
+	
 	
 	-- Data Flow per il controllo della FIFO di Housekeeping
 	fifo_f2h_addr_csr		<= "000";	--> fifo_f2h_data_out_csr = Level_Fifo
 	fifo_f2h_rd_en_csr	<= '1';		--> Aggiorna Level_Fifo ogni ciclo di clock
+	
+	-- Data Flow per il controllo della FIFO Fast_Data
+	fast_fifo_f2h_addr_csr		<= "000";	--> fast_fifo_f2h_data_out_csr = Level_Fifo
+	fast_fifo_f2h_rd_en_csr		<= '1';		--> Aggiorna Level_Fifo ogni ciclo di clock
 	
 	
 end architecture;
