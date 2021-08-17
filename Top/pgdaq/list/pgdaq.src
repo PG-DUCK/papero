@@ -13,6 +13,7 @@ logic/hkReader.vhd
 logic/HPS_intf.vhd
 logic/CRC32.vhd
 logic/Test_Unit.vhd
+logic/FastData_Transmitter.vhd
 
 
 #Basic functions_md

@@ -246,6 +246,36 @@ package pgdaqPackage is
 			);
 	end component;
 	
+	--!@copydoc FastData_Transmitter.vhd
+	--!Trasmettitore dei dati scientifici
+	component FastData_Transmitter is
+	port(
+		  iCLK					: in std_logic;								-- Clock
+		  iRST					: in std_logic;								-- Reset
+		  -- Enable
+		  iEN						: in std_logic;								-- Abilitazione del modulo FastData_Transmitter
+		  -- Settings Packet
+		  iSettingLength		: in std_logic_vector(31 downto 0);		-- Lunghezza del pacchetto --> Number of 32-bit payload words + 10
+		  iFirmwareVersion	: in std_logic_vector(31 downto 0);		-- Versione del firmware in uso
+		  iSettingTrigNum		: in std_logic_vector(31 downto 0);		-- Numero di trigger passati dall'ultimo reset
+		  iSettingTrigDet		: in std_logic_vector(7 downto 0);		-- Detector associato al trigger attuale
+		  iSettingTrigID		: in std_logic_vector(7 downto 0);		-- Identificativo della tipologia di trigger
+		  iSettingIntTime		: in std_logic_vector(63 downto 0);		-- Numero di fronti di salita di clock passati dall'ultimo reset e calcolati internamente all'FPGA
+		  iSettingExtTime		: in std_logic_vector(63 downto 0);		-- Numero di fronti di salita di clock passati dall'ultimo reset e calcolati esternamente all'FPGA
+		  -- Fifo Management
+		  iFIFO_DATA			: in std_logic_vector(31 downto 0);		-- "Data_Output" della FIFO a monte del FastData_Transmitter
+		  iFIFO_EMPTY			: in std_logic;								-- "Empty" della FIFO a monte del FastData_Transmitter
+		  iFIFO_AEMPTY			: in std_logic;								-- "Almost_Empty" della FIFO a monte del FastData_Transmitter. ATTENZIONE!!!--> Per un corretto funzionamento, impostare pAEMPTY_VAL = 2 sulla FIFO a monte del FastData_Transmitter
+		  oFIFO_RE				: out std_logic;								-- "Read_Enable" della FIFO a monte del FastData_Transmitter
+		  oFIFO_DATA			: out std_logic_vector(31 downto 0);	-- "Data_Inutput" della FIFO a valle del FastData_Transmitter
+		  iFIFO_AFULL			: in std_logic;								-- "Almost_Full" della FIFO a valle del FastData_Transmitter
+		  oFIFO_WE				: out std_logic;								-- "Write_Enable" della FIFO a valle del FastData_Transmitter
+		  -- Output Flag
+		  oBUSY					: out std_logic;								-- Il trasmettitore è impegnato in un trasferimento dati. '0'-->ok, '1'-->busy
+		  oWARNING				: out std_logic								-- Malfunzionamenti. '0'-->ok, '1'--> errore: la macchina è finita in uno stato non precisato
+		 );
+	end component;
+	
   -- Functions -----------------------------------------------------------------
   --!@brief Compute the parity bit of an 8-bit data with both polarities
   --!@param[in] p String containing the polarity, "EVEN" or "ODD"
