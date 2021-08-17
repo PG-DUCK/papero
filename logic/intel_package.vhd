@@ -16,6 +16,14 @@ component soc_system is
   button_pio_external_connection_export : in    std_logic_vector(1 downto 0)  := (others => '0'); -- button_pio_external_connection.export
   clk_clk                               : in    std_logic                     := '0';             --                            clk.clk
   dipsw_pio_external_connection_export  : in    std_logic_vector(3 downto 0)  := (others => '0'); --  dipsw_pio_external_connection.export
+  fast_fifo_fpga_to_hps_in_writedata     : in    std_logic_vector(31 downto 0) := (others => '0'); --       fast_fifo_fpga_to_hps_in.writedata
+  fast_fifo_fpga_to_hps_in_write         : in    std_logic                     := '0';             --                               .write
+  fast_fifo_fpga_to_hps_in_waitrequest   : out   std_logic;                                        --                               .waitrequest
+  fast_fifo_fpga_to_hps_in_csr_address   : in    std_logic_vector(2 downto 0)  := (others => '0'); --   fast_fifo_fpga_to_hps_in_csr.address
+  fast_fifo_fpga_to_hps_in_csr_read      : in    std_logic                     := '0';             --                               .read
+  fast_fifo_fpga_to_hps_in_csr_writedata : in    std_logic_vector(31 downto 0) := (others => '0'); --                               .writedata
+  fast_fifo_fpga_to_hps_in_csr_write     : in    std_logic                     := '0';             --                               .write
+  fast_fifo_fpga_to_hps_in_csr_readdata  : out   std_logic_vector(31 downto 0);                    --                               .readdata
   fifo_fpga_to_hps_in_writedata         : in    std_logic_vector(31 downto 0) := (others => '0'); --            fifo_fpga_to_hps_in.writedata
   fifo_fpga_to_hps_in_write             : in    std_logic                     := '0';             --                               .write
   fifo_fpga_to_hps_in_waitrequest       : out   std_logic;                                        --                               .waitrequest

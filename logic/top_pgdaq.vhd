@@ -131,7 +131,17 @@ signal 	inverter_hps_cold_reset    : std_logic; 							 -- FIX BUG MODEL SIM
 signal 	inverter_hps_warm_reset    : std_logic; 							 -- FIX BUG MODEL SIM
 signal 	inverter_hps_debug_reset   : std_logic; 							 -- FIX BUG MODEL SIM
 
--- Set di segnali per pilotare la fifo FPGA --> HPS
+-- Set di segnali per pilotare la fifo FPGA --> HPS contenente dati scientifici
+signal fast_fifo_f2h_data_in	 		 : std_logic_vector(31 downto 0);	 -- Data
+signal fast_fifo_f2h_wr_en				 : std_logic;								 -- Write Enable
+signal fast_fifo_f2h_full				 : std_logic;								 -- Fifo Full
+signal fast_fifo_f2h_addr_csr			 : std_logic_vector(2 downto 0);
+signal fast_fifo_f2h_rd_en_csr		 : std_logic;
+signal fast_fifo_f2h_data_in_csr		 : std_logic_vector(31 downto 0);
+signal fast_fifo_f2h_wr_en_csr		 : std_logic;
+signal fast_fifo_f2h_data_out_csr	 : std_logic_vector(31 downto 0);
+
+-- Set di segnali per pilotare la fifo FPGA --> HPS contenente dati di telemetria
 signal fifo_f2h_data_in	 		 : std_logic_vector(31 downto 0);	 -- Data
 signal fifo_f2h_wr_en			 : std_logic;								 -- Write Enable
 signal fifo_f2h_full				 : std_logic;								 -- Fifo Full
@@ -141,7 +151,7 @@ signal fifo_f2h_data_in_csr	 : std_logic_vector(31 downto 0);
 signal fifo_f2h_wr_en_csr		 : std_logic;
 signal fifo_f2h_data_out_csr	 : std_logic_vector(31 downto 0);
 
--- Set di segnali per pilotare la fifo HPS --> FPGA
+-- Set di segnali per pilotare la fifo HPS --> FPGA contenente dati di configurazione
 signal fifo_h2f_data_out	 	 : std_logic_vector(31 downto 0);	 -- Data
 signal fifo_h2f_rd_en			 : std_logic;								 -- Read Enable
 signal fifo_h2f_empty			 : std_logic;								 -- Fifo Empty
@@ -251,19 +261,28 @@ begin
     button_pio_external_connection_export => fpga_debounced_buttons,  -- button_pio_external_connection.export
     hps_0_h2f_reset_reset_n               => hps_fpga_reset_n,  -- hps_0_h2f_reset.reset_n
     hps_0_f2h_cold_reset_req_reset_n      => inverter_hps_cold_reset,  -- hps_0_f2h_cold_reset_req.reset_n                   (BUG MODEL SIM FIXED)
-    hps_0_f2h_debug_reset_req_reset_n     => inverter_hps_debug_reset,  -- hps_0_f2h_debug_reset_req.reset_n                        (BUG MODEL SIM FIXED)
+    hps_0_f2h_debug_reset_req_reset_n     => inverter_hps_debug_reset,  -- hps_0_f2h_debug_reset_req.reset_n                 (BUG MODEL SIM FIXED)
     hps_0_f2h_stm_hw_events_stm_hwevents  => stm_hw_events,  -- hps_0_f2h_stm_hw_events.stm_hwevents
     hps_0_f2h_warm_reset_req_reset_n      => inverter_hps_warm_reset,  -- hps_0_f2h_warm_reset_req.reset_n                   (BUG MODEL SIM FIXED)
 
     --Fifo Partion
-	 fifo_fpga_to_hps_in_writedata		 => fifo_f2h_data_in, 			 --	  fifo_fpga_to_hps_in.writedata
-	 fifo_fpga_to_hps_in_write				 => fifo_f2h_wr_en,     		 -- 								.write
-	 fifo_fpga_to_hps_in_waitrequest		 => fifo_f2h_full,				 -- 								.waitrequest
-	 fifo_fpga_to_hps_in_csr_address		 => fifo_f2h_addr_csr,			 -- fifo_fpga_to_hps_in_csr.address
- 	 fifo_fpga_to_hps_in_csr_read			 => fifo_f2h_rd_en_csr,		    -- 								.read
-	 fifo_fpga_to_hps_in_csr_writedata	 => fifo_f2h_data_in_csr,		 -- 								.writedata
-	 fifo_fpga_to_hps_in_csr_write		 => fifo_f2h_wr_en_csr,			 -- 								.write
-	 fifo_fpga_to_hps_in_csr_readdata	 => fifo_f2h_data_out_csr,		 -- 								.readdata
+	 fast_fifo_fpga_to_hps_in_writedata			=> fast_fifo_f2h_data_in, 			 --	  fifo_fpga_to_hps_in.writedata
+	 fast_fifo_fpga_to_hps_in_write				=> fast_fifo_f2h_wr_en,     		 -- 								.write
+    fast_fifo_fpga_to_hps_in_waitrequest		=> fast_fifo_f2h_full,				 -- 								.waitrequest
+    fast_fifo_fpga_to_hps_in_csr_address		=> fast_fifo_f2h_addr_csr,			 -- fifo_fpga_to_hps_in_csr.address
+    fast_fifo_fpga_to_hps_in_csr_read			=> fast_fifo_f2h_rd_en_csr,	    -- 								.read
+    fast_fifo_fpga_to_hps_in_csr_writedata	=> fast_fifo_f2h_data_in_csr,		 -- 								.writedata
+    fast_fifo_fpga_to_hps_in_csr_write			=> fast_fifo_f2h_wr_en_csr,		 -- 								.write
+    fast_fifo_fpga_to_hps_in_csr_readdata		=> fast_fifo_f2h_data_out_csr,	 -- 								.readdata	  
+	 
+	 fifo_fpga_to_hps_in_writedata		 => fifo_f2h_data_in, 			 --	  fast_fifo_fpga_to_hps_in.writedata
+	 fifo_fpga_to_hps_in_write				 => fifo_f2h_wr_en,     		 -- 									  .write
+	 fifo_fpga_to_hps_in_waitrequest		 => fifo_f2h_full,				 -- 								     .waitrequest
+	 fifo_fpga_to_hps_in_csr_address		 => fifo_f2h_addr_csr,			 -- fast_fifo_fpga_to_hps_in_csr.address
+ 	 fifo_fpga_to_hps_in_csr_read			 => fifo_f2h_rd_en_csr,		    -- 								     .read
+	 fifo_fpga_to_hps_in_csr_writedata	 => fifo_f2h_data_in_csr,		 -- 								     .writedata
+	 fifo_fpga_to_hps_in_csr_write		 => fifo_f2h_wr_en_csr,			 -- 								     .write
+	 fifo_fpga_to_hps_in_csr_readdata	 => fifo_f2h_data_out_csr,		 -- 								     .readdata
 		  
 	 fifo_hps_to_fpga_out_readdata		 => fifo_h2f_data_out,			 --	  fifo_fpga_to_hps_in.writedata
 	 fifo_hps_to_fpga_out_read				 => fifo_h2f_rd_en,         	 -- 						      .write
