@@ -395,7 +395,7 @@ begin
 					 pDEPTH       => 4096,
 					 pUSEDW_WIDTH => ceil_log2(4096),
 					 pAEMPTY_VAL  => 2,
-					 pAFULL_VAL   => 4092,
+					 pAFULL_VAL   => 4086,
 					 pSHOW_AHEAD  => "OFF" 
 					)
 	port map(
@@ -443,7 +443,7 @@ begin
 	-- Generazione del segnale di Almost Full della FIFO a valle del FastData_Transmitter in funzione del livello di riempimento della stessa
 	Almost_Full_proc : process (fast_fifo_f2h_data_out_csr)
 	begin
-		if (fast_fifo_f2h_data_out_csr > 4096 - 4 - 1) then
+		if (fast_fifo_f2h_data_out_csr > 4086) then
 			sFIFO_AFULL_inf <= '1';	-- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> sFIFO_AFULL_inf = '1'
 		else
 			sFIFO_AFULL_inf <= '0';	-- Altrimenti, sFifoAfull = '0'
