@@ -419,6 +419,11 @@
    internal="hps_0.h2f_reset"
    type="reset"
    dir="start" />
+ <interface
+   name="hps_0_h2f_user0_clock"
+   internal="hps_0.h2f_user0_clock"
+   type="clock"
+   dir="start" />
  <interface name="hps_0_hps_io" internal="hps_0.hps_io" type="conduit" dir="end" />
  <interface
    name="led_pio_external_connection"
@@ -1396,7 +1401,22 @@
    kind="clock"
    version="20.1"
    start="clk_0.clk"
+   end="fifo_HPS_to_FPGA.clk_in" />
+ <connection
+   kind="clock"
+   version="20.1"
+   start="clk_0.clk"
    end="fifo_HPS_to_FPGA.clk_out" />
+ <connection
+   kind="clock"
+   version="20.1"
+   start="clk_0.clk"
+   end="fifo_FPGA_to_HPS.clk_out" />
+ <connection
+   kind="clock"
+   version="20.1"
+   start="clk_0.clk"
+   end="fast_fifo_FPGA_to_HPS.clk_out" />
  <connection
    kind="clock"
    version="20.1"
@@ -1417,21 +1437,6 @@
    version="20.1"
    start="clk_0.clk"
    end="hps_0.h2f_lw_axi_clock" />
- <connection
-   kind="clock"
-   version="20.1"
-   start="hps_0.h2f_user0_clock"
-   end="fifo_HPS_to_FPGA.clk_in" />
- <connection
-   kind="clock"
-   version="20.1"
-   start="hps_0.h2f_user0_clock"
-   end="fifo_FPGA_to_HPS.clk_out" />
- <connection
-   kind="clock"
-   version="20.1"
-   start="hps_0.h2f_user0_clock"
-   end="fast_fifo_FPGA_to_HPS.clk_out" />
  <connection
    kind="interrupt"
    version="20.1"

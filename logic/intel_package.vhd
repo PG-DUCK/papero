@@ -45,6 +45,7 @@ component soc_system is
   hps_0_f2h_stm_hw_events_stm_hwevents  : in    std_logic_vector(27 downto 0) := (others => '0'); --        hps_0_f2h_stm_hw_events.stm_hwevents
   hps_0_f2h_warm_reset_req_reset_n      : in    std_logic                     := '0';             --       hps_0_f2h_warm_reset_req.reset_n
   hps_0_h2f_reset_reset_n               : out   std_logic;                                        --                hps_0_h2f_reset.reset_n
+  hps_0_h2f_user0_clock_clk             : out   std_logic;                                        --          hps_0_h2f_user0_clock.clk		
   hps_0_hps_io_hps_io_emac1_inst_TX_CLK : out   std_logic;                                        --                   hps_0_hps_io.hps_io_emac1_inst_TX_CLK
   hps_0_hps_io_hps_io_emac1_inst_TXD0   : out   std_logic;                                        --                               .hps_io_emac1_inst_TXD0
   hps_0_hps_io_hps_io_emac1_inst_TXD1   : out   std_logic;                                        --                               .hps_io_emac1_inst_TXD1

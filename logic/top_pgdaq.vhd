@@ -127,11 +127,12 @@ signal stm_hw_events          : std_logic_vector(27 downto 0);
 signal fpga_clk_50            : std_logic;
 
 -- Set di segnali ausiliari
-signal 	neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
+signal 	neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);	 -- debounced_bottons in logica positiva
 signal 	neg_hps_fpga_reset_n		   : std_logic;							 -- segnale interno di RESET in logica positiva
 signal 	inverter_hps_cold_reset    : std_logic; 							 -- FIX BUG MODEL SIM
 signal 	inverter_hps_warm_reset    : std_logic; 							 -- FIX BUG MODEL SIM
 signal 	inverter_hps_debug_reset   : std_logic; 							 -- FIX BUG MODEL SIM
+signal	h2f_user_clock					: std_logic;							 -- 100 MHz user clock by HPS
 
 -- Set di segnali per pilotare la fifo FPGA --> HPS contenente dati scientifici
 signal fast_fifo_f2h_data_in	 		 : std_logic_vector(31 downto 0);	 -- Data
@@ -274,7 +275,8 @@ begin
     hps_0_f2h_debug_reset_req_reset_n     => inverter_hps_debug_reset,  -- hps_0_f2h_debug_reset_req.reset_n                 (BUG MODEL SIM FIXED)
     hps_0_f2h_stm_hw_events_stm_hwevents  => stm_hw_events,  -- hps_0_f2h_stm_hw_events.stm_hwevents
     hps_0_f2h_warm_reset_req_reset_n      => inverter_hps_warm_reset,  -- hps_0_f2h_warm_reset_req.reset_n                   (BUG MODEL SIM FIXED)
-
+	 hps_0_h2f_user0_clock_clk  				=> h2f_user_clock,       -- hps_0_h2f_user0_clock.clk
+		
     --Fifo Partion
 	 fast_fifo_fpga_to_hps_in_writedata			=> fast_fifo_f2h_data_in, 			 --	  fifo_fpga_to_hps_in.writedata
 	 fast_fifo_fpga_to_hps_in_write				=> fast_fifo_f2h_wr_en,     		 -- 								.write
