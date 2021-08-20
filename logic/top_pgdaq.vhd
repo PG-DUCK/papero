@@ -383,7 +383,7 @@ begin
 
 	-- Interfaccia di comunicazione tra FPGA e HPS per i dati di controllo
 	HPS_interface : HPS_intf
-	generic map(AF_HK_FIFO => 949)
+	generic map(AF_HK_FIFO => cF2H_AFULL)
 	port map(
 				iCLK_intf			=> h2f_user_clock,
 				iRST_intf			=> neg_hps_fpga_reset_n,
@@ -464,7 +464,7 @@ begin
 	-- Generazione del segnale di Almost Full della FIFO a valle del FastData_Transmitter in funzione del livello di riempimento della stessa
 	Almost_Full_proc : process (fast_fifo_f2h_data_out_csr)
 	begin
-		if (fast_fifo_f2h_data_out_csr > 4086) then
+		if (fast_fifo_f2h_data_out_csr > cFastF2H_AFULL) then
 			sFIFO_AFULL_inf <= '1';	-- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> sFIFO_AFULL_inf = '1'
 		else
 			sFIFO_AFULL_inf <= '0';	-- Altrimenti, sFifoAfull = '0'
