@@ -182,8 +182,21 @@ begin
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
 
   neg_fpga_debounced_buttons	 <= not fpga_debounced_buttons;  -- Siccome i bottoni dell'FPGA lavorano in logica negata mentre i nostri moduli in logica positiva, invertiamo il loro comportamento.
-  neg_hps_fpga_reset_n			 <= not hps_fpga_reset_n;			-- Il reset fornito dal soc_system utilizza la logica negata. Invertiamo il valore per adattarlo ai nostri moduli, che invece lavorano in logica positva.
-	
+  --neg_hps_fpga_reset_n			 <= not hps_fpga_reset_n;
+
+  -- Il reset fornito dal soc_system utilizza la logica negata. Invertiamo il valore per adattarlo ai nostri moduli, che invece lavorano in logica positva.
+  sync_stage_i : sync_stage
+  generic map (
+    pSTAGES => 3
+    )
+  port map (
+    iCLK => h2f_user_clock,
+    iRST => '0',
+    iD   => not hps_fpga_reset_n,
+    oQ   => neg_hps_fpga_reset_n
+    );
+
+
   inverter_hps_cold_reset  <= not hps_cold_reset;   --FIX BUG MODEL SIM
   inverter_hps_warm_reset  <= not hps_warm_reset;   --FIX BUG MODEL SIM
   inverter_hps_debug_reset <= not hps_debug_reset;  --FIX BUG MODEL SIM
@@ -276,8 +289,10 @@ begin
     hps_0_f2h_stm_hw_events_stm_hwevents  => stm_hw_events,  -- hps_0_f2h_stm_hw_events.stm_hwevents
     hps_0_f2h_warm_reset_req_reset_n      => inverter_hps_warm_reset,  -- hps_0_f2h_warm_reset_req.reset_n                   (BUG MODEL SIM FIXED)
 	 hps_0_h2f_user0_clock_clk  				=> h2f_user_clock,       -- hps_0_h2f_user0_clock.clk
-		
+
     --Fifo Partion
+   fast_fifo_fpga_to_hps_clk_clk          => h2f_user_clock,          --      fast_fifo_fpga_to_hps_clk.clk
+   fast_fifo_fpga_to_hps_rst_reset_n      => '1',       --      fast_fifo_fpga_to_hps_rst.reset_n
 	 fast_fifo_fpga_to_hps_in_writedata			=> fast_fifo_f2h_data_in, 			 --	  fifo_fpga_to_hps_in.writedata
 	 fast_fifo_fpga_to_hps_in_write				=> fast_fifo_f2h_wr_en,     		 -- 								.write
     fast_fifo_fpga_to_hps_in_waitrequest		=> fast_fifo_f2h_full,				 -- 								.waitrequest
@@ -285,8 +300,10 @@ begin
     fast_fifo_fpga_to_hps_in_csr_read			=> fast_fifo_f2h_rd_en_csr,	    -- 								.read
     fast_fifo_fpga_to_hps_in_csr_writedata	=> fast_fifo_f2h_data_in_csr,		 -- 								.writedata
     fast_fifo_fpga_to_hps_in_csr_write			=> fast_fifo_f2h_wr_en_csr,		 -- 								.write
-    fast_fifo_fpga_to_hps_in_csr_readdata		=> fast_fifo_f2h_data_out_csr,	 -- 								.readdata	  
-	 
+    fast_fifo_fpga_to_hps_in_csr_readdata		=> fast_fifo_f2h_data_out_csr,	 -- 								.readdata
+
+   fifo_fpga_to_hps_clk_clk               => h2f_user_clock,               --           fifo_fpga_to_hps_clk.clk
+   fifo_fpga_to_hps_rst_reset_n           => '1',           --           fifo_fpga_to_hps_rst.reset_n
 	 fifo_fpga_to_hps_in_writedata		 => fifo_f2h_data_in, 			 --	  fast_fifo_fpga_to_hps_in.writedata
 	 fifo_fpga_to_hps_in_write				 => fifo_f2h_wr_en,     		 -- 									  .write
 	 fifo_fpga_to_hps_in_waitrequest		 => fifo_f2h_full,				 -- 								     .waitrequest
@@ -295,7 +312,9 @@ begin
 	 fifo_fpga_to_hps_in_csr_writedata	 => fifo_f2h_data_in_csr,		 -- 								     .writedata
 	 fifo_fpga_to_hps_in_csr_write		 => fifo_f2h_wr_en_csr,			 -- 								     .write
 	 fifo_fpga_to_hps_in_csr_readdata	 => fifo_f2h_data_out_csr,		 -- 								     .readdata
-		  
+
+   fifo_hps_to_fpga_clk_clk => h2f_user_clock,  --fifo_hps_to_fpga_clk.clk
+   fifo_hps_to_fpga_rst_reset_n => '1',  --fifo_hps_to_fpga_rst.reset_n
 	 fifo_hps_to_fpga_out_readdata		 => fifo_h2f_data_out,			 --	  fifo_fpga_to_hps_in.writedata
 	 fifo_hps_to_fpga_out_read				 => fifo_h2f_rd_en,         	 -- 						      .write
 	 fifo_hps_to_fpga_out_waitrequest	 => fifo_h2f_empty,				 --						 	   .waitrequest
@@ -361,12 +380,12 @@ begin
       signal_in => hps_reset_req(2),
       pulse_out => hps_debug_reset
       );
-		
+
 	-- Interfaccia di comunicazione tra FPGA e HPS per i dati di controllo
 	HPS_interface : HPS_intf
 	generic map(AF_HK_FIFO => 949)
 	port map(
-				iCLK_intf			=> fpga_clk_50,
+				iCLK_intf			=> h2f_user_clock,
 				iRST_intf			=> neg_hps_fpga_reset_n,
 				iFWV_intf			=> PGDAQ_SHA,
 				iFIFO_H2F_WR		=> fifo_h2f_empty,
@@ -379,17 +398,17 @@ begin
 				oFIFO_F2H_WE		=> fifo_f2h_wr_en,
 				oFIFO_F2H_DATA		=> fifo_f2h_data_in
 				);
-	
+
 	-- Generatore di dati pseudocasuali a 32 bit
 	data_generator_proc : Test_Unit
 	port map(
-				iCLK			=> fpga_clk_50,
+				iCLK			=> h2f_user_clock,
 				iRST			=> neg_hps_fpga_reset_n,
 				iEN			=> not sFIFO_AFULL_sup,
 				oDATA			=> sDATA,
 				oDATA_VALID	=> sDATA_VALID
 				);
-	
+
 	-- FIFO a cavallo tra il PRBS e il FastData_Transmitter
 	fifo_monte : parametric_fifo_synch
 	generic map(
@@ -398,10 +417,10 @@ begin
 					 pUSEDW_WIDTH => ceil_log2(4096),
 					 pAEMPTY_VAL  => 2,
 					 pAFULL_VAL   => 4086,
-					 pSHOW_AHEAD  => "OFF" 
+					 pSHOW_AHEAD  => "OFF"
 					)
 	port map(
-				iCLK    => fpga_clk_50,
+				iCLK    => h2f_user_clock,
 				iRST    => neg_hps_fpga_reset_n,
 				-- control interface
 				oAEMPTY => sFIFO_AEMPTY_sup,
@@ -413,16 +432,16 @@ begin
 				iDATA   => sDATA,
 				oQ      => sFIFO_DATA_sup_out
 				);
-	
+
 	-- Trasmettitore dati veloci
 	 FIFO_f2h_fast_transmitter : FastData_Transmitter
 	 port map(
-			    iCLK 					=> fpga_clk_50,
+			    iCLK 					=> h2f_user_clock,
 			    iRST 					=> neg_hps_fpga_reset_n,
 			    -- Enable
 			    iEN 						=> '1',
 			    -- Settings Packet
-			    iSettingLength 		=> x"0000006e",	
+			    iSettingLength 		=> x"0000006e",
 			    iFirmwareVersion 	=> x"12345678",
 			    iSettingTrigNum		=> x"00000001",
 			    iSettingTrigDet	 	=> x"23",
@@ -441,7 +460,7 @@ begin
 			    oBUSY	 				=> open,
 			    oWARNING				=> open
 			    );
-	
+
 	-- Generazione del segnale di Almost Full della FIFO a valle del FastData_Transmitter in funzione del livello di riempimento della stessa
 	Almost_Full_proc : process (fast_fifo_f2h_data_out_csr)
 	begin
@@ -451,17 +470,15 @@ begin
 			sFIFO_AFULL_inf <= '0';	-- Altrimenti, sFifoAfull = '0'
 		end if;
 	end process;
-	
-	
+
+
 	-- Data Flow per il controllo della FIFO di Housekeeping
 	fifo_f2h_addr_csr		<= "000";	--> fifo_f2h_data_out_csr = Level_Fifo
 	fifo_f2h_rd_en_csr	<= '1';		--> Aggiorna Level_Fifo ogni ciclo di clock
-	
+
 	-- Data Flow per il controllo della FIFO Fast_Data
 	fast_fifo_f2h_addr_csr		<= "000";	--> fast_fifo_f2h_data_out_csr = Level_Fifo
 	fast_fifo_f2h_rd_en_csr		<= '1';		--> Aggiorna Level_Fifo ogni ciclo di clock
-	
-	
+
+
 end architecture;
-
-
