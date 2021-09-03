@@ -346,7 +346,7 @@
  <parameter name="hideFromIPCatalog" value="false" />
  <parameter name="lockedInterfaceDefinition" value="" />
  <parameter name="maxAdditionalLatency" value="1" />
- <parameter name="projectName">DE10_NANO_SoC_GHRD.qpf</parameter>
+ <parameter name="projectName" value="" />
  <parameter name="sopcBorderPoints" value="false" />
  <parameter name="systemHash" value="0" />
  <parameter name="testBenchDutName" value="" />
@@ -365,6 +365,11 @@
    type="conduit"
    dir="end" />
  <interface
+   name="fast_fifo_fpga_to_hps_clk"
+   internal="fast_fifo_FPGA_to_HPS.clk_in"
+   type="clock"
+   dir="end" />
+ <interface
    name="fast_fifo_fpga_to_hps_in"
    internal="fast_fifo_FPGA_to_HPS.in"
    type="avalon"
@@ -373,6 +378,16 @@
    name="fast_fifo_fpga_to_hps_in_csr"
    internal="fast_fifo_FPGA_to_HPS.in_csr"
    type="avalon"
+   dir="end" />
+ <interface
+   name="fast_fifo_fpga_to_hps_rst"
+   internal="fast_fifo_FPGA_to_HPS.reset_in"
+   type="reset"
+   dir="end" />
+ <interface
+   name="fifo_fpga_to_hps_clk"
+   internal="fifo_FPGA_to_HPS.clk_in"
+   type="clock"
    dir="end" />
  <interface
    name="fifo_fpga_to_hps_in"
@@ -385,6 +400,16 @@
    type="avalon"
    dir="end" />
  <interface
+   name="fifo_fpga_to_hps_rst"
+   internal="fifo_FPGA_to_HPS.reset_in"
+   type="reset"
+   dir="end" />
+ <interface
+   name="fifo_hps_to_fpga_clk"
+   internal="fifo_HPS_to_FPGA.clk_out"
+   type="clock"
+   dir="end" />
+ <interface
    name="fifo_hps_to_fpga_out"
    internal="fifo_HPS_to_FPGA.out"
    type="avalon"
@@ -393,6 +418,11 @@
    name="fifo_hps_to_fpga_out_csr"
    internal="fifo_HPS_to_FPGA.out_csr"
    type="avalon"
+   dir="end" />
+ <interface
+   name="fifo_hps_to_fpga_rst"
+   internal="fifo_HPS_to_FPGA.reset_out"
+   type="reset"
    dir="end" />
  <interface
    name="hps_0_f2h_cold_reset_req"
@@ -1046,7 +1076,7 @@
   <parameter name="dbg_trace_clk_div" value="0" />
   <parameter name="desired_can0_clk_mhz" value="100.0" />
   <parameter name="desired_can1_clk_mhz" value="100.0" />
-  <parameter name="desired_cfg_clk_mhz" value="100.0" />
+  <parameter name="desired_cfg_clk_mhz" value="50.0" />
   <parameter name="desired_emac0_clk_mhz" value="250.0" />
   <parameter name="desired_emac1_clk_mhz" value="250.0" />
   <parameter name="desired_gpio_db_clk_hz" value="32000" />
@@ -1391,22 +1421,7 @@
    kind="clock"
    version="20.1"
    start="clk_0.clk"
-   end="fifo_FPGA_to_HPS.clk_in" />
- <connection
-   kind="clock"
-   version="20.1"
-   start="clk_0.clk"
-   end="fast_fifo_FPGA_to_HPS.clk_in" />
- <connection
-   kind="clock"
-   version="20.1"
-   start="clk_0.clk"
    end="fifo_HPS_to_FPGA.clk_in" />
- <connection
-   kind="clock"
-   version="20.1"
-   start="clk_0.clk"
-   end="fifo_HPS_to_FPGA.clk_out" />
  <connection
    kind="clock"
    version="20.1"
@@ -1517,22 +1532,7 @@
    version="20.1"
    start="clk_0.clk_reset"
    end="fifo_HPS_to_FPGA.reset_in" />
- <connection
-   kind="reset"
-   version="20.1"
-   start="clk_0.clk_reset"
-   end="fifo_FPGA_to_HPS.reset_in" />
- <connection
-   kind="reset"
-   version="20.1"
-   start="clk_0.clk_reset"
-   end="fast_fifo_FPGA_to_HPS.reset_in" />
  <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="ILC.reset_n" />
- <connection
-   kind="reset"
-   version="20.1"
-   start="clk_0.clk_reset"
-   end="fifo_HPS_to_FPGA.reset_out" />
  <connection
    kind="reset"
    version="20.1"

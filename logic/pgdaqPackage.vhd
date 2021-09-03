@@ -22,6 +22,12 @@ package pgdaqPackage is
   constant cF2H_HK_HDR    : std_logic_vector(31 downto 0) := x"4EADE500";  --!Fixed Header for the FPGA-2-HPS FSM
   constant cF2H_HK_EOP    : std_logic_vector(31 downto 0) := x"600DF00D";  --!End of Packet for the FPGA-2-HPS FSM
   constant cF2H_HK_PERIOD : natural                       := 50000000;  --!Period for internal counter to read HKs; max: 2^32 (85 s)
+  constant cF2H_AFULL     : natural                       := 949; --!Almost full threshold for the HK FIFO
+  constant cFastF2H_AFULL : natural                       := 4085; --!Almost full threshold for the data FIFO
+
+  --Trigger types
+  constant cTRG_PHYS  : std_logic_vector(7 downto 0) := "00000001"; --!Physics trigger (from external pin)
+  constant cTRG_CALIB : std_logic_vector(7 downto 0) := "00000010"; --!Calibration trigger (internal)
 
   -- Types ---------------------------------------------------------------------
   --!Register array; all registers are r/w for HPS and FPGA
@@ -82,7 +88,7 @@ package pgdaqPackage is
       );
   end component;
 
-  --!Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request".
+  --!Allunga di un ciclo di clock lo stato "alto" del segnale di "Wait_Request"
   component HighHold is
     generic(
       channels   : integer   := 1;
@@ -98,7 +104,7 @@ package pgdaqPackage is
       );
   end component;
 
-  --!Temporizza l'invio di impulsi sul read_enable della FIFO.
+  --!Temporizza l'invio di impulsi sul read_enable della FIFO
   component WR_Timer is
     port(
       WRT_CLK_in              : in  std_logic;
@@ -180,7 +186,7 @@ package pgdaqPackage is
   component HPS_intf is
 	 generic(
 		AF_HK_FIFO		 : natural := 949									--!Almost_Full threshold for HouseKeeping FIFO
-		);	
+		);
     port(
       iCLK_intf       : in  std_logic;									--!Main clock
       iRST_intf       : in  std_logic;  								--!Main reset
@@ -199,7 +205,7 @@ package pgdaqPackage is
       oFIFO_F2H_DATA  : out std_logic_vector(31 downto 0)   	--!Data TX
       );
   end component;
-  
+
 	--!@copydoc FFD.vhd
 	--!Unità di base per realizzare gli shift register dei moduli PRBS
 	component FFD is
@@ -211,7 +217,7 @@ package pgdaqPackage is
 			oQ			: out std_logic
 			);
 	end component;
-	
+
 	--!@copydoc PRBS14.vhd
 	--!Modulo per la generazione di dati pseudo-casuali a 14 bit
 	component PRBS14 is
@@ -222,7 +228,7 @@ package pgdaqPackage is
 			oDATA			: out std_logic_vector(13 downto 0)
 			);
 	end component;
-	
+
 	--!@copydoc PRBS32.vhd
 	--!Modulo per la generazione di dati pseudo-casuali a 32 bit
 	component PRBS32 is
@@ -233,7 +239,7 @@ package pgdaqPackage is
 			oDATA			: out std_logic_vector(31 downto 0)
 			);
 	end component;
-	
+
 	--!@copydoc Test_Unit.vhd
 	--!Unità di test per verificare il funzionamento della sola scheda DAQ
 	component Test_Unit is
@@ -245,7 +251,7 @@ package pgdaqPackage is
 			oDATA_VALID	: out std_logic								-- Segnale che attesta la validità dei dati in uscita dalla Test_Unit. Se oDATA_VALID=1 --> il valore di "oDATA" è consistente
 			);
 	end component;
-	
+
 	--!@copydoc FastData_Transmitter.vhd
 	--!Trasmettitore dei dati scientifici
 	component FastData_Transmitter is
@@ -275,13 +281,41 @@ package pgdaqPackage is
 		  oWARNING				: out std_logic								-- Malfunzionamenti. '0'-->ok, '1'--> errore: la macchina è finita in uno stato non precisato
 		 );
 	end component;
-	
+
+  --!@copydoc trigBusyLogic.vhd
+  component trigBusyLogic is
+    port (
+      iCLK            : in  std_logic;
+      iRST            : in  std_logic;
+      iCFG            : in  std_logic_vector(31 downto 0);
+      iEXT_TRIG       : in  std_logic;
+      iBUSIES         : in  std_logic_vector(7 downto 0);
+      oTRIG           : out std_logic;
+      oTRIG_ID        : out std_logic_vector(7 downto 0);
+      oTRIG_COUNT     : out std_logic_vector(31 downto 0);
+      oTRIG_WHEN_BUSY : out std_logic_vector(7 downto 0);
+      oBUSY           : out std_logic
+      );
+  end component;
+
+
+
   -- Functions -----------------------------------------------------------------
   --!@brief Compute the parity bit of an 8-bit data with both polarities
   --!@param[in] p String containing the polarity, "EVEN" or "ODD"
   --!@param[in] d Input 8-bit data
   --!@return  Parity bit of the incoming 8-bit data
   function parity8bit (p : string; d : std_logic_vector(7 downto 0)) return std_logic;
+
+  --!@brief Compute the and between all the elements of a std_logic_vector
+  --!@param[in] slv Input std_logic_vector to be reduced to a std_logic
+  --!@return  And of all of the slv elements
+  function unary_and(slv : in std_logic_vector) return std_logic;
+
+  --!@brief Compute the or between all the elements of a std_logic_vector
+  --!@param[in] slv Input std_logic_vector to be reduced to a std_logic
+  --!@return  Or of all of the slv elements
+  function unary_or(slv : in std_logic_vector) return std_logic;
 
 end pgdaqPackage;
 
@@ -298,6 +332,24 @@ package body pgdaqPackage is
            xor d(4) xor d(5) xor d(6) xor d(7);
     end if;
     return x;
+  end function;
+
+  function unary_and(slv : in std_logic_vector) return std_logic is
+    variable and_v : std_logic := '1';  -- Null input returns '1'
+  begin
+    for i in slv'range loop
+      and_v := and_v and slv(i);
+    end loop;
+    return and_v;
+  end function;
+
+  function unary_or(slv : in std_logic_vector) return std_logic is
+    variable or_v : std_logic := '0';  -- Null input returns '0'
+  begin
+    for i in slv'range loop
+      or_v := or_v or slv(i);
+    end loop;
+    return or_v;
   end function;
 
 end package body;

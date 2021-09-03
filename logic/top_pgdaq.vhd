@@ -115,83 +115,100 @@ end entity top_pgdaq;
 
 --!@copydoc top_pgdaq.vhd
 architecture std of top_pgdaq is
--------------------------------------------------------------
-signal hps_fpga_reset_n       : std_logic;
-signal fpga_debounced_buttons : std_logic_vector(1 downto 0);
-signal fpga_led_internal      : std_logic_vector(6 downto 0);
-signal hps_reset_req          : std_logic_vector(2 downto 0);
-signal hps_cold_reset         : std_logic;
-signal hps_warm_reset         : std_logic;
-signal hps_debug_reset        : std_logic;
-signal stm_hw_events          : std_logic_vector(27 downto 0);
-signal fpga_clk_50            : std_logic;
+  --HPS signals
+  signal hps_fpga_reset_n       : std_logic;
+  signal fpga_debounced_buttons : std_logic_vector(1 downto 0);
+  signal fpga_led_internal      : std_logic_vector(6 downto 0);
+  signal hps_reset_req          : std_logic_vector(2 downto 0);
+  signal hps_cold_reset         : std_logic;
+  signal hps_warm_reset         : std_logic;
+  signal hps_debug_reset        : std_logic;
+  signal stm_hw_events          : std_logic_vector(27 downto 0);
+  signal fpga_clk_50            : std_logic;
 
--- Set di segnali ausiliari
-signal 	neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);	 -- debounced_bottons in logica positiva
-signal 	neg_hps_fpga_reset_n		   : std_logic;							 -- segnale interno di RESET in logica positiva
-signal 	inverter_hps_cold_reset    : std_logic; 							 -- FIX BUG MODEL SIM
-signal 	inverter_hps_warm_reset    : std_logic; 							 -- FIX BUG MODEL SIM
-signal 	inverter_hps_debug_reset   : std_logic; 							 -- FIX BUG MODEL SIM
-signal	h2f_user_clock					: std_logic;							 -- 100 MHz user clock by HPS
+  -- Ausiliari
+  signal neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
+  signal neg_hps_fpga_reset_n       : std_logic;  -- segnale interno di RESET in logica positiva
+  signal inverter_hps_cold_reset    : std_logic;
+  signal inverter_hps_warm_reset    : std_logic;
+  signal inverter_hps_debug_reset   : std_logic;
+  signal h2f_user_clock             : std_logic;  -- 50 MHz user clock by HPS
 
--- Set di segnali per pilotare la fifo FPGA --> HPS contenente dati scientifici
-signal fast_fifo_f2h_data_in	 		 : std_logic_vector(31 downto 0);	 -- Data
-signal fast_fifo_f2h_wr_en				 : std_logic;								 -- Write Enable
-signal fast_fifo_f2h_full				 : std_logic;								 -- Fifo Full
-signal fast_fifo_f2h_addr_csr			 : std_logic_vector(2 downto 0);
-signal fast_fifo_f2h_rd_en_csr		 : std_logic;
-signal fast_fifo_f2h_data_in_csr		 : std_logic_vector(31 downto 0);
-signal fast_fifo_f2h_wr_en_csr		 : std_logic;
-signal fast_fifo_f2h_data_out_csr	 : std_logic_vector(31 downto 0);
+  -- fifo FPGA --> HPS contenente dati scientifici
+  signal fast_fifo_f2h_data_in      : std_logic_vector(31 downto 0);  -- Data
+  signal fast_fifo_f2h_wr_en        : std_logic;  -- Write Enable
+  signal fast_fifo_f2h_full         : std_logic;  -- Fifo Full
+  signal fast_fifo_f2h_addr_csr     : std_logic_vector(2 downto 0);
+  signal fast_fifo_f2h_rd_en_csr    : std_logic;
+  signal fast_fifo_f2h_data_in_csr  : std_logic_vector(31 downto 0);
+  signal fast_fifo_f2h_wr_en_csr    : std_logic;
+  signal fast_fifo_f2h_data_out_csr : std_logic_vector(31 downto 0);
 
--- Set di segnali per pilotare la fifo FPGA --> HPS contenente dati di telemetria
-signal fifo_f2h_data_in	 		 : std_logic_vector(31 downto 0);	 -- Data
-signal fifo_f2h_wr_en			 : std_logic;								 -- Write Enable
-signal fifo_f2h_full				 : std_logic;								 -- Fifo Full
-signal fifo_f2h_addr_csr		 : std_logic_vector(2 downto 0);
-signal fifo_f2h_rd_en_csr		 : std_logic;
-signal fifo_f2h_data_in_csr	 : std_logic_vector(31 downto 0);
-signal fifo_f2h_wr_en_csr		 : std_logic;
-signal fifo_f2h_data_out_csr	 : std_logic_vector(31 downto 0);
+  -- fifo FPGA --> HPS contenente dati di telemetria
+  signal fifo_f2h_data_in      : std_logic_vector(31 downto 0);  -- Data
+  signal fifo_f2h_wr_en        : std_logic;  -- Write Enable
+  signal fifo_f2h_full         : std_logic;  -- Fifo Full
+  signal fifo_f2h_addr_csr     : std_logic_vector(2 downto 0);
+  signal fifo_f2h_rd_en_csr    : std_logic;
+  signal fifo_f2h_data_in_csr  : std_logic_vector(31 downto 0);
+  signal fifo_f2h_wr_en_csr    : std_logic;
+  signal fifo_f2h_data_out_csr : std_logic_vector(31 downto 0);
 
--- Set di segnali per pilotare la fifo HPS --> FPGA contenente dati di configurazione
-signal fifo_h2f_data_out	 	 : std_logic_vector(31 downto 0);	 -- Data
-signal fifo_h2f_rd_en			 : std_logic;								 -- Read Enable
-signal fifo_h2f_empty			 : std_logic;								 -- Fifo Empty
-signal fifo_h2f_addr_csr		 : std_logic_vector(2 downto 0);
-signal fifo_h2f_rd_en_csr		 : std_logic;
-signal fifo_h2f_data_in_csr	 : std_logic_vector(31 downto 0);
-signal fifo_h2f_wr_en_csr		 : std_logic;
-signal fifo_h2f_data_out_csr	 : std_logic_vector(31 downto 0);
+  -- fifo HPS --> FPGA contenente dati di configurazione
+  signal fifo_h2f_data_out     : std_logic_vector(31 downto 0);  -- Data
+  signal fifo_h2f_rd_en        : std_logic;                      -- Read Enable
+  signal fifo_h2f_empty        : std_logic;                      -- Fifo Empty
+  signal fifo_h2f_addr_csr     : std_logic_vector(2 downto 0);
+  signal fifo_h2f_rd_en_csr    : std_logic;
+  signal fifo_h2f_data_in_csr  : std_logic_vector(31 downto 0);
+  signal fifo_h2f_wr_en_csr    : std_logic;
+  signal fifo_h2f_data_out_csr : std_logic_vector(31 downto 0);
 
--- Set di segnali di interconnessione tra i moduli istanziati
-signal warning_rx			 		: std_logic_vector(2 downto 0);		-- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
-signal sFIFO_DATA_sup_out		: std_logic_vector(31 downto 0);		-- Dati in uscita dalla FIFO a monte del FastData_Transmitter
-signal sFIFO_EMPTY_sup			: std_logic;								-- "Empty" della FIFO a monte del FastData_Transmitter
-signal sFIFO_AEMPTY_sup			: std_logic;								-- "Almost Empty" della FIFO a monte del FastData_Transmitter
-signal sFIFO_RE_sup				: std_logic;								-- "Read Enable" della FIFO a monte del FastData_Transmitter
-signal sFIFO_AFULL_inf			: std_logic;								-- "Almost Full" della FIFO a valle del FastData_Transmitter
-signal sFIFO_AFULL_sup			: std_logic;								-- "Almost Full" della FIFO a monte del FastData_Transmitter
-signal sDATA						: std_logic_vector(31 downto 0);		-- Dato pseudocasuale in uscita dal generatore PRBS a 32 bit
-signal sDATA_VALID				: std_logic;								-- Consistenza del dato pseudocasuale in uscita dal generatore PRBS a 32 bit
+  -- Interconnessione tra i moduli istanziati
+  signal warning_rx         : std_logic_vector(2 downto 0);  -- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
+  signal sFIFO_DATA_sup_out : std_logic_vector(31 downto 0);  -- Dati in uscita dalla FIFO a monte del FastData_Transmitter
+  signal sFIFO_EMPTY_sup    : std_logic;  -- "Empty" della FIFO a monte del FastData_Transmitter
+  signal sFIFO_AEMPTY_sup   : std_logic;  -- "Almost Empty" della FIFO a monte del FastData_Transmitter
+  signal sFIFO_RE_sup       : std_logic;  -- "Read Enable" della FIFO a monte del FastData_Transmitter
+  signal sFIFO_AFULL_inf    : std_logic;  -- "Almost Full" della FIFO a valle del FastData_Transmitter
+  signal sFIFO_AFULL_sup    : std_logic;  -- "Almost Full" della FIFO a monte del FastData_Transmitter
+  signal sDATA              : std_logic_vector(31 downto 0);  -- Dato pseudocasuale in uscita dal generatore PRBS a 32 bit
+  signal sDATA_VALID        : std_logic;  -- Consistenza del dato pseudocasuale in uscita dal generatore PRBS a 32 bit
 
+  -- Trigger and busy
+  signal sTrig              : std_logic;                      -- Main trigger
+  signal sTrigId            : std_logic_vector(7 downto 0);   --
+  signal sTrigCount         : std_logic_vector(31 downto 0);  --
+  signal sTrigWhenBusyCount : std_logic_vector(7 downto 0);   --
+  signal sBusy              : std_logic;
 
 begin
   -- connection of internal logics ----------------------------
   fpga_clk_50   <= FPGA_CLK1_50;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
 
-  neg_fpga_debounced_buttons	 <= not fpga_debounced_buttons;  -- Siccome i bottoni dell'FPGA lavorano in logica negata mentre i nostri moduli in logica positiva, invertiamo il loro comportamento.
-  neg_hps_fpga_reset_n			 <= not hps_fpga_reset_n;			-- Il reset fornito dal soc_system utilizza la logica negata. Invertiamo il valore per adattarlo ai nostri moduli, che invece lavorano in logica positva.
-	
-  inverter_hps_cold_reset  <= not hps_cold_reset;   --FIX BUG MODEL SIM
-  inverter_hps_warm_reset  <= not hps_warm_reset;   --FIX BUG MODEL SIM
-  inverter_hps_debug_reset <= not hps_debug_reset;  --FIX BUG MODEL SIM
+  neg_fpga_debounced_buttons <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
 
+  -- Il reset fornito dal soc_system utilizza la logica negata, i nostri moduli lavorano in logica positiva
+  HPS_RST_SYNCH : sync_stage
+    generic map (
+      pSTAGES => 3
+      )
+    port map (
+      iCLK => h2f_user_clock,
+      iRST => '0',
+      iD   => not hps_fpga_reset_n,
+      oQ   => neg_hps_fpga_reset_n
+      );
+
+
+  inverter_hps_cold_reset  <= not hps_cold_reset;
+  inverter_hps_warm_reset  <= not hps_warm_reset;
+  inverter_hps_debug_reset <= not hps_debug_reset;
   --!@brief HPS instance
   SoC_inst : soc_system port map (
     --Clock&Reset
-    clk_clk                               => FPGA_CLK1_50,  -- clk.clk
+    clk_clk                               => fpga_clk_50,  -- clk.clk
     reset_reset_n                         => hps_fpga_reset_n,  -- reset.reset_n
     --HPS ddr3
     memory_mem_a                          => HPS_DDR3_ADDR,  --  memory.mem_a
@@ -271,40 +288,46 @@ begin
     dipsw_pio_external_connection_export  => SW,  -- dipsw_pio_external_connection.export
     button_pio_external_connection_export => fpga_debounced_buttons,  -- button_pio_external_connection.export
     hps_0_h2f_reset_reset_n               => hps_fpga_reset_n,  -- hps_0_h2f_reset.reset_n
-    hps_0_f2h_cold_reset_req_reset_n      => inverter_hps_cold_reset,  -- hps_0_f2h_cold_reset_req.reset_n                   (BUG MODEL SIM FIXED)
-    hps_0_f2h_debug_reset_req_reset_n     => inverter_hps_debug_reset,  -- hps_0_f2h_debug_reset_req.reset_n                 (BUG MODEL SIM FIXED)
+    hps_0_f2h_cold_reset_req_reset_n      => inverter_hps_cold_reset,  -- hps_0_f2h_cold_reset_req.reset_n
+    hps_0_f2h_debug_reset_req_reset_n     => inverter_hps_debug_reset,  -- hps_0_f2h_debug_reset_req.reset_n
     hps_0_f2h_stm_hw_events_stm_hwevents  => stm_hw_events,  -- hps_0_f2h_stm_hw_events.stm_hwevents
-    hps_0_f2h_warm_reset_req_reset_n      => inverter_hps_warm_reset,  -- hps_0_f2h_warm_reset_req.reset_n                   (BUG MODEL SIM FIXED)
-	 hps_0_h2f_user0_clock_clk  				=> h2f_user_clock,       -- hps_0_h2f_user0_clock.clk
-		
+    hps_0_f2h_warm_reset_req_reset_n      => inverter_hps_warm_reset,  -- hps_0_f2h_warm_reset_req.reset_n
+    hps_0_h2f_user0_clock_clk             => h2f_user_clock,  -- hps_0_h2f_user0_clock.clk
+
     --Fifo Partion
-	 fast_fifo_fpga_to_hps_in_writedata			=> fast_fifo_f2h_data_in, 			 --	  fifo_fpga_to_hps_in.writedata
-	 fast_fifo_fpga_to_hps_in_write				=> fast_fifo_f2h_wr_en,     		 -- 								.write
-    fast_fifo_fpga_to_hps_in_waitrequest		=> fast_fifo_f2h_full,				 -- 								.waitrequest
-    fast_fifo_fpga_to_hps_in_csr_address		=> fast_fifo_f2h_addr_csr,			 -- fifo_fpga_to_hps_in_csr.address
-    fast_fifo_fpga_to_hps_in_csr_read			=> fast_fifo_f2h_rd_en_csr,	    -- 								.read
-    fast_fifo_fpga_to_hps_in_csr_writedata	=> fast_fifo_f2h_data_in_csr,		 -- 								.writedata
-    fast_fifo_fpga_to_hps_in_csr_write			=> fast_fifo_f2h_wr_en_csr,		 -- 								.write
-    fast_fifo_fpga_to_hps_in_csr_readdata		=> fast_fifo_f2h_data_out_csr,	 -- 								.readdata	  
-	 
-	 fifo_fpga_to_hps_in_writedata		 => fifo_f2h_data_in, 			 --	  fast_fifo_fpga_to_hps_in.writedata
-	 fifo_fpga_to_hps_in_write				 => fifo_f2h_wr_en,     		 -- 									  .write
-	 fifo_fpga_to_hps_in_waitrequest		 => fifo_f2h_full,				 -- 								     .waitrequest
-	 fifo_fpga_to_hps_in_csr_address		 => fifo_f2h_addr_csr,			 -- fast_fifo_fpga_to_hps_in_csr.address
- 	 fifo_fpga_to_hps_in_csr_read			 => fifo_f2h_rd_en_csr,		    -- 								     .read
-	 fifo_fpga_to_hps_in_csr_writedata	 => fifo_f2h_data_in_csr,		 -- 								     .writedata
-	 fifo_fpga_to_hps_in_csr_write		 => fifo_f2h_wr_en_csr,			 -- 								     .write
-	 fifo_fpga_to_hps_in_csr_readdata	 => fifo_f2h_data_out_csr,		 -- 								     .readdata
-		  
-	 fifo_hps_to_fpga_out_readdata		 => fifo_h2f_data_out,			 --	  fifo_fpga_to_hps_in.writedata
-	 fifo_hps_to_fpga_out_read				 => fifo_h2f_rd_en,         	 -- 						      .write
-	 fifo_hps_to_fpga_out_waitrequest	 => fifo_h2f_empty,				 --						 	   .waitrequest
-	 fifo_hps_to_fpga_out_csr_address	 => fifo_h2f_addr_csr,			 -- fifo_fpga_to_hps_in_csr.address
-	 fifo_hps_to_fpga_out_csr_read		 => fifo_h2f_rd_en_csr,			 --							   .read
-	 fifo_hps_to_fpga_out_csr_writedata	 => fifo_h2f_data_in_csr,		 -- 								.writedata
-	 fifo_hps_to_fpga_out_csr_write		 => fifo_h2f_wr_en_csr,			 -- 								.write
-	 fifo_hps_to_fpga_out_csr_readdata	 => fifo_h2f_data_out_csr		 -- 								.readdata
-	 );
+    fast_fifo_fpga_to_hps_clk_clk          => h2f_user_clock,  -- fast_fifo_fpga_to_hps_clk.clk
+    fast_fifo_fpga_to_hps_rst_reset_n      => '1',  -- fast_fifo_fpga_to_hps_rst.reset_n
+    fast_fifo_fpga_to_hps_in_writedata     => fast_fifo_f2h_data_in,  --       fifo_fpga_to_hps_in.writedata
+    fast_fifo_fpga_to_hps_in_write         => fast_fifo_f2h_wr_en,  --                          .write
+    fast_fifo_fpga_to_hps_in_waitrequest   => fast_fifo_f2h_full,  --                          .waitrequest
+    fast_fifo_fpga_to_hps_in_csr_address   => fast_fifo_f2h_addr_csr,  --   fifo_fpga_to_hps_in_csr.address
+    fast_fifo_fpga_to_hps_in_csr_read      => fast_fifo_f2h_rd_en_csr,  --                          .read
+    fast_fifo_fpga_to_hps_in_csr_writedata => fast_fifo_f2h_data_in_csr,  --                          .writedata
+    fast_fifo_fpga_to_hps_in_csr_write     => fast_fifo_f2h_wr_en_csr,  --                          .write
+    fast_fifo_fpga_to_hps_in_csr_readdata  => fast_fifo_f2h_data_out_csr,  --                          .readdata
+
+    fifo_fpga_to_hps_clk_clk          => h2f_user_clock,  --         fifo_fpga_to_hps_clk.clk
+    fifo_fpga_to_hps_rst_reset_n      => '1',  --         fifo_fpga_to_hps_rst.reset_n
+    fifo_fpga_to_hps_in_writedata     => fifo_f2h_data_in,  --     fast_fifo_fpga_to_hps_in.writedata
+    fifo_fpga_to_hps_in_write         => fifo_f2h_wr_en,  --                             .write
+    fifo_fpga_to_hps_in_waitrequest   => fifo_f2h_full,  --                             .waitrequest
+    fifo_fpga_to_hps_in_csr_address   => fifo_f2h_addr_csr,  -- fast_fifo_fpga_to_hps_in_csr.address
+    fifo_fpga_to_hps_in_csr_read      => fifo_f2h_rd_en_csr,  --                             .read
+    fifo_fpga_to_hps_in_csr_writedata => fifo_f2h_data_in_csr,  --                             .writedata
+    fifo_fpga_to_hps_in_csr_write     => fifo_f2h_wr_en_csr,  --                             .write
+    fifo_fpga_to_hps_in_csr_readdata  => fifo_f2h_data_out_csr,  --                             .readdata
+
+    fifo_hps_to_fpga_clk_clk           => h2f_user_clock,  --    fifo_hps_to_fpga_clk.clk
+    fifo_hps_to_fpga_rst_reset_n       => '1',  --    fifo_hps_to_fpga_rst.reset_n
+    fifo_hps_to_fpga_out_readdata      => fifo_h2f_data_out,  --     fifo_fpga_to_hps_in.writedata
+    fifo_hps_to_fpga_out_read          => fifo_h2f_rd_en,  --                        .write
+    fifo_hps_to_fpga_out_waitrequest   => fifo_h2f_empty,  --                        .waitrequest
+    fifo_hps_to_fpga_out_csr_address   => fifo_h2f_addr_csr,  -- fifo_fpga_to_hps_in_csr.address
+    fifo_hps_to_fpga_out_csr_read      => fifo_h2f_rd_en_csr,  --                        .read
+    fifo_hps_to_fpga_out_csr_writedata => fifo_h2f_data_in_csr,  --                        .writedata
+    fifo_hps_to_fpga_out_csr_write     => fifo_h2f_wr_en_csr,  --                        .write
+    fifo_hps_to_fpga_out_csr_readdata  => fifo_h2f_data_out_csr  --                        .readdata
+    );
 
   --!@brief Debounce logic to clean out glitches within 1ms
   debounce_inst : debounce generic map(
@@ -361,107 +384,120 @@ begin
       signal_in => hps_reset_req(2),
       pulse_out => hps_debug_reset
       );
-		
-	-- Interfaccia di comunicazione tra FPGA e HPS per i dati di controllo
-	HPS_interface : HPS_intf
-	generic map(AF_HK_FIFO => 949)
-	port map(
-				iCLK_intf			=> fpga_clk_50,
-				iRST_intf			=> neg_hps_fpga_reset_n,
-				iFWV_intf			=> PGDAQ_SHA,
-				iFIFO_H2F_WR		=> fifo_h2f_empty,
-				iFIFO_H2F_DATA		=> fifo_h2f_data_out,
-				oFIFO_H2F_RE		=> fifo_h2f_rd_en,
-				oFIFO_H2F_WARN		=> warning_rx,
-				iREGISTER_ARRAY	=> ((others => '0'),(others => '0'), '0'),
-				iHKREADER_START	=> '1',
-				iFIFO_F2H_LEVEL	=> fifo_f2h_data_out_csr,
-				oFIFO_F2H_WE		=> fifo_f2h_wr_en,
-				oFIFO_F2H_DATA		=> fifo_f2h_data_in
-				);
-	
-	-- Generatore di dati pseudocasuali a 32 bit
-	data_generator_proc : Test_Unit
-	port map(
-				iCLK			=> fpga_clk_50,
-				iRST			=> neg_hps_fpga_reset_n,
-				iEN			=> not sFIFO_AFULL_sup,
-				oDATA			=> sDATA,
-				oDATA_VALID	=> sDATA_VALID
-				);
-	
-	-- FIFO a cavallo tra il PRBS e il FastData_Transmitter
-	fifo_monte : parametric_fifo_synch
-	generic map(
-					 pWIDTH       => 32,
-					 pDEPTH       => 4096,
-					 pUSEDW_WIDTH => ceil_log2(4096),
-					 pAEMPTY_VAL  => 2,
-					 pAFULL_VAL   => 4086,
-					 pSHOW_AHEAD  => "OFF" 
-					)
-	port map(
-				iCLK    => fpga_clk_50,
-				iRST    => neg_hps_fpga_reset_n,
-				-- control interface
-				oAEMPTY => sFIFO_AEMPTY_sup,
-				oEMPTY  => sFIFO_EMPTY_sup,
-				oAFULL  => sFIFO_AFULL_sup,
-				iRD_REQ => sFIFO_RE_sup,
-				iWR_REQ => sDATA_VALID,
-				-- data interface
-				iDATA   => sDATA,
-				oQ      => sFIFO_DATA_sup_out
-				);
-	
-	-- Trasmettitore dati veloci
-	 FIFO_f2h_fast_transmitter : FastData_Transmitter
-	 port map(
-			    iCLK 					=> fpga_clk_50,
-			    iRST 					=> neg_hps_fpga_reset_n,
-			    -- Enable
-			    iEN 						=> '1',
-			    -- Settings Packet
-			    iSettingLength 		=> x"0000006e",	
-			    iFirmwareVersion 	=> x"12345678",
-			    iSettingTrigNum		=> x"00000001",
-			    iSettingTrigDet	 	=> x"23",
-			    iSettingTrigID		=> x"45",
-			    iSettingIntTime		=> x"1a1a1a1a1b1b1b1b",
-			    iSettingExtTime 		=> x"2a2a2a2a2b2b2b2b",
-			    -- Fifo Management
-			    iFIFO_DATA				=> sFIFO_DATA_sup_out,
-			    iFIFO_EMPTY 			=> sFIFO_EMPTY_sup,
-			    iFIFO_AEMPTY			=> sFIFO_AEMPTY_sup,
-			    oFIFO_RE 				=> sFIFO_RE_sup,
-			    oFIFO_DATA 			=> fast_fifo_f2h_data_in,
-			    iFIFO_AFULL 			=> sFIFO_AFULL_inf,
-			    oFIFO_WE				=> fast_fifo_f2h_wr_en,
-			    -- Output Flag
-			    oBUSY	 				=> open,
-			    oWARNING				=> open
-			    );
-	
-	-- Generazione del segnale di Almost Full della FIFO a valle del FastData_Transmitter in funzione del livello di riempimento della stessa
-	Almost_Full_proc : process (fast_fifo_f2h_data_out_csr)
-	begin
-		if (fast_fifo_f2h_data_out_csr > 4086) then
-			sFIFO_AFULL_inf <= '1';	-- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> sFIFO_AFULL_inf = '1'
-		else
-			sFIFO_AFULL_inf <= '0';	-- Altrimenti, sFifoAfull = '0'
-		end if;
-	end process;
-	
-	
-	-- Data Flow per il controllo della FIFO di Housekeeping
-	fifo_f2h_addr_csr		<= "000";	--> fifo_f2h_data_out_csr = Level_Fifo
-	fifo_f2h_rd_en_csr	<= '1';		--> Aggiorna Level_Fifo ogni ciclo di clock
-	
-	-- Data Flow per il controllo della FIFO Fast_Data
-	fast_fifo_f2h_addr_csr		<= "000";	--> fast_fifo_f2h_data_out_csr = Level_Fifo
-	fast_fifo_f2h_rd_en_csr		<= '1';		--> Aggiorna Level_Fifo ogni ciclo di clock
-	
-	
+
+  -- Interfaccia di comunicazione tra FPGA e HPS per i dati di controllo
+  HPS_interface : HPS_intf
+    generic map(AF_HK_FIFO => cF2H_AFULL)
+    port map(
+      iCLK_intf       => h2f_user_clock,
+      iRST_intf       => neg_hps_fpga_reset_n,
+      iFWV_intf       => PGDAQ_SHA,
+      iFIFO_H2F_WR    => fifo_h2f_empty,
+      iFIFO_H2F_DATA  => fifo_h2f_data_out,
+      oFIFO_H2F_RE    => fifo_h2f_rd_en,
+      oFIFO_H2F_WARN  => warning_rx,
+      iREGISTER_ARRAY => ((others => '0'), (others => '0'), '0'),
+      iHKREADER_START => '1',
+      iFIFO_F2H_LEVEL => fifo_f2h_data_out_csr,
+      oFIFO_F2H_WE    => fifo_f2h_wr_en,
+      oFIFO_F2H_DATA  => fifo_f2h_data_in
+      );
+
+  -- Generatore di dati pseudocasuali a 32 bit
+  data_generator_proc : Test_Unit
+    port map(
+      iCLK        => h2f_user_clock,
+      iRST        => neg_hps_fpga_reset_n,
+      iEN         => not sFIFO_AFULL_sup,
+      oDATA       => sDATA,
+      oDATA_VALID => sDATA_VALID
+      );
+
+  -- FIFO a cavallo tra il PRBS e il FastData_Transmitter
+  fifo_monte : parametric_fifo_synch
+    generic map(
+      pWIDTH       => 32,
+      pDEPTH       => 4096,
+      pUSEDW_WIDTH => ceil_log2(4096),
+      pAEMPTY_VAL  => 2,
+      pAFULL_VAL   => 4086,
+      pSHOW_AHEAD  => "OFF"
+      )
+    port map(
+      iCLK    => h2f_user_clock,
+      iRST    => neg_hps_fpga_reset_n,
+      -- control interface
+      oAEMPTY => sFIFO_AEMPTY_sup,
+      oEMPTY  => sFIFO_EMPTY_sup,
+      oAFULL  => sFIFO_AFULL_sup,
+      iRD_REQ => sFIFO_RE_sup,
+      iWR_REQ => sDATA_VALID,
+      -- data interface
+      iDATA   => sDATA,
+      oQ      => sFIFO_DATA_sup_out
+      );
+
+  -- Trasmettitore dati veloci
+  FIFO_f2h_fast_transmitter : FastData_Transmitter
+    port map(
+      iCLK             => h2f_user_clock,
+      iRST             => neg_hps_fpga_reset_n,
+      -- Enable
+      iEN              => '1',
+      -- Settings Packet
+      iSettingLength   => x"0000006e",
+      iFirmwareVersion => x"12345678",
+      iSettingTrigNum  => x"00000001",
+      iSettingTrigDet  => x"23",
+      iSettingTrigID   => x"45",
+      iSettingIntTime  => x"1a1a1a1a1b1b1b1b",
+      iSettingExtTime  => x"2a2a2a2a2b2b2b2b",
+      -- Fifo Management
+      iFIFO_DATA       => sFIFO_DATA_sup_out,
+      iFIFO_EMPTY      => sFIFO_EMPTY_sup,
+      iFIFO_AEMPTY     => sFIFO_AEMPTY_sup,
+      oFIFO_RE         => sFIFO_RE_sup,
+      oFIFO_DATA       => fast_fifo_f2h_data_in,
+      iFIFO_AFULL      => sFIFO_AFULL_inf,
+      oFIFO_WE         => fast_fifo_f2h_wr_en,
+      -- Output Flag
+      oBUSY            => open,
+      oWARNING         => open
+      );
+
+  -- Generazione del segnale di Almost Full della FIFO a valle del FastData_Transmitter in funzione del livello di riempimento della stessa
+  Almost_Full_proc : process (fast_fifo_f2h_data_out_csr)
+  begin
+    if (fast_fifo_f2h_data_out_csr > cFastF2H_AFULL) then
+      sFIFO_AFULL_inf <= '1';  -- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> sFIFO_AFULL_inf = '1'
+    else
+      sFIFO_AFULL_inf <= '0';           -- Altrimenti, sFifoAfull = '0'
+    end if;
+  end process;
+
+
+  -- Data Flow per il controllo della FIFO di Housekeeping
+  fifo_f2h_addr_csr  <= "000";          --> fifo_f2h_data_out_csr = Level_Fifo
+  fifo_f2h_rd_en_csr <= '1';    --> Aggiorna Level_Fifo ogni ciclo di clock
+
+  -- Data Flow per il controllo della FIFO Fast_Data
+  fast_fifo_f2h_addr_csr  <= "000";  --> fast_fifo_f2h_data_out_csr = Level_Fifo
+  fast_fifo_f2h_rd_en_csr <= '1';  --> Aggiorna Level_Fifo ogni ciclo di clock
+
+  -- Trigger and busy logic
+  TRIG_BUSY : trigBusyLogic
+    port map (
+      iCLK            => h2f_user_clock,
+      iRST            => neg_hps_fpga_reset_n,
+      iCFG            => x"FFFFF001",      --Temporary
+      iEXT_TRIG       => '1',              --Temporary
+      iBUSIES         => (others => '0'),  --Temporary
+      oTRIG           => sTrig,
+      oTRIG_ID        => sTrigId,
+      oTRIG_COUNT     => sTrigCount,
+      oTRIG_WHEN_BUSY => sTrigWhenBusyCount,
+      oBUSY           => sBusy
+      );
+
+
 end architecture;
-
-
