@@ -24,7 +24,7 @@ entity trigBusyLogic is
     iEXT_TRIG       : in  std_logic;    --!External Trigger
     iBUSIES         : in  std_logic_vector(7 downto 0);  --!Busy signals from all over the FPGA
     oTRIG           : out std_logic;    --!Output trigger
-    oTRIG_ID      : out std_logic_vector(7 downto 0);  --!Trigger type
+    oTRIG_ID        : out std_logic_vector(7 downto 0);  --!Trigger type
     oTRIG_COUNT     : out std_logic_vector(31 downto 0);  --!Trigger number
     oTRIG_WHEN_BUSY : out std_logic_vector(7 downto 0);  --!Triggers occurred when system is busy
     oBUSY           : out std_logic     --!Output busy
@@ -119,7 +119,7 @@ begin
     port map (
       iCLK   => iCLK,
       iRST   => iRST,
-      iEN    => sMainTrig,
+      iEN    => sMainTrig and sBusy,
       iLOAD  => '0',
       iDATA  => (others => '0'),
       oCOUNT => oTRIG_WHEN_BUSY,
