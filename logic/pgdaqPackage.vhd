@@ -289,7 +289,8 @@ package pgdaqPackage is
       iRST            : in  std_logic;
       iCFG            : in  std_logic_vector(31 downto 0);
       iEXT_TRIG       : in  std_logic;
-      iBUSIES         : in  std_logic_vector(7 downto 0);
+      iBUSIES_AND     : in  std_logic_vector(7 downto 0);
+      iBUSIES_OR      : in  std_logic_vector(7 downto 0);
       oTRIG           : out std_logic;
       oTRIG_ID        : out std_logic_vector(7 downto 0);
       oTRIG_COUNT     : out std_logic_vector(31 downto 0);
