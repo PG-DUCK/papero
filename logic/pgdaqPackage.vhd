@@ -22,7 +22,7 @@ package pgdaqPackage is
   constant cF2H_HK_HDR    : std_logic_vector(31 downto 0) := x"4EADE500";  --!Fixed Header for the FPGA-2-HPS FSM
   constant cF2H_HK_EOP    : std_logic_vector(31 downto 0) := x"600DF00D";  --!End of Packet for the FPGA-2-HPS FSM
   constant cF2H_HK_PERIOD : natural                       := 50000000;  --!Period for internal counter to read HKs; max: 2^32 (85 s)
-  constant cF2H_AFULL     : natural                       := 949; --!Almost full threshold for the HK FIFO
+  constant cF2H_AFULL     : natural                       := 949; --!Almost full threshold for the HK FIFO: 1021 - (6 + 32*2) - 2
   constant cFastF2H_AFULL : natural                       := 4085; --!Almost full threshold for the data FIFO
 
   --Trigger types
@@ -63,6 +63,32 @@ package pgdaqPackage is
     data : std_logic_vector(31 downto 0);  --!Input data
     crc  : std_logic_vector(31 downto 0);  --!CRC32 out
   end record tCrc32;
+
+  --!Input signals of a typical FIFO memory of 32 bit
+  type tFifo32In is record
+    data : std_logic_vector(31 downto 0);  --!Input data port
+    rd   : std_logic;                                     --!Read request
+    wr   : std_logic;                                     --!Write request
+  end record tFifo32In;
+
+  --!Output signals of a typical FIFO memory of 32 bit
+  type tFifo32Out is record
+    q      : std_logic_vector(31 downto 0);  --!Output data port
+    aEmpty : std_logic;                                     --!Almost empty
+    empty  : std_logic;                                     --!Empty
+    aFull  : std_logic;                                     --!Almost full
+    full   : std_logic;                                     --!Full
+  end record tFifo32Out;
+
+  --!Metadata for the F2H Fast TX
+  type tF2hMetadata is record
+    pktLen    : std_logic_vector(31 downto 0);  --!Packet Length: Number of 32-bit payload words + 10
+    trigNum   : std_logic_vector(31 downto 0);  --!Trigger Counter
+    detId     : std_logic_vector(7 downto 0);   --!Detector ID
+    trigId    : std_logic_vector(7 downto 0);   --!Trigger ID
+    intTime   : std_logic_vector(63 downto 0);  --!Internal Timestamp
+    extTime   : std_logic_vector(63 downto 0);  --!External Timestamp
+  end record tF2hMetadata;
 
   -- Components ----------------------------------------------------------------
   --!Detects rising and falling edges of the input
@@ -182,29 +208,47 @@ package pgdaqPackage is
       );
   end component;
 
-  --!Interfaccia di comunicazione tra FPGA e HPS
+  --!@copydoc HPS_intf.vhd
   component HPS_intf is
-	 generic(
-		AF_HK_FIFO		 : natural := 949									--!Almost_Full threshold for HouseKeeping FIFO
-		);
-    port(
-      iCLK_intf       : in  std_logic;									--!Main clock
-      iRST_intf       : in  std_logic;  								--!Main reset
-      iFWV_intf       : in  std_logic_vector(31 downto 0);  	--!Main firmware version
-      --FIFO H2F
-      iFIFO_H2F_WR    : in  std_logic;  								--!Wait Request fifo_RX
-      iFIFO_H2F_DATA  : in  std_logic_vector(31 downto 0);  	--!Data RX
-      oFIFO_H2F_RE    : out std_logic;  								--!Read Enable
-      oFIFO_H2F_WARN  : out std_logic_vector(2 downto 0);   	--!Warning
-      --registerArray
-      iREGISTER_ARRAY : in  tRegIntf;   								--!Registers interface (for FPGA)
-      --FIFO F2H
-      iHKREADER_START : in  std_logic;  								--!Start acquisition of hkReader
-      iFIFO_F2H_LEVEL : in  std_logic_vector(31 downto 0);		--!Level of HouseKeeping FIFO
-      oFIFO_F2H_WE    : out std_logic;  								--!Write Enable
-      oFIFO_F2H_DATA  : out std_logic_vector(31 downto 0)   	--!Data TX
+    generic (
+      pGW_VER : std_logic_vector(31 downto 0)
+      );
+    port (
+      --# {{clocks|Clock}}
+      iCLK                : in  std_logic;
+      --# {{resets|Reset}}
+      iRST                : in  std_logic;
+      --# {{ConfigRX | ConfigRX}}
+      oCR_WARNING         : out std_logic_vector(2 downto 0);
+      --# {{HKReader|HKReader}}
+      iHK_RDR_CNT         : in  tControlIn;
+      iHK_RDR_INT_START   : in  std_logic;
+      --# {{F2HFast|F2HFast}}
+      iF2HFAST_CNT        : in  tControlIn;
+      iF2HFAST_METADATA   : in  tF2hMetadata;
+      oF2HFAST_BUSY       : out std_logic;
+      oF2HFAST_WARNING    : out std_logic;
+      --# {{RegArray|RegArray}}
+      iREG_ARRAY          : in  tRegisterArray;
+      oREG_CONFIG_RX      : out tRegIntf;
+      --# {{FdiFifo|FdiFifo}}
+      iFDI_FIFO           : in  tFifo32Out;
+      oFDI_FIFO           : out tFifo32In;
+      --# {{H2F_FIFO|H2F_FIFO}}
+      iFIFO_H2F_EMPTY     : in  std_logic;
+      iFIFO_H2F_DATA      : in  std_logic_vector(31 downto 0);
+      oFIFO_H2F_RE        : out std_logic;
+      --# {{F2H_FIFO|F2H_FIFO}}
+      iFIFO_F2H_AFULL     : in  std_logic;
+      oFIFO_F2H_WE        : out std_logic;
+      oFIFO_F2H_DATA      : out std_logic_vector(31 downto 0);
+      --# {{F2H_FastFIFO|F2H_FastFIFO}}
+      iFIFO_F2HFAST_AFULL : in  std_logic;
+      oFIFO_F2HFAST_WE    : out std_logic;
+      oFIFO_F2HFAST_DATA  : out std_logic_vector(31 downto 0)  --!F2H Fast q
       );
   end component;
+
 
 	--!@copydoc FFD.vhd
 	--!Unità di base per realizzare gli shift register dei moduli PRBS
