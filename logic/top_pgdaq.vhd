@@ -171,7 +171,6 @@ architecture std of top_pgdaq is
   signal sExtTrig       : std_logic;
   signal sMainTrig      : std_logic;
   signal sMainBusy      : std_logic;
-  signal sTrgCfg        : std_logic_vector(31 downto 0);
   signal sTrgBusiesAnd  : std_logic_vector(7 downto 0);
   signal sTrgBusiesOr   : std_logic_vector(7 downto 0);
 
@@ -404,23 +403,25 @@ begin
   end process;
 
   --!@brief Wrapper for all of the Trigger and Data Acquisition modules
+  --!@todo connect iRST_REG, iEXT_TRIG, oTRIG, oBUSY
+  sTrgBusiesAnd <= (others => '0');
+  sTrgBusiesOr <= (others => '0');
   TdaqModule_i : TdaqModule
     generic map (
       pFDI_WIDTH => 32,
       pFDI_DEPTH => 4096,
-      pFW_VER    => PGDAQ_SHA
+      pGW_VER    => PGDAQ_SHA
     )
     port map (
     iCLK                => h2f_user_clock,
     iRST                => hps_fpga_reset,
     --
-    iRST_REG            => '0', --!@todo choose a reset for the register array
+    iRST_REG            => '0',
     iFPGA_REG           => sFpgaRegIntf,
     --
-    iEXT_TRIG           => sExtTrig,
+    iEXT_TRIG           => '0',
     oTRIG               => sMainTrig,
     oBUSY               => sMainBusy,
-    iTRG_CFG            => sTrgCfg,
     iTRG_BUSIES_AND     => sTrgBusiesAnd,
     iTRG_BUSIES_OR      => sTrgBusiesOr,
     --
@@ -434,7 +435,7 @@ begin
     --
     iFIFO_F2HFAST_AFULL => fast_fifo_f2h_afull,
     oFIFO_F2HFAST_WE    => fast_fifo_f2h_wr_en,
-    oFIFO_F2HFAST_DATA  => fast_fifo_f2h_data_inf
+    oFIFO_F2HFAST_DATA  => fast_fifo_f2h_data_in
     );
 
 

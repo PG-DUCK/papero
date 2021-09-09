@@ -32,7 +32,7 @@ entity HPS_intf is
     oREG_CONFIG_RX      : out tRegIntf;    --!Configurations from HPS
     --FDI_FIFO
     iFDI_FIFO           : in  tFifo32Out;  --!FDI FIFO output signals
-    oFDI_FIFO           : out tFifo32In;   --!FDI FIFO input signals
+    oFDI_FIFO_RD        : out std_logic;   --!FDI FIFO read request
     --FIFO H2F
     iFIFO_H2F_EMPTY     : in  std_logic;   --!H2F HK Wait Request
     iFIFO_H2F_DATA      : in  std_logic_vector(31 downto 0);  --!H2F HK Data RX
@@ -61,7 +61,7 @@ begin
       CR_RST_in               => iRST,
       CR_FIFO_WAIT_REQUEST_in => iFIFO_H2F_EMPTY,
       CR_DATA_in              => iFIFO_H2F_DATA,
-      CR_FWV_in               => pFW_VER,
+      CR_FWV_in               => pGW_VER,
       CR_FIFO_READ_EN_out     => oFIFO_H2F_RE,
       CR_DATA_out             => oREG_CONFIG_RX.reg,
       CR_ADDRESS_out          => sCrAddr,
@@ -78,7 +78,7 @@ begin
       iCNT        => iHK_RDR_CNT,
       oCNT        => open,
       iINT_START  => iHK_RDR_INT_START,
-      iFW_VER     => pFW_VER,
+      iFW_VER     => pGW_VER,
       iREG_ARRAY  => iREG_ARRAY,
       oFIFO_DATA  => oFIFO_F2H_DATA,
       oFIFO_WR    => oFIFO_F2H_WE,
@@ -88,7 +88,7 @@ begin
   --!@brief Scientific data transmitter
   f2h_fast_tx : FastData_Transmitter
     generic map(
-      pFW_VER => pFW_VER
+      pGW_VER => pGW_VER
       )
     port map(
       iCLK         => iCLK,
@@ -101,7 +101,7 @@ begin
       iFIFO_DATA   => iFDI_FIFO.q,
       iFIFO_EMPTY  => iFDI_FIFO.empty,
       iFIFO_AEMPTY => iFDI_FIFO.aEmpty,
-      oFIFO_RE     => oFDI_FIFO.rd,
+      oFIFO_RE     => oFDI_FIFO_RD,
       --F2H Fast
       iFIFO_AFULL  => iFIFO_F2HFAST_AFULL,
       oFIFO_WE     => oFIFO_F2HFAST_WE,

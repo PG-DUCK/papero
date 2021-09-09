@@ -73,6 +73,7 @@ architecture std of hkReader is
   --Internal Start
   signal sStartCounter : std_logic_vector(31 downto 0);
   signal sStart        : std_logic;
+  signal sExtStartRE   : std_logic;
 
   --Parity
   signal sParity  : std_logic_vector(3 downto 0);
@@ -83,6 +84,16 @@ architecture std of hkReader is
 begin
   oFIFO_DATA <= sFifoData;
   oFIFO_WR   <= sFifoWr;
+
+  --!@brief Rising edge of the start signal
+  start_re : edge_detector
+  port map (
+    iCLK    => iCLK,
+    iRST    => '0',
+    iD      => iCNT.start,
+    oEDGE_R => sExtStartRE
+    );
+
   --!@brief FSM to send an HK packet. A-full is checked only at the beginning.
   --!@param[in] iCLK Clock, used on rising edge
   --!@return sHkState Next state of the FSM
@@ -113,7 +124,7 @@ begin
           --Wait for a start and check if
           when IDLE =>
             sFifoWr <= '0';
-            START_IF : if (iCNT.start = '1' or sStart = '1') then
+            START_IF : if (sExtStartRE = '1' or sStart = '1') then
               sHkState <= WAIT_FOR_FIFO;
             end if START_IF;
 

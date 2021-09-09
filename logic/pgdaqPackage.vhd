@@ -233,7 +233,7 @@ package pgdaqPackage is
       oREG_CONFIG_RX      : out tRegIntf;
       --# {{FdiFifo|FdiFifo}}
       iFDI_FIFO           : in  tFifo32Out;
-      oFDI_FIFO           : out tFifo32In;
+      oFDI_FIFO_RD        : out std_logic;
       --# {{H2F_FIFO|H2F_FIFO}}
       iFIFO_H2F_EMPTY     : in  std_logic;
       iFIFO_H2F_DATA      : in  std_logic_vector(31 downto 0);
@@ -299,19 +299,16 @@ package pgdaqPackage is
 	--!@copydoc FastData_Transmitter.vhd
 	--!Trasmettitore dei dati scientifici
 	component FastData_Transmitter is
+    generic(
+  		pGW_VER : std_logic_vector(31 downto 0)
+  	);
 	port(
 		  iCLK					: in std_logic;								-- Clock
 		  iRST					: in std_logic;								-- Reset
 		  -- Enable
 		  iEN						: in std_logic;								-- Abilitazione del modulo FastData_Transmitter
-		  -- Settings Packet
-		  iSettingLength		: in std_logic_vector(31 downto 0);		-- Lunghezza del pacchetto --> Number of 32-bit payload words + 10
-		  iFirmwareVersion	: in std_logic_vector(31 downto 0);		-- Versione del firmware in uso
-		  iSettingTrigNum		: in std_logic_vector(31 downto 0);		-- Numero di trigger passati dall'ultimo reset
-		  iSettingTrigDet		: in std_logic_vector(7 downto 0);		-- Detector associato al trigger attuale
-		  iSettingTrigID		: in std_logic_vector(7 downto 0);		-- Identificativo della tipologia di trigger
-		  iSettingIntTime		: in std_logic_vector(63 downto 0);		-- Numero di fronti di salita di clock passati dall'ultimo reset e calcolati internamente all'FPGA
-		  iSettingExtTime		: in std_logic_vector(63 downto 0);		-- Numero di fronti di salita di clock passati dall'ultimo reset e calcolati esternamente all'FPGA
+      -- Settings Packet
+		  iMETADATA			: in tF2hMetadata; --Packet header information all'FPGA
 		  -- Fifo Management
 		  iFIFO_DATA			: in std_logic_vector(31 downto 0);		-- "Data_Output" della FIFO a monte del FastData_Transmitter
 		  iFIFO_EMPTY			: in std_logic;								-- "Empty" della FIFO a monte del FastData_Transmitter
@@ -348,7 +345,7 @@ package pgdaqPackage is
   generic (
     pFDI_WIDTH : natural;
     pFDI_DEPTH : natural;
-    pFW_VER    : std_logic_vector(31 downto 0)
+    pGW_VER    : std_logic_vector(31 downto 0)
   );
   port (
     iCLK                : in  std_logic;
@@ -360,7 +357,6 @@ package pgdaqPackage is
     iEXT_TRIG           : in  std_logic;
     oTRIG               : out std_logic;
     oBUSY               : out std_logic;
-    iTRG_CFG            : in  std_logic_vector(31 downto 0);
     iTRG_BUSIES_AND     : in  std_logic_vector(7 downto 0);
     iTRG_BUSIES_OR      : in  std_logic_vector(7 downto 0);
     --# {{H2F_FIFO|H2F_FIFO}}

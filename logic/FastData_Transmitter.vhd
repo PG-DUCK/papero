@@ -12,7 +12,7 @@ use work.pgdaqPackage.all;
 --!@copydoc FastData_Transmitter.vhd
 entity FastData_Transmitter is
 	generic(
-		pFW_VER : std_logic_vector(31 downto 0)
+		pGW_VER : std_logic_vector(31 downto 0)
 	);
 	port(
 	    iCLK					: in std_logic;								-- Clock
@@ -148,7 +148,7 @@ begin
 					-- Stato di FIRMWARE-VERSION. Inoltro della parola contenente la Versione del Firmware in uso (SHA dell'ultimo commit)
 					when FWV =>
 						if (iFIFO_AFULL = '0') then
-							sFIFO_DATA	 <= pFW_VER;
+							sFIFO_DATA	 <= pGW_VER;
 							sFIFO_WE		 <= '1';
 							sCRC32_en	 <= '1';
 							sPS			 <= TRIG_NUM;

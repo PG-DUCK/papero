@@ -15,7 +15,7 @@ entity TdaqModule is
   generic(
     pFDI_WIDTH : natural := 32;
     pFDI_DEPTH  : natural := 4096;
-    pFW_VER    : std_logic_vector(31 downto 0)
+    pGW_VER    : std_logic_vector(31 downto 0)
   );
   port (
     iCLK        : in  std_logic;  --!Main clock on the FPGA side
@@ -27,7 +27,6 @@ entity TdaqModule is
     iEXT_TRIG       : in  std_logic;
     oTRIG           : out std_logic;
     oBUSY           : out std_logic;
-    iTRG_CFG        : in  std_logic_vector(31 downto 0);
     iTRG_BUSIES_AND : in  std_logic_vector(7 downto 0);
     iTRG_BUSIES_OR  : in  std_logic_vector(7 downto 0);
     --H2F
@@ -54,6 +53,7 @@ architecture std of TdaqModule is
   signal sF2hFastMetaData : tF2hMetadata;
   signal sF2hFastBusy : std_logic;
   signal sF2hFastWarning : std_logic;
+  signal sCrWarning : std_logic_vector(2 downto 0);
 
   -- Register Array
   signal sRegArray : tRegisterArray;
@@ -67,31 +67,33 @@ architecture std of TdaqModule is
   signal sTrigId    : std_logic_vector(7 downto 0);
   signal sTrigCount : std_logic_vector(31 downto 0);
   signal sTrigWhenBusyCount : std_logic_vector(7 downto 0);
+  signal sTrigCfg : std_logic_vector(31 downto 0);
 
 begin
   --Temporary assignments
   sHkRdrCnt         <= ('0','0');
   sHkRdrIntstart  <= '1';
   sF2hFastCnt <= ('1','1');
-  sF2hFastMetaData.pktLen   => x"0000006e",
-  sF2hFastMetaData.trigNum  => x"00000001",
-  sF2hFastMetaData.detId  => x"23",
-  sF2hFastMetaData.trigId   => x"45",
-  sF2hFastMetaData.intTime  => x"1a1a1a1a1b1b1b1b",
-  sF2hFastMetaData.extTime  => x"2a2a2a2a2b2b2b2b",
+  sF2hFastMetaData.pktLen   <= x"0000006e";
+  sF2hFastMetaData.trigNum  <= x"00000001";
+  sF2hFastMetaData.detId  <= x"23";
+  sF2hFastMetaData.trigId   <= x"45";
+  sF2hFastMetaData.intTime  <= x"1a1a1a1a1b1b1b1b";
+  sF2hFastMetaData.extTime  <= x"2a2a2a2a2b2b2b2b";
   --!@todo Connect sF2hFastBusy sF2hFastWarning
+  sTrigCfg <= x"FFFFFFF1";
 
 
   --!@brief FPGA-HPS communication interfaces
   HPS_interfaces : HPS_intf
     generic map(
-      pFW_VER => pFW_VER
+      pGW_VER => pGW_VER
     )
     port map(
       iCLK                => iCLK,
       iRST                => iRST,
       --
-      oCR_WARNING         => warning_rx,
+      oCR_WARNING         => sCrWarning,
       --
       iHK_RDR_CNT         => sHkRdrCnt,
       iHK_RDR_INT_START   => sHkRdrIntstart,
@@ -105,15 +107,15 @@ begin
       oREG_CONFIG_RX      => sRegConfigRx,
       --
       iFDI_FIFO           => sFdiFifoOut,
-      oFDI_FIFO           => sFdiFifoIn,
+      oFDI_FIFO_RD        => sFdiFifoIn.rd,
       --
-      iFIFO_H2F_EMPTY     => fifo_h2f_empty,
-      iFIFO_H2F_DATA      => fifo_h2f_data_out,
-      oFIFO_H2F_RE        => fifo_h2f_rd_en,
+      iFIFO_H2F_EMPTY     => iFIFO_H2F_EMPTY,
+      iFIFO_H2F_DATA      => iFIFO_H2F_DATA,
+      oFIFO_H2F_RE        => oFIFO_H2F_RE,
       --
-      iFIFO_F2H_AFULL     => fifo_f2h_data_out_csr,
-      oFIFO_F2H_WE        => fifo_f2h_wr_en,
-      oFIFO_F2H_DATA      => fifo_f2h_data_in,
+      iFIFO_F2H_AFULL     => iFIFO_F2H_AFULL,
+      oFIFO_F2H_WE        => oFIFO_F2H_WE,
+      oFIFO_F2H_DATA      => oFIFO_F2H_DATA,
       --
       iFIFO_F2HFAST_AFULL => iFIFO_F2HFAST_AFULL,
       oFIFO_F2HFAST_WE    => oFIFO_F2HFAST_WE,
@@ -172,8 +174,8 @@ begin
     port map (
       iCLK            => iCLK,
       iRST            => iRST,
-      iCFG            => iTRG_CFG,
-      iEXT_TRIG       => iTRG_EXT_TRIG,
+      iCFG            => sTrigCfg,
+      iEXT_TRIG       => iEXT_TRIG,
       iBUSIES_AND     => iTRG_BUSIES_AND,
       iBUSIES_OR      => iTRG_BUSIES_OR,
       oTRIG           => oTRIG,
