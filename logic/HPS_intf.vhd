@@ -97,13 +97,6 @@ begin
       iEN          => iF2HFAST_CNT.en,
       -- Settings Packet
       iMETADATA    => iF2HFAST_METADATA,
-      --iSettingLength   => x"0000006e",
-      --iFirmwareVersion => x"12345678",
-      --iSettingTrigNum  => x"00000001",
-      --iSettingTrigDet  => x"23",
-      --iSettingTrigID   => x"45",
-      --iSettingIntTime  => x"1a1a1a1a1b1b1b1b",
-      --iSettingExtTime  => x"2a2a2a2a2b2b2b2b",
       -- Fifo Management
       iFIFO_DATA   => iFDI_FIFO.q,
       iFIFO_EMPTY  => iFDI_FIFO.empty,

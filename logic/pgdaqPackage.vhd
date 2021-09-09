@@ -343,6 +343,41 @@ package pgdaqPackage is
       );
   end component;
 
+  --!@copydoc TdaqModule.vhd
+  component TdaqModule is
+  generic (
+    pFDI_WIDTH : natural;
+    pFDI_DEPTH : natural;
+    pFW_VER    : std_logic_vector(31 downto 0)
+  );
+  port (
+    iCLK                : in  std_logic;
+    iRST                : in  std_logic;
+    --# {{RegArray|RegArray}}
+    iRST_REG            : in  std_logic;
+    iFPGA_REG           : in  tRegIntf;
+    --# {{TrigBusy|TrigBusy}}
+    iEXT_TRIG           : in  std_logic;
+    oTRIG               : out std_logic;
+    oBUSY               : out std_logic;
+    iTRG_CFG            : in  std_logic_vector(31 downto 0);
+    iTRG_BUSIES_AND     : in  std_logic_vector(7 downto 0);
+    iTRG_BUSIES_OR      : in  std_logic_vector(7 downto 0);
+    --# {{H2F_FIFO|H2F_FIFO}}
+    iFIFO_H2F_EMPTY     : in  std_logic;
+    iFIFO_H2F_DATA      : in  std_logic_vector(31 downto 0);
+    oFIFO_H2F_RE        : out std_logic;
+    --# {{F2H_FIFO|F2H_FIFO}}
+    iFIFO_F2H_AFULL     : in  std_logic;
+    oFIFO_F2H_WE        : out std_logic;
+    oFIFO_F2H_DATA      : out std_logic_vector(31 downto 0);
+    --# {{F2H_FastFIFO|F2H_FastFIFO}}
+    iFIFO_F2HFAST_AFULL : in  std_logic;
+    oFIFO_F2HFAST_WE    : out std_logic;
+    oFIFO_F2HFAST_DATA  : out std_logic_vector(31 downto 0)
+  );
+end component;
+
 
 
   -- Functions -----------------------------------------------------------------
