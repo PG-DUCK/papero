@@ -76,15 +76,15 @@ begin
   sF2hFastCnt <= ('1','1');
   sF2hFastMetaData.pktLen   <= x"0000006e";
   sF2hFastMetaData.trigNum  <= x"00000001";
-  sF2hFastMetaData.detId  <= x"23";
+  sF2hFastMetaData.detId    <= x"23";
   sF2hFastMetaData.trigId   <= x"45";
   sF2hFastMetaData.intTime  <= x"1a1a1a1a1b1b1b1b";
   sF2hFastMetaData.extTime  <= x"2a2a2a2a2b2b2b2b";
-  --!@todo Connect sF2hFastBusy sF2hFastWarning
   sTrigCfg <= x"FFFFFFF1";
 
 
   --!@brief FPGA-HPS communication interfaces
+  --!@todo connect sCrWarning, sF2hFastBusy, sF2hFastWarning
   HPS_interfaces : HPS_intf
     generic map(
       pGW_VER => pGW_VER

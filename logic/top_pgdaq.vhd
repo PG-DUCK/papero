@@ -406,6 +406,9 @@ begin
   --!@todo connect iRST_REG, iEXT_TRIG, oTRIG, oBUSY
   sTrgBusiesAnd <= (others => '0');
   sTrgBusiesOr <= (others => '0');
+  sFpgaRegIntf.reg  <= (others => '0');
+  sFpgaRegIntf.addr <= (others => '0');
+  sFpgaRegIntf.we   <= '0';
   TdaqModule_i : TdaqModule
     generic map (
       pFDI_WIDTH => 32,
