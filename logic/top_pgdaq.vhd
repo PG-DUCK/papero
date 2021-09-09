@@ -98,9 +98,9 @@ entity top_pgdaq is
     SW : in std_logic_vector(3 downto 0);
 
     -- TRIG BUSY ---------------------------------------------------------------
-    iEXT_TRIG : std_logic;
-    oBUSY     : std_logic;
-    oTRIG     : std_logic
+    iEXT_TRIG : in  std_logic;
+    oBUSY     : out std_logic;
+    oTRIG     : out std_logic
 
     );
 end entity top_pgdaq;
