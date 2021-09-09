@@ -38,20 +38,6 @@ entity top_pgdaq is
     FPGA_CLK2_50 : in std_logic;
     FPGA_CLK3_50 : in std_logic;
 
-    --- HDMI -------------------------------------------------------------------
-    HDMI_I2C_SCL : inout std_logic;
-    HDMI_I2C_SDA : inout std_logic;
-    HDMI_I2S     : inout std_logic;
-    HDMI_LRCLK   : inout std_logic;
-    HDMI_MCLK    : inout std_logic;
-    HDMI_SCLK    : inout std_logic;
-    HDMI_TX_CLK  : out   std_logic;
-    HDMI_TX_D    : out   std_logic_vector(23 downto 0);
-    HDMI_TX_DE   : out   std_logic;
-    HDMI_TX_HS   : out   std_logic;
-    HDMI_TX_INT  : in    std_logic;
-    HDMI_TX_VS   : out   std_logic;
-
     --- HPS --------------------------------------------------------------------
     HPS_CONV_USB_N   : inout std_logic;
     HPS_DDR3_ADDR    : out   std_logic_vector(14 downto 0);
@@ -109,7 +95,13 @@ entity top_pgdaq is
     LED : out std_logic_vector(7 downto 0);
 
     --- SW ---------------------------------------------------------------------
-    SW : in std_logic_vector(3 downto 0)
+    SW : in std_logic_vector(3 downto 0);
+
+    -- TRIG BUSY ---------------------------------------------------------------
+    iEXT_TRIG : std_logic;
+    oBUSY     : std_logic;
+    oTRIG     : std_logic
+
     );
 end entity top_pgdaq;
 
@@ -178,6 +170,9 @@ begin
   -- connection of internal logics ----------------------------
   fpga_clk_50   <= FPGA_CLK1_50;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
+
+  oBUSY <= sMainBusy;
+  oTRIG <= sMainTrig;
 
   fpga_debounced_buttons_n <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
 
@@ -422,7 +417,7 @@ begin
     iRST_REG            => '0',
     iFPGA_REG           => sFpgaRegIntf,
     --
-    iEXT_TRIG           => '0',
+    iEXT_TRIG           => iEXT_TRIG,
     oTRIG               => sMainTrig,
     oBUSY               => sMainBusy,
     iTRG_BUSIES_AND     => sTrgBusiesAnd,

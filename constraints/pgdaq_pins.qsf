@@ -50,7 +50,7 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to FPGA_CLK3_50
 #set_location_assignment PIN_AA13 -to GPIO_0[34]
 #set_location_assignment PIN_AA11 -to GPIO_0[35]
 
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to 
+#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to
 
 #===============================================================================
 # GPIO 1
@@ -92,7 +92,7 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to FPGA_CLK3_50
 #set_location_assignment PIN_AE19 -to GPIO_1[34]
 #set_location_assignment PIN_AE17 -to GPIO_1[35]
 
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to 
+#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to
 
 
 #===============================================================================
@@ -142,80 +142,15 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to SW[3]
 
 
 #===============================================================================
-# HDMI
+# GPIO
 #===============================================================================
-set_location_assignment PIN_U10 -to HDMI_I2C_SCL
-set_location_assignment PIN_AA4 -to HDMI_I2C_SDA
-set_location_assignment PIN_T13 -to HDMI_I2S
-set_location_assignment PIN_T11 -to HDMI_LRCLK
-set_location_assignment PIN_U11 -to HDMI_MCLK
-set_location_assignment PIN_T12 -to HDMI_SCLK
-set_location_assignment PIN_AG5 -to HDMI_TX_CLK
-set_location_assignment PIN_AD19 -to HDMI_TX_DE
-set_location_assignment PIN_AD12 -to HDMI_TX_D[0]
-set_location_assignment PIN_AE12 -to HDMI_TX_D[1]
-set_location_assignment PIN_W8 -to HDMI_TX_D[2]
-set_location_assignment PIN_Y8 -to HDMI_TX_D[3]
-set_location_assignment PIN_AD11 -to HDMI_TX_D[4]
-set_location_assignment PIN_AD10 -to HDMI_TX_D[5]
-set_location_assignment PIN_AE11 -to HDMI_TX_D[6]
-set_location_assignment PIN_Y5 -to HDMI_TX_D[7]
-set_location_assignment PIN_AF10 -to HDMI_TX_D[8]
-set_location_assignment PIN_Y4 -to HDMI_TX_D[9]
-set_location_assignment PIN_AE9 -to HDMI_TX_D[10]
-set_location_assignment PIN_AB4 -to HDMI_TX_D[11]
-set_location_assignment PIN_AE7 -to HDMI_TX_D[12]
-set_location_assignment PIN_AF6 -to HDMI_TX_D[13]
-set_location_assignment PIN_AF8 -to HDMI_TX_D[14]
-set_location_assignment PIN_AF5 -to HDMI_TX_D[15]
-set_location_assignment PIN_AE4 -to HDMI_TX_D[16]
-set_location_assignment PIN_AH2 -to HDMI_TX_D[17]
-set_location_assignment PIN_AH4 -to HDMI_TX_D[18]
-set_location_assignment PIN_AH5 -to HDMI_TX_D[19]
-set_location_assignment PIN_AH6 -to HDMI_TX_D[20]
-set_location_assignment PIN_AG6 -to HDMI_TX_D[21]
-set_location_assignment PIN_AF9 -to HDMI_TX_D[22]
-set_location_assignment PIN_AE8 -to HDMI_TX_D[23]
-set_location_assignment PIN_T8 -to HDMI_TX_HS
-set_location_assignment PIN_AF11 -to HDMI_TX_INT
-set_location_assignment PIN_V13 -to HDMI_TX_VS
+set_location_assignment PIN_AA26 -to iEXT_TRIG
+set_location_assignment PIN_AB26 -to oBUSY
+set_location_assignment PIN_W14 -to oTRIG
 
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_I2C_SCL
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_I2C_SDA
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_I2S
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_LRCLK
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_MCLK
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_SCLK
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_CLK
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_DE
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[0]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[1]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[2]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[3]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[4]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[5]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[6]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[7]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[8]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[9]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[10]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[11]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[12]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[13]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[14]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[15]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[16]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[17]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[18]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[19]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[20]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[21]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[22]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_D[23]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_HS
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_INT
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to HDMI_TX_VS
-
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iEXT_TRIG
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oBUSY
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oTRIG
 
 #===============================================================================
 # HPS
@@ -561,4 +496,3 @@ set_global_assignment -name UNIPHY_SEQUENCER_DQS_CONFIG_ENABLE ON
 #set_instance_assignment -name GLOBAL_SIGNAL OFF -to u0|hps_0|hps_io|border|hps_sdram_inst|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[3]
 #set_instance_assignment -name ENABLE_BENEFICIAL_SKEW_OPTIMIZATION_FOR_NON_GLOBAL_CLOCKS ON -to u0|hps_0|hps_io|border|hps_sdram_inst
 #set_instance_assignment -name PLL_COMPENSATION_MODE DIRECT -to u0|hps_0|hps_io|border|hps_sdram_inst|pll0|fbout
-
