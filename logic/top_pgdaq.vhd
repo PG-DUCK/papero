@@ -406,12 +406,16 @@ begin
   -- Generatore di dati pseudocasuali a 32 bit
   data_generator_proc : Test_Unit
     port map(
-      iCLK        => h2f_user_clock,
-      iRST        => neg_hps_fpga_reset_n,
-      iEN         => not sFIFO_AFULL_sup,
-      oDATA       => sDATA,
-      oDATA_VALID => sDATA_VALID
-      );
+      iCLK             => h2f_user_clock,
+      iRST             => SW(0),
+      iEN              => SW(1) and (not sFIFO_AFULL_sup),
+      iSETTING_CONFIG	 => SW(3 downto 2),
+      iSETTING_LENGTH	 => x"0000006e",
+      iTRIG	       		 => sTrig,
+      oDATA			       => sDATA,
+      oDATA_VALID		   => sDATA_VALID,
+      oTEST_BUSY	     => open
+				);
 
   -- FIFO a cavallo tra il PRBS e il FastData_Transmitter
   fifo_monte : parametric_fifo_synch
@@ -489,8 +493,8 @@ begin
     port map (
       iCLK            => h2f_user_clock,
       iRST            => neg_hps_fpga_reset_n,
-      iCFG            => x"FFFFF001",      --Temporary
-      iEXT_TRIG       => '1',              --Temporary
+      iCFG            => x"00002B51",      --Temporary
+      iEXT_TRIG       => '0',              --Temporary
       iBUSIES         => (others => '0'),  --Temporary
       oTRIG           => sTrig,
       oTRIG_ID        => sTrigId,

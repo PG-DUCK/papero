@@ -244,12 +244,16 @@ package pgdaqPackage is
 	--!Unità di test per verificare il funzionamento della sola scheda DAQ
 	component Test_Unit is
 		port(
-			iCLK			: in std_logic;								-- Porta per il clock
-			iRST			: in std_logic;								-- Porta per il reset
-			iEN			: in std_logic;								-- Porta per l'abilitazione della unità di test
-			oDATA			: out std_logic_vector(31 downto 0);	-- Numero binario a 32 bit pseudo-casuale
-			oDATA_VALID	: out std_logic								-- Segnale che attesta la validità dei dati in uscita dalla Test_Unit. Se oDATA_VALID=1 --> il valore di "oDATA" è consistente
-			);
+			iCLK			        : in std_logic;					                -- Porta per il clock
+			iRST		        	: in std_logic;							            -- Porta per il reset
+			iEN		          	: in std_logic;								          -- Porta per l'abilitazione della unità di test
+			iSETTING_CONFIG		: in std_logic_vector(1 downto 0);		  -- Configurazione modalità operativa: "00"-->dati pseudocasuali generati con un tempo pseudocasuale, "01" dati pseudocasuali generati negli istanti di trigger, "10" dati pseudocasuali generati di continuo (rate massima)
+      iSETTING_LENGTH		: in std_logic_vector(31 downto 0);		  -- Lunghezza del pacchetto --> Number of 32-bit payload words + 10
+      iTRIG             : in std_logic;                         -- Ingresso per il segnale di trigger proveniente dalla trigBusyLogic
+      oDATA		        	: out std_logic_vector(31 downto 0);    -- Numero binario a 32 bit pseudo-casuale
+			oDATA_VALID     	: out std_logic;						            -- Segnale che attesta la validità dei dati in uscita dalla Test_Unit. Se oDATA_VALID=1 --> il valore di "oDATA" è consistente
+			oTEST_BUSY        : out std_logic                         -- La Test_Unit è impegnata e non può essere interrotta, altrimenti il pacchetto dati verrebbe incompleto
+      );
 	end component;
 
 	--!@copydoc FastData_Transmitter.vhd
