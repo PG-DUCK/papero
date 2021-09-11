@@ -22,7 +22,7 @@ entity TdaqModule is
     iRST        : in  std_logic;  --!Main reset on the FPGA side
     --Register Array
     iRST_REG    : in  std_logic;  --!Reset of the Register array
-    iFPGA_REG   : in tRegIntf;    --!RegArray interface from the FPGA
+    iFPGA_REG   : in tFpgaRegIntf;    --!RegArray interface from the FPGA
     --Trigger and Busy logic
     iEXT_TRIG       : in  std_logic;
     oTRIG           : out std_logic;
@@ -56,7 +56,7 @@ architecture std of TdaqModule is
   signal sCrWarning : std_logic_vector(2 downto 0);
 
   -- Register Array
-  signal sRegArray : tRegisterArray;
+  signal sRegArray : tRegArray;
   signal sRegConfigRx	 : tRegIntf;
 
   -- Fast-Data Input FIFO
@@ -71,7 +71,7 @@ architecture std of TdaqModule is
 
 begin
   --Temporary assignments
-  sHkRdrCnt         <= ('0','0');
+  sHkRdrCnt         <= ('1','1');
   sHkRdrIntstart  <= '1';
   sF2hFastCnt <= ('1','1');
   sF2hFastMetaData.pktLen   <= x"0000006e";

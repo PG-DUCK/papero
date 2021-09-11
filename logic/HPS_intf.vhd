@@ -28,7 +28,7 @@ entity HPS_intf is
     oF2HFAST_BUSY       : out std_logic;   --!FastTX Busy
     oF2HFAST_WARNING    : out std_logic;   --!FastTX Errors
     --Register array
-    iREG_ARRAY          : in  tRegisterArray;                --!Register array
+    iREG_ARRAY          : in  tRegArray;   --!Register array
     oREG_CONFIG_RX      : out tRegIntf;    --!Configurations from HPS
     --FDI_FIFO
     iFDI_FIFO           : in  tFifo32Out;  --!FDI FIFO output signals
@@ -68,17 +68,21 @@ begin
       CR_DATA_VALID_out       => oREG_CONFIG_RX.we,
       CR_WARNING_out          => oCR_WARNING
       );
-  oREG_CONFIG_RX.addr <= sCrAddr(cREG_ADDR - 1 downto 0);
+  oREG_CONFIG_RX.addr <= sCrAddr(cHPS_REG_ADDR - 1 downto 0);
 
   --!@brief Telemetries (HK) read and send
   f2h_tx : hkReader
+    generic map(
+      pFIFO_WIDTH => 32,
+      pPARITY     => "EVEN",
+      pGW_VER     => pGW_VER
+      )
     port map(
       iCLK        => iCLK,
       iRST        => iRST,
       iCNT        => iHK_RDR_CNT,
       oCNT        => open,
       iINT_START  => iHK_RDR_INT_START,
-      iFW_VER     => pGW_VER,
       iREG_ARRAY  => iREG_ARRAY,
       oFIFO_DATA  => oFIFO_F2H_DATA,
       oFIFO_WR    => oFIFO_F2H_WE,

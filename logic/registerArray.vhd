@@ -19,33 +19,50 @@ entity registerArray is
     iCNT       : in  tControlIn;      --!Control input signals
     oCNT       : out tControlOut;     --!Control output flags
     --Register array
-    oREG_ARRAY : out tRegisterArray;  --!Register array, 32-bit cREGISTERS-deep
+    oREG_ARRAY : out tRegArray;       --!Complete Registers array
     iHPS_REG   : in  tRegIntf;        --!HPS interface
-    iFPGA_REG  : in  tRegIntf         --!FPGA interface
+    iFPGA_REG  : in  tFpgaRegIntf     --!FPGA interface
     );
 end registerArray;
 
 --!@copydoc registerArray.vhd
 architecture std of registerArray is
-  signal sRegisters : tRegisterArray;
+  signal sHpsReg  : tHpsRegArray;
+  signal sFpgaReg : tFpgaRegArray;
+
+  signal sRegisters : tRegArray;
 begin
   -- Combinatorial assignments -------------------------------------------------
   oREG_ARRAY <= sRegisters;
+  HPS_REG_GEN : for hh in 0 to cHPS_REGISTERS-1 generate
+    sRegisters(hh) <= sHpsReg(hh);
+  end generate HPS_REG_GEN;
+  FPGA_REG_GEN : for ff in 0 to cFPGA_REGISTERS-1 generate
+    sRegisters(ff+cHPS_REGISTERS) <= sHpsReg(ff);
+  end generate FPGA_REG_GEN;
   ------------------------------------------------------------------------------
 
-  --!@brief Update registers' content. HPS has precedence over FPGA.
+  --!@brief Update registers' content
   WRITE_PROC : process (iCLK)
   begin
     RCLK_IF : if (rising_edge(iCLK)) then
       RST_IF : if (iRST = '1') then
-        sRegisters <= cREG_NULL;
+        sHpsReg  <= cHPS_REG_NULL;
+        sFpgaReg <= cFPGA_REG_NULL;
       else
-        sRegisters <= sRegisters;       --default value, update if necessary
-        WE_IF : if (iHPS_REG.we = '1') then
-          sRegisters(slv2int(iHPS_REG.addr)) <= iHPS_REG.reg;
-        elsif (iFPGA_REG.we = '1') then
-          sRegisters(slv2int(iFPGA_REG.addr)) <= iFPGA_REG.reg;
-        end if WE_IF;
+        sHpsReg  <= sHpsReg;   --default value, update if necessary
+        sFpgaReg <= sFpgaReg;  --default value, update if necessary
+
+        HPS_WE_IF : if (iHPS_REG.we = '1') then
+          sHpsReg(slv2int(iHPS_REG.addr)) <= iHPS_REG.reg;
+        end if HPS_WE_IF;
+
+        FPGA_WE_LOOP : for ii in 0 to cFPGA_REGISTERS-1 loop
+          if (iFPGA_REG.we(ii) = '1') then
+            sFpgaReg(ii) <= iFPGA_REG.regs(ii);
+          end if;
+        end loop FPGA_WE_LOOP;
+
       end if RST_IF;
     end if RCLK_IF;
   end process WRITE_PROC;

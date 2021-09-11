@@ -159,7 +159,7 @@ architecture std of top_pgdaq is
   signal fifo_h2f_data_out_csr : std_logic_vector(31 downto 0);
 
   -- TDAQ Module
-  signal sFpgaRegIntf   : tRegIntf;
+  signal sFpgaRegIntf   : tFpgaRegIntf;
   signal sExtTrig       : std_logic;
   signal sMainTrig      : std_logic;
   signal sMainBusy      : std_logic;
@@ -401,9 +401,8 @@ begin
   --!@todo connect iRST_REG, iEXT_TRIG, oTRIG, oBUSY
   sTrgBusiesAnd <= (others => '0');
   sTrgBusiesOr <= (others => '0');
-  sFpgaRegIntf.reg  <= (others => '0');
-  sFpgaRegIntf.addr <= (others => '0');
-  sFpgaRegIntf.we   <= '0';
+  sFpgaRegIntf.regs <= cFPGA_REG_NULL;
+  sFpgaRegIntf.we   <= (others => '0');
   TdaqModule_i : TdaqModule
     generic map (
       pFDI_WIDTH => 32,

@@ -13,9 +13,13 @@ use work.basic_package.all;
 --!@copydoc pgdaqPackage.vhd
 package pgdaqPackage is
   -- Constants -----------------------------------------------------------------
-  constant cREGISTERS : natural := 32;  --!Total number of registers
-  constant cREG_ADDR  : natural := ceil_log2(cREGISTERS);  --!Register address width
   constant cREG_WIDTH : natural := 32;  --!Register width
+  constant cHPS_REGISTERS  : natural := 16;  --!Number of HPS-RW, FPGA-R registers
+  constant cFPGA_REGISTERS : natural := 16; --!Number of HPS-R, FPGA-RW registers
+  constant cREGISTERS : natural := cHPS_REGISTERS + cFPGA_REGISTERS; --!Total number of registers
+
+  constant cHPS_REG_ADDR  : natural := ceil_log2(cHPS_REGISTERS);  --!Register address width
+  constant cFPGA_REG_ADDR : natural := ceil_log2(cFPGA_REGISTERS);  --!Register address width
 
   --Housekeeping reader
   constant cF2H_HK_SOP    : std_logic_vector(31 downto 0) := x"55AADEAD";  --!Start of Packet for the FPGA-2-HPS FSM
@@ -30,10 +34,42 @@ package pgdaqPackage is
   constant cTRG_CALIB : std_logic_vector(7 downto 0) := "00000010"; --!Calibration trigger (internal)
 
   -- Types ---------------------------------------------------------------------
-  --!Register array; all registers are r/w for HPS and FPGA
-  type tRegisterArray is array (0 to cREGISTERS-1) of
+  --!Register array HPS-RW, FPGA-R
+  type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
-  constant cREG_NULL : tRegisterArray := (others => (others => '0'));  --!Null vector for register array
+  constant cHPS_REG_NULL : tHpsRegArray := (
+    x"c1a0c1a0", x"00000000", x"00000003", x"00000002",
+    x"02faf080", x"000000FF", x"0000006E", x"00040028",
+    x"00040002", x"00070145", x"00000000", x"00000000",
+    x"00000000", x"00000000", x"00000000", x"00000000"
+  );  --!Null vector for HPS register array
+
+  --!Register array HPS-R, FPGA-RW
+  type tFpgaRegArray is array (0 to cFPGA_REGISTERS-1) of
+    std_logic_vector(cREG_WIDTH-1 downto 0);
+  constant cFPGA_REG_NULL : tFpgaRegArray := (
+    x"a0a0a0a0", x"00000000", x"00000000", x"00000000",
+    x"00000000", x"00000000", x"00000000", x"00000000",
+    x"00000000", x"00000000", x"00000000", x"00000000",
+    x"00000000", x"00000000", x"00000000", x"00000000"
+  );  --!Null vector for FPGA register array
+
+  --!Complete Registers array
+  type tRegArray is array (0 to cREGISTERS-1) of
+    std_logic_vector(cREG_WIDTH-1 downto 0);
+
+  --!Registers interface
+  type tRegIntf is record
+    reg  : std_logic_vector(cREG_WIDTH-1 downto 0);    --!Content to be written
+    addr : std_logic_vector(cHPS_REG_ADDR-1 downto 0); --!Address to be updated
+    we   : std_logic;                                  --!Write enable
+  end record tRegIntf;
+
+  --!FPGA Registers interface
+  type tFpgaRegIntf is record
+    regs : tFpgaRegArray; --!FPGA registers
+    we   : std_logic_vector(cFPGA_REGISTERS-1 downto 0); --!Write enable vector
+  end record tFpgaRegIntf;
 
   --!Control interface for a generic block: input signals
   type tControlIn is record
@@ -48,13 +84,6 @@ package pgdaqPackage is
     reset : std_logic;                  --!Resetting flag
     compl : std_logic;                  --!completion of task
   end record tControlOut;
-
-  --!Registers interface
-  type tRegIntf is record
-    reg  : std_logic_vector(cREG_WIDTH-1 downto 0);  --!Content to be written
-    addr : std_logic_vector(cREG_ADDR-1 downto 0);   --!Address to be updated
-    we   : std_logic;                                --!Write enable
-  end record tRegIntf;
 
   --!CRC32 interface (do not use it as port)
   type tCrc32 is record
@@ -166,9 +195,9 @@ package pgdaqPackage is
       iCNT       : in  tControlIn;      --!Control input signals
       oCNT       : out tControlOut;     --!Control output flags
       --Register array
-      oREG_ARRAY : out tRegisterArray;  --!Register array, 32-bit cREGISTERS-deep
+      oREG_ARRAY : out tRegArray;       --!Register array
       iHPS_REG   : in  tRegIntf;        --!HPS interface
-      iFPGA_REG  : in  tRegIntf         --!FPGA interface
+      iFPGA_REG  : in  tFpgaRegIntf     --!FPGA interface
       );
   end component;
 
@@ -176,7 +205,8 @@ package pgdaqPackage is
   component hkReader is
     generic(
       pFIFO_WIDTH : natural := 32;      --!FIFO data width
-      pPARITY     : string  := "EVEN"   --!Parity polarity ("EVEN" or "ODD")
+      pPARITY     : string  := "EVEN";  --!Parity polarity ("EVEN" or "ODD")
+      pGW_VER     : std_logic_vector(31 downto 0)  --!Firmware version from HoG
       );
     port (
       iCLK        : in  std_logic;      --!Main clock
@@ -185,8 +215,7 @@ package pgdaqPackage is
       oCNT        : out tControlOut;    --!Control output flags
       iINT_START  : in  std_logic;      --!Enable for the internal start
       --Register array
-      iFW_VER     : in  std_logic_vector(31 downto 0);  --!Firmware version from HoG
-      iREG_ARRAY  : in  tRegisterArray;                 --!Register array input
+      iREG_ARRAY  : in  tRegArray;      --!Register array input
       --Output FIFO interface
       oFIFO_DATA  : out std_logic_vector(pFIFO_WIDTH-1 downto 0);  --!Fifo Data in
       oFIFO_WR    : out std_logic;      --!Fifo write-request in
@@ -229,7 +258,7 @@ package pgdaqPackage is
       oF2HFAST_BUSY       : out std_logic;
       oF2HFAST_WARNING    : out std_logic;
       --# {{RegArray|RegArray}}
-      iREG_ARRAY          : in  tRegisterArray;
+      iREG_ARRAY          : in  tRegArray;
       oREG_CONFIG_RX      : out tRegIntf;
       --# {{FdiFifo|FdiFifo}}
       iFDI_FIFO           : in  tFifo32Out;
@@ -352,7 +381,7 @@ package pgdaqPackage is
     iRST                : in  std_logic;
     --# {{RegArray|RegArray}}
     iRST_REG            : in  std_logic;
-    iFPGA_REG           : in  tRegIntf;
+    iFPGA_REG           : in  tFpgaRegIntf;
     --# {{TrigBusy|TrigBusy}}
     iEXT_TRIG           : in  std_logic;
     oTRIG               : out std_logic;
