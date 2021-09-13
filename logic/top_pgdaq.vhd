@@ -159,12 +159,19 @@ architecture std of top_pgdaq is
   signal fifo_h2f_data_out_csr : std_logic_vector(31 downto 0);
 
   -- TDAQ Module
-  signal sFpgaRegIntf   : tFpgaRegIntf;
   signal sExtTrig       : std_logic;
   signal sMainTrig      : std_logic;
   signal sMainBusy      : std_logic;
   signal sTrgBusiesAnd  : std_logic_vector(7 downto 0);
   signal sTrgBusiesOr   : std_logic_vector(7 downto 0);
+
+  -- Timestamps
+  signal sIntTsEn     : std_logic;
+  signal sIntTsRst    : std_logic;
+  signal sIntTsCount  : std_logic_vector(63 downto 0);
+  signal sExtTsEn     : std_logic;
+  signal sExtTsRst    : std_logic;
+  signal sExtTsCount  : std_logic_vector(63 downto 0);
 
 begin
   -- connection of internal logics ----------------------------
@@ -397,12 +404,44 @@ begin
     end if;
   end process;
 
+  sIntTsEn <= '1';
+  sIntTsRst <= '0';
+  --!@brief Internal timestamp counter
+  intTimestampCounter : counter
+  generic map (
+    pOVERLAP  => "Y",
+    pBUSWIDTH => 64
+    )
+  port map (
+    iCLK   => h2f_user_clock,
+    iEN    => sIntTsEn,
+    iRST   => sIntTsRst,
+    iLOAD  => '0',
+    iDATA  => (others => '0'),
+    oCOUNT => sIntTsCount
+    );
+
+  sExtTsEn <= '1';
+  sExtTsRst <= '0';
+  --!@brief External timestamp counter
+  extTimestampCounter : counter
+  generic map (
+    pOVERLAP  => "Y",
+    pBUSWIDTH => 64
+    )
+  port map (
+    iCLK   => h2f_user_clock,
+    iEN    => sExtTsEn,
+    iRST   => sExtTsRst,
+    iLOAD  => '0',
+    iDATA  => (others => '0'),
+    oCOUNT => sExtTsCount
+    );
+
   --!@brief Wrapper for all of the Trigger and Data Acquisition modules
   --!@todo connect iRST_REG, iEXT_TRIG, oTRIG, oBUSY
   sTrgBusiesAnd <= (others => '0');
   sTrgBusiesOr <= (others => '0');
-  sFpgaRegIntf.regs <= cFPGA_REG_NULL;
-  sFpgaRegIntf.we   <= (others => '0');
   TdaqModule_i : TdaqModule
     generic map (
       pFDI_WIDTH => 32,
@@ -414,7 +453,8 @@ begin
     iRST                => hps_fpga_reset,
     --
     iRST_REG            => '0',
-    iFPGA_REG           => sFpgaRegIntf,
+    iINT_TS             => sIntTsCount,
+    iEXT_TS             => sExtTsCount,
     --
     iEXT_TRIG           => iEXT_TRIG,
     oTRIG               => sMainTrig,

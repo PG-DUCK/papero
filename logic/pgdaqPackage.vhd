@@ -34,16 +34,35 @@ package pgdaqPackage is
   constant cTRG_CALIB : std_logic_vector(7 downto 0) := "00000010"; --!Calibration trigger (internal)
 
   -- Types ---------------------------------------------------------------------
+  constant rGOTO_STATE : natural := 0;
+  constant rUNITS_EN : natural := 1;
+  constant rHK_CFG : natural := 2;
+  constant rTRIGBUSY_LOGIC : natural := 3;
+  constant rDET_ID : natural := 4;
+  constant rPKT_LEN : natural := 5;
+  constant rFE_CLK_PARAM : natural := 6;
+  constant rADC_CLK_PARAM : natural := 7;
+  constant rMSD_PARAM : natural := 8;
   --!Register array HPS-RW, FPGA-R
   type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
   constant cHPS_REG_NULL : tHpsRegArray := (
-    x"c1a0c1a0", x"00000000", x"00000003", x"00000002",
-    x"02faf080", x"000000FF", x"0000006E", x"00040028",
-    x"00040002", x"00070145", x"00000000", x"00000000",
+    x"00000000", x"00000003", x"00000002", x"02faf080",
+    x"000000FF", x"0000006E", x"00040028", x"00040002",
+    x"00070145", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000"
   );  --!Null vector for HPS register array
 
+  constant rGW_VER : natural := 0;
+  constant rINT_TS_MSB : natural := 1;
+  constant rINT_TS_LSB : natural := 2;
+  constant rEXT_TS_MSB : natural := 3;
+  constant rEXT_TS_LSB : natural := 4;
+  constant rWARNING : natural := 5;
+  constant rBUSY : natural := 6;
+  constant rTRG_COUNT : natural := 7;
+  constant rFDI_FIFO_NUMWORD : natural := 8;
+  constant rPIUMONE : natural := 15;
   --!Register array HPS-R, FPGA-RW
   type tFpgaRegArray is array (0 to cFPGA_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
@@ -51,7 +70,7 @@ package pgdaqPackage is
     x"a0a0a0a0", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000",
-    x"00000000", x"00000000", x"00000000", x"00000000"
+    x"00000000", x"00000000", x"00000000", x"c1a0c1a0"
   );  --!Null vector for FPGA register array
 
   --!Complete Registers array
@@ -381,7 +400,9 @@ package pgdaqPackage is
     iRST                : in  std_logic;
     --# {{RegArray|RegArray}}
     iRST_REG            : in  std_logic;
-    iFPGA_REG           : in  tFpgaRegIntf;
+    oREG_ARRAY          : out tRegArray;
+    iINT_TS             : in  std_logic_vector(63 downto 0);
+    iEXT_TS             : in  std_logic_vector(63 downto 0);
     --# {{TrigBusy|TrigBusy}}
     iEXT_TRIG           : in  std_logic;
     oTRIG               : out std_logic;
