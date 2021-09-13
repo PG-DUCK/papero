@@ -19,7 +19,6 @@ entity TdaqModule is
   );
   port (
     iCLK        : in  std_logic;  --!Main clock on the FPGA side
-    iRST        : in  std_logic;  --!Main reset on the FPGA side
     --Register Array
     iRST_REG    : in  std_logic;  --!Reset of the Register array
     oREG_ARRAY  : out tRegArray;  --!Complete Registers array
@@ -48,6 +47,10 @@ end entity TdaqModule;
 
 --!@copydoc TdaqModule.vhd
 architecture std of TdaqModule is
+  -- Global
+  signal sRst : std_logic;
+  signal sRstCounters : std_logic;
+
   -- HPS interface
   signal sHkRdrCnt : tControlIn;
   signal sHkRdrIntstart : std_logic;
@@ -70,36 +73,54 @@ architecture std of TdaqModule is
   signal sFdiFifoUsedW : std_logic_vector(ceil_log2(pFDI_DEPTH)-1 downto 0);
 
   -- Trigger and Busy logic
+  signal sTrigEn    : std_logic;
   signal sTrigId    : std_logic_vector(7 downto 0);
   signal sTrigCount : std_logic_vector(31 downto 0);
   signal sTrigWhenBusyCount : std_logic_vector(7 downto 0);
   signal sTrigCfg : std_logic_vector(31 downto 0);
   signal sBusy : std_logic;
 
-begin
-  --Temporary assignments
-  sHkRdrCnt         <= ('1','1');
-  sHkRdrIntstart  <= '1';
-  sF2hFastCnt <= ('1','1');
-  sF2hFastMetaData.pktLen   <= x"0000006e";
-  sF2hFastMetaData.trigNum  <= x"00000001";
-  sF2hFastMetaData.detId    <= x"23";
-  sF2hFastMetaData.trigId   <= x"45";
-  sF2hFastMetaData.intTime  <= x"1a1a1a1a1b1b1b1b";
-  sF2hFastMetaData.extTime  <= x"2a2a2a2a2b2b2b2b";
-  sTrigCfg <= x"FFFFFFF1";
+  -- Test unit
+  signal sTestUnitEn : std_logic;
 
+begin
+  -- Register Array assignments
+  sRst          <= sRegArray(rGOTO_STATE)(0);
+  sRstCounters  <= sRegArray(rGOTO_STATE)(1);
+  sTrigEn       <= sRegArray(rGOTO_STATE)(4);
+  --
+  sF2hFastCnt.en <= sRegArray(rUNITS_EN)(0);
+  sF2hFastCnt.start <= sRegArray(rUNITS_EN)(0);
+  sTestUnitEn   <= sRegArray(rUNITS_EN)(1);
+  sHkRdrIntstart  <= sRegArray(rUNITS_EN)(4);
+  sHkRdrCnt.start      <= sRegArray(rUNITS_EN)(5);
+  sHkRdrCnt.en         <= sRegArray(rUNITS_EN)(6);
+  --
+  sTrigCfg      <= sRegArray(rTRIGBUSY_LOGIC);
+  --
+  sF2hFastMetaData.detId  <= sRegArray(rDET_ID)(7 downto 0);
+  --
+  sF2hFastMetaData.pktLen   <= sRegArray(rPKT_LEN);
+
+  -- Metadata assignments
+  sF2hFastMetaData.trigNum  <= sTrigCount;
+  sF2hFastMetaData.trigId   <= sTrigId;
+  sF2hFastMetaData.intTime  <= iINT_TS;
+  sF2hFastMetaData.extTime  <= iEXT_TS;
+
+  --Ports assignments
+  oREG_ARRAY <= sRegArray;
   oBUSY <= sBusy;
 
   --!@brief FPGA-HPS communication interfaces
-  --!@todo connect sCrWarning, sF2hFastBusy, sF2hFastWarning
+  --!@todo connect sF2hFastBusy to the trigBusyLogic
   HPS_interfaces : HPS_intf
     generic map(
       pGW_VER => pGW_VER
     )
     port map(
       iCLK                => iCLK,
-      iRST                => iRST,
+      iRST                => sRst,
       --
       oCR_WARNING         => sCrWarning,
       --
@@ -146,8 +167,8 @@ begin
   PRBS_generator : Test_Unit
     port map(
       iCLK        => iCLK,
-      iRST        => iRST,
-      iEN         => not sFdiFifoOut.aFull,
+      iRST        => sRst,
+      iEN         => sTestUnitEn and not sFdiFifoOut.aFull,
       oDATA       => sFdiFifoIn.data,
       oDATA_VALID => sFdiFifoIn.wr
       );
@@ -164,7 +185,7 @@ begin
       )
     port map(
       iCLK    => iCLK,
-      iRST    => iRST,
+      iRST    => sRst,
       oUSEDW  => sFdiFifoUsedW,
       -- Write interface
       oAFULL  => sFdiFifoOut.aFull,
@@ -182,16 +203,17 @@ begin
   Trig_Busy : trigBusyLogic
     port map (
       iCLK            => iCLK,
-      iRST            => iRST,
+      iRST            => sRst or not sTrigEn,
+      iRST_COUNTERS   => sRstCounters,
       iCFG            => sTrigCfg,
       iEXT_TRIG       => iEXT_TRIG,
       iBUSIES_AND     => iTRG_BUSIES_AND,
       iBUSIES_OR      => iTRG_BUSIES_OR,
       oTRIG           => oTRIG,
-      oTRIG_ID        => sTrigId, --sF2hFastMetaData.trigId
-      oTRIG_COUNT     => sTrigCount, --sF2hFastMetaData.trigNum
+      oTRIG_ID        => sTrigId,
+      oTRIG_COUNT     => sTrigCount,
       oTRIG_WHEN_BUSY => sTrigWhenBusyCount,
-      oBUSY           => oBUSY
+      oBUSY           => sBusy
       );
 
   -- FPGA-registers mapping
@@ -211,7 +233,10 @@ begin
   sFpgaRegIntf.we(rBUSY)   <= '1';
   sFpgaRegIntf.regs(rTRG_COUNT) <= sTrigCount;
   sFpgaRegIntf.we(rTRG_COUNT)   <= '1';
-  sFpgaRegIntf.regs(rFDI_FIFO_NUMWORD) <= sFdiFifoUsedW;
+  sFpgaRegIntf.regs(rFDI_FIFO_NUMWORD)
+                  (sFdiFifoUsedW'left downto 0) <= sFdiFifoUsedW;
+  sFpgaRegIntf.regs(rFDI_FIFO_NUMWORD)
+                  (cREG_WIDTH-1 downto sFdiFifoUsedW'left+1) <= (others => '0');
   sFpgaRegIntf.we(rFDI_FIFO_NUMWORD)   <= '1';
   sFpgaRegIntf.regs(9) <= (others => '0');
   sFpgaRegIntf.we(9)   <= '0';
@@ -228,7 +253,7 @@ begin
   sFpgaRegIntf.regs(rPIUMONE) <= x"c1a0c1a0";
   sFpgaRegIntf.we(rPIUMONE)   <= '1';
 
-  sRegWarning <= x"0000" & sF2hFastWarning & x"0" & sCrWarning;
+  sRegWarning <= x"00000" & "000" & sF2hFastWarning & x"0" & "0" & sCrWarning;
   sRegBusy <= sBusy & "000" & iTRG_BUSIES_AND & iTRG_BUSIES_OR & sF2hFastBusy
               & iFIFO_F2H_AFULL & iFIFO_F2HFAST_AFULL
               & sFdiFifoOut.aFull & sTrigWhenBusyCount;

@@ -40,15 +40,14 @@ L'HPS può configurare l'FPGA accedendo a tali registri sia in lettura che in sc
 
 |  # | Content | Default (hex) |
 | -- | ------- | ------- |
-| 0  | Stato Top-Level. 1: Start/Stop trigger, 0: Reset(logica FPGA tranne registerArray) | XXXXXXX0 |
-| 1  | Units Enable. 1: Test_Unit Enable e data multiplexer, 0: FastData_Transmitter Enable,  | XXXXXXX3 |
-| 2  | Telemetria. 2: hkReader Enable, 1: Ricevi periodicamente (1 s) contenuto registerArray anche con Start/Stop=0, 0: Ricevi contenuto attuale del registerArray | XXXXXX02 |
-| 3  | CFG trigBusyLogic. [31:4]: Periodo del trigger interno (a multipli di 320 ns), 0: Abilitazione trigger interno | 02faf080 |
-| 4  | [7:0] Detector ID | XXXXXXFF |
-| 5  | Setting length[31:0]: Lunghezza pacchetto dati scientifici (Payload 32-bit words + 10) | 0000006E |
-| 6  | FE-clock  parameters. [31:16] duty cycle and [15:0] divider | 00040028 |
-| 7  | ADC-clock parameters. [31:16] duty cycle and [15:0] divider | 00040002 |
-| 8  | MSD parameters. 20: internal trigger on, 19:FE test, [18:16]:FE Gs, [15:0]: Trigger-2-Hold Delay (in clock cycles) | 00070145 |
+| 0  | Stato Top-Level. 4: Start/Stop trigger, 1: Reset contatori, 0: Reset(logica FPGA tranne registerArray) | XXXXXXX0 |
+| 1  | Units Enable. 6: hkReader Enable, 5: Ricevi periodicamente (1 s) contenuto registerArray, 4: Ricevi contenuto attuale del registerArray, 1: Test_Unit Enable e data multiplexer, 0: FastData_Transmitter Enable,  | XXXXXX23 |
+| 2  | CFG trigBusyLogic. [31:4]: Periodo del trigger interno (a multipli di 320 ns), 0: Abilitazione trigger interno | 02faf080 |
+| 3  | [7:0] Detector ID | XXXXXXFF |
+| 4  | Setting length[31:0]: Lunghezza pacchetto dati scientifici (Payload 32-bit words + 10) | 0000028A |
+| 5  | FE-clock  parameters. [31:16] duty cycle and [15:0] divider | 00040028 |
+| 6  | ADC-clock parameters. [31:16] duty cycle and [15:0] divider | 00040002 |
+| 7  | MSD parameters. 20: internal trigger on, 19:FE test, [18:16]:FE Gs, [15:0]: Trigger-2-Hold Delay (in clock cycles) | 00070145 |
 | 16  | Versione del Gateware. [31:0]: SHA dell'ultimo commit |  |
 | 17  | Internal Timestamp "high". [31:0]: Numero di clock passati dall'ultimo Reset calcolati internamente (word più significativa) |  |
 | 18  | Internal Timestamp "low". [31:0]: Numero di clock passati dall'ultimo Reset calcolati esternamente (word meno significativa) |  |

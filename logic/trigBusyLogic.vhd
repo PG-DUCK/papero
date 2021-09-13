@@ -20,6 +20,7 @@ entity trigBusyLogic is
   port(
     iCLK            : in  std_logic;    --!Clock (used at rising edge)
     iRST            : in  std_logic;    --!Synchronous Reset
+    iRST_COUNTERS   : in  std_logic;    --!Synchronous Reset for the counters
     iCFG            : in  std_logic_vector(31 downto 0);  --!Configuration
     iEXT_TRIG       : in  std_logic;    --!External Trigger
     iBUSIES_AND     : in  std_logic_vector(7 downto 0);  --!Busy signals and'ed
@@ -103,7 +104,7 @@ begin
       )
     port map (
       iCLK   => iCLK,
-      iRST   => iRST,
+      iRST   => iRST_COUNTERS,
       iEN    => sTrig,
       iLOAD  => '0',
       iDATA  => (others => '0'),
@@ -119,7 +120,7 @@ begin
       )
     port map (
       iCLK   => iCLK,
-      iRST   => iRST,
+      iRST   => iRST_COUNTERS,
       iEN    => sMainTrig and sBusy,
       iLOAD  => '0',
       iDATA  => (others => '0'),

@@ -36,20 +36,19 @@ package pgdaqPackage is
   -- Types ---------------------------------------------------------------------
   constant rGOTO_STATE : natural := 0;
   constant rUNITS_EN : natural := 1;
-  constant rHK_CFG : natural := 2;
-  constant rTRIGBUSY_LOGIC : natural := 3;
-  constant rDET_ID : natural := 4;
-  constant rPKT_LEN : natural := 5;
-  constant rFE_CLK_PARAM : natural := 6;
-  constant rADC_CLK_PARAM : natural := 7;
-  constant rMSD_PARAM : natural := 8;
+  constant rTRIGBUSY_LOGIC : natural := 2;
+  constant rDET_ID : natural := 3;
+  constant rPKT_LEN : natural := 4;
+  constant rFE_CLK_PARAM : natural := 5;
+  constant rADC_CLK_PARAM : natural := 6;
+  constant rMSD_PARAM : natural := 7;
   --!Register array HPS-RW, FPGA-R
   type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
   constant cHPS_REG_NULL : tHpsRegArray := (
-    x"00000000", x"00000003", x"00000002", x"02faf080",
-    x"000000FF", x"0000006E", x"00040028", x"00040002",
-    x"00070145", x"00000000", x"00000000", x"00000000",
+    x"00000000", x"00000023", x"02faf080", x"000000FF",
+    x"0000028A", x"00040028", x"00040002", x"00070145",
+    x"00000000", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000"
   );  --!Null vector for HPS register array
 
@@ -376,6 +375,7 @@ package pgdaqPackage is
     port (
       iCLK            : in  std_logic;
       iRST            : in  std_logic;
+      iRST_COUNTERS   : in  std_logic;
       iCFG            : in  std_logic_vector(31 downto 0);
       iEXT_TRIG       : in  std_logic;
       iBUSIES_AND     : in  std_logic_vector(7 downto 0);
@@ -397,7 +397,6 @@ package pgdaqPackage is
   );
   port (
     iCLK                : in  std_logic;
-    iRST                : in  std_logic;
     --# {{RegArray|RegArray}}
     iRST_REG            : in  std_logic;
     oREG_ARRAY          : out tRegArray;
@@ -422,7 +421,7 @@ package pgdaqPackage is
     oFIFO_F2HFAST_WE    : out std_logic;
     oFIFO_F2HFAST_DATA  : out std_logic_vector(31 downto 0)
   );
-end component;
+  end component;
 
 
 

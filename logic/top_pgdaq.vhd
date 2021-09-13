@@ -164,6 +164,7 @@ architecture std of top_pgdaq is
   signal sMainBusy      : std_logic;
   signal sTrgBusiesAnd  : std_logic_vector(7 downto 0);
   signal sTrgBusiesOr   : std_logic_vector(7 downto 0);
+  signal sRegArray      : tRegArray;
 
   -- Timestamps
   signal sIntTsEn     : std_logic;
@@ -405,7 +406,8 @@ begin
   end process;
 
   sIntTsEn <= '1';
-  sIntTsRst <= '0';
+  sIntTsRst <= sRegArray(rGOTO_STATE)(1) or sRegArray(rGOTO_STATE)(0)
+                or not sRegArray(rGOTO_STATE)(4);
   --!@brief Internal timestamp counter
   intTimestampCounter : counter
   generic map (
@@ -422,7 +424,7 @@ begin
     );
 
   sExtTsEn <= '1';
-  sExtTsRst <= '0';
+  sExtTsRst <= sRegArray(rGOTO_STATE)(1) or sRegArray(rGOTO_STATE)(0);
   --!@brief External timestamp counter
   extTimestampCounter : counter
   generic map (
@@ -439,7 +441,7 @@ begin
     );
 
   --!@brief Wrapper for all of the Trigger and Data Acquisition modules
-  --!@todo connect iRST_REG, iEXT_TRIG, oTRIG, oBUSY
+  --!@todo connect busies
   sTrgBusiesAnd <= (others => '0');
   sTrgBusiesOr <= (others => '0');
   TdaqModule_i : TdaqModule
@@ -450,9 +452,9 @@ begin
     )
     port map (
     iCLK                => h2f_user_clock,
-    iRST                => hps_fpga_reset,
     --
-    iRST_REG            => '0',
+    iRST_REG            => hps_fpga_reset,
+    oREG_ARRAY          => sRegArray,
     iINT_TS             => sIntTsCount,
     iEXT_TS             => sExtTsCount,
     --
