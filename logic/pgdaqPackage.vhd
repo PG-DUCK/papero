@@ -218,14 +218,14 @@ package pgdaqPackage is
 			);
 	end component;
 
-	--!@copydoc PRBS14.vhd
-	--!Modulo per la generazione di dati pseudo-casuali a 14 bit
-	component PRBS14 is
+	--!@copydoc PRBS8.vhd
+	--!Modulo per la generazione di dati pseudo-casuali a 8 bit
+	component PRBS8 is
 		port(
 			iCLK			: in std_logic;
 			iRST			: in std_logic;
-			iPRBS14_en	: in std_logic;
-			oDATA			: out std_logic_vector(13 downto 0)
+			iPRBS8_en	: in std_logic;
+			oDATA			: out std_logic_vector(7 downto 0)
 			);
 	end component;
 
@@ -301,7 +301,26 @@ package pgdaqPackage is
       oBUSY           : out std_logic
       );
   end component;
-
+  
+  --!Generatore di segnale PWM
+  component Variable_PWM_FSM is
+	generic (
+           period     : integer;			  -- Periodo di conteggio del contatore (che di fatto andrà a definire la frequenza del segnale PWM) espresso in "numero di cicli di clock"
+           duty_cycle : integer;        -- Numero di cicli di clock per i quali l'uscita dovrà tenersi "alta"
+           neg        : integer;        -- Logica di funzionamento del dispositivo. Se neg=0-->logica normale, se neg=1-->logica negata
+           R_vs_F     : integer := 0    -- Parametro che seleziona quali fronti d'onda conteggiare. Se R_vs_F=0--> rising edge, se R_vs_F=1--> falling edge
+          );
+	port (
+        SWITCH            : in std_logic;        -- Ingresso per abilitare il segnale PWM
+        ENABLE_COUNTER    : in std_logic;        -- Ingresso per abilitare il contatore per la generazione del segnale PWM
+        RESET_RF_COUNTER  : in std_logic;        -- Ingresso per il reset del contatore dei fronti d'onda
+        CLK               : in std_logic;        -- Ingresso del segnale di Clock
+        LED               : out std_logic;       -- Uscita del dispositivo	
+        RISING_LED        : out std_logic;       -- Uscita di segnalazione dei fronti di salita
+        FALLING_LED       : out std_logic;       -- Uscita di segnalazione dei fronti di discesa
+        RISE_FALL_COUNTER : out std_logic_vector(7 downto 0)    -- Uscita contenente il numero di fronti di salita/discesa rilevati dal detector
+       );
+  end component;
 
 
   -- Functions -----------------------------------------------------------------

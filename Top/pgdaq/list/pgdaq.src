@@ -23,8 +23,9 @@ logic/Key_Pulse_Gen.vhd
 logic/HighHold.vhd
 logic/WR_Timer.vhd
 logic/FFD.vhd
-logic/PRBS14.vhd
+logic/PRBS8.vhd
 logic/PRBS32.vhd
+logic/Variable_PWM_FSM.vhd
 
 
 #Qsys IPs: regenerate the IP for each new build

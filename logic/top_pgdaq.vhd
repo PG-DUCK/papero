@@ -195,7 +195,7 @@ begin
       pSTAGES => 3
       )
     port map (
-      iCLK => h2f_user_clock,
+      iCLK => fpga_clk_50,
       iRST => '0',
       iD   => not hps_fpga_reset_n,
       oQ   => neg_hps_fpga_reset_n
@@ -295,7 +295,7 @@ begin
     hps_0_h2f_user0_clock_clk             => h2f_user_clock,  -- hps_0_h2f_user0_clock.clk
 
     --Fifo Partion
-    fast_fifo_fpga_to_hps_clk_clk          => h2f_user_clock,  -- fast_fifo_fpga_to_hps_clk.clk
+    fast_fifo_fpga_to_hps_clk_clk          => fpga_clk_50,  -- fast_fifo_fpga_to_hps_clk.clk
     fast_fifo_fpga_to_hps_rst_reset_n      => '1',  -- fast_fifo_fpga_to_hps_rst.reset_n
     fast_fifo_fpga_to_hps_in_writedata     => fast_fifo_f2h_data_in,  --       fifo_fpga_to_hps_in.writedata
     fast_fifo_fpga_to_hps_in_write         => fast_fifo_f2h_wr_en,  --                          .write
@@ -306,7 +306,7 @@ begin
     fast_fifo_fpga_to_hps_in_csr_write     => fast_fifo_f2h_wr_en_csr,  --                          .write
     fast_fifo_fpga_to_hps_in_csr_readdata  => fast_fifo_f2h_data_out_csr,  --                          .readdata
 
-    fifo_fpga_to_hps_clk_clk          => h2f_user_clock,  --         fifo_fpga_to_hps_clk.clk
+    fifo_fpga_to_hps_clk_clk          => fpga_clk_50,  --         fifo_fpga_to_hps_clk.clk
     fifo_fpga_to_hps_rst_reset_n      => '1',  --         fifo_fpga_to_hps_rst.reset_n
     fifo_fpga_to_hps_in_writedata     => fifo_f2h_data_in,  --     fast_fifo_fpga_to_hps_in.writedata
     fifo_fpga_to_hps_in_write         => fifo_f2h_wr_en,  --                             .write
@@ -317,7 +317,7 @@ begin
     fifo_fpga_to_hps_in_csr_write     => fifo_f2h_wr_en_csr,  --                             .write
     fifo_fpga_to_hps_in_csr_readdata  => fifo_f2h_data_out_csr,  --                             .readdata
 
-    fifo_hps_to_fpga_clk_clk           => h2f_user_clock,  --    fifo_hps_to_fpga_clk.clk
+    fifo_hps_to_fpga_clk_clk           => fpga_clk_50,  --    fifo_hps_to_fpga_clk.clk
     fifo_hps_to_fpga_rst_reset_n       => '1',  --    fifo_hps_to_fpga_rst.reset_n
     fifo_hps_to_fpga_out_readdata      => fifo_h2f_data_out,  --     fifo_fpga_to_hps_in.writedata
     fifo_hps_to_fpga_out_read          => fifo_h2f_rd_en,  --                        .write
@@ -389,7 +389,7 @@ begin
   HPS_interface : HPS_intf
     generic map(AF_HK_FIFO => cF2H_AFULL)
     port map(
-      iCLK_intf       => h2f_user_clock,
+      iCLK_intf       => fpga_clk_50,
       iRST_intf       => neg_hps_fpga_reset_n,
       iFWV_intf       => PGDAQ_SHA,
       iFIFO_H2F_WR    => fifo_h2f_empty,
@@ -406,7 +406,7 @@ begin
   -- Generatore di dati pseudocasuali a 32 bit
   data_generator_proc : Test_Unit
     port map(
-      iCLK             => h2f_user_clock,
+      iCLK             => fpga_clk_50,
       iRST             => SW(0),
       iEN              => SW(1) and (not sFIFO_AFULL_sup),
       iSETTING_CONFIG	 => SW(3 downto 2),
@@ -416,7 +416,7 @@ begin
       oDATA_VALID		   => sDATA_VALID,
       oTEST_BUSY	     => open
 				);
-
+  
   -- FIFO a cavallo tra il PRBS e il FastData_Transmitter
   fifo_monte : parametric_fifo_synch
     generic map(
@@ -428,7 +428,7 @@ begin
       pSHOW_AHEAD  => "OFF"
       )
     port map(
-      iCLK    => h2f_user_clock,
+      iCLK    => fpga_clk_50,
       iRST    => neg_hps_fpga_reset_n,
       -- control interface
       oAEMPTY => sFIFO_AEMPTY_sup,
@@ -444,7 +444,7 @@ begin
   -- Trasmettitore dati veloci
   FIFO_f2h_fast_transmitter : FastData_Transmitter
     port map(
-      iCLK             => h2f_user_clock,
+      iCLK             => fpga_clk_50,
       iRST             => neg_hps_fpga_reset_n,
       -- Enable
       iEN              => '1',
@@ -491,7 +491,7 @@ begin
   -- Trigger and busy logic
   TRIG_BUSY : trigBusyLogic
     port map (
-      iCLK            => h2f_user_clock,
+      iCLK            => fpga_clk_50,
       iRST            => neg_hps_fpga_reset_n,
       iCFG            => x"00002B51",      --Temporary
       iEXT_TRIG       => '0',              --Temporary

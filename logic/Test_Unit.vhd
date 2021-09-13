@@ -35,12 +35,14 @@ type tStatus is (RESET, STANDBY, COUNT, RESTART_COUNT);	 -- La Test_Unit è una 
 signal sPS, sNS : tStatus;											 -- PS= stato attuale, NS=stato prossimo.
 
 -- Set di segnali utili per interconnetere i vari moduli del Top-Level
-signal	 sPRBS14_en			: std_logic;								          -- Abilitazione del modulo PRBS14
-signal	 sPRBS14_out		: std_logic_vector(13 downto 0);		  -- Valore di fine conteggio del contatore
+signal   sSettingConfig : std_logic_vector(1 downto 0);       -- Configurazione modalità operativa
+signal	 sPRBS8_en			: std_logic;								          -- Abilitazione del modulo PRBS8
+signal	 sPRBS8_out		  : std_logic_vector(7 downto 0);		    -- Valore di fine conteggio del contatore
 signal   sTrig          : std_logic;                          -- Segnale di trigger proveniente dalla trigBusyLogic
 signal   sTrig_R        : std_logic;                          -- Impulso di trigger proveniente dalla trigBusyLogic
-signal	 sStopValue			: std_logic_vector(13 downto 0);		  -- Valore di fine conteggio del contatore (negato)
-signal	 sCounter			  : std_logic_vector(13 downto 0);      -- Contatore per abilitare il PRBS32. Permette di creare un tempo di invio aleatorio tra un dato pseudocasuale e il successivo
+signal	 sStopValue			: std_logic_vector(15 downto 0);		  -- Valore di fine conteggio del contatore utile per generare un intervallo temporale casuale tra l'uscita di un pachetto e il successivo
+signal	 sCounter			  : std_logic_vector(15 downto 0);      -- Contatore per abilitare il PRBS32. Permette di creare un tempo di invio aleatorio tra un dato pseudocasuale e il successivo
+signal   sSop           : std_logic;                          -- Start of packet in modalità operativa 1 della Test_Unit
 constant cGND					  : std_logic := '0';					          -- Massa
 
 -- Set di segnali paralleli ai tre circuiti per la generazione di dati pseudocasuali
@@ -92,11 +94,21 @@ signal sRestartCountEnable_ns_R	: std_logic;
 
 
 begin
-	-- Assegnazione segnali interni
-	sStopValue	<= not sPRBS14_out;		 -- Utilizzeremo, come valore di fine conteggio, l'uscita del PRBS14 negata, altrimenti non avremmo potuto usufruire della quantità "0x0000"
-	sEN1 <= iEN and iSETTING_CONFIG(0) and (not iSETTING_CONFIG(1));    -- Generazione del segnale di Enable per la prima modalità operativa della Test_Unit
-  sEN2 <= iEN and (not iSETTING_CONFIG(0)) and iSETTING_CONFIG(1);    -- Generazione del segnale di Enable per la seconda modalità operativa della Test_Unit
-  sEN3 <= iEN and iSETTING_CONFIG(0) and iSETTING_CONFIG(1);          -- Generazione del segnale di Enable per la terza modalità operativa della Test_Unit
+	-- Processo per evitare che qualcuno possa cambiare modalità operativa mentre la Test_Unit risulta impegnata
+  setting_config_proc : process (iCLK)
+	begin
+		if rising_edge(iCLK) then
+			if ((sBusy1 = '0') and (sBusy2 = '0')) then
+        sSettingConfig <= iSETTING_CONFIG;
+      end if;
+    end if;
+  end process;
+  
+  -- Assegnazione segnali interni
+	sStopValue	<= not (sPRBS8_out & x"FF");		 -- Utilizzeremo come valore di fine conteggio un multiplo di 256 (MAX= 1,3 ms). Inoltre prenderemo l'uscita del PRBS8 negata, altrimenti non avremmo potuto usufruire della quantità "0x0000"
+	sEN1 <= iEN and sSettingConfig(0) and (not sSettingConfig(1));    -- Generazione del segnale di Enable per la prima modalità operativa della Test_Unit
+  sEN2 <= iEN and (not sSettingConfig(0)) and sSettingConfig(1);    -- Generazione del segnale di Enable per la seconda modalità operativa della Test_Unit
+  sEN3 <= iEN and sSettingConfig(0) and sSettingConfig(1);          -- Generazione del segnale di Enable per la terza modalità operativa della Test_Unit
 	sTrig <= (sEN2 and iTRIG);         -- Segnale usato per trasportare il trigger iniettato sulla porta "iTRIG"
   
 	-- Instanziamento dello User Edge Detector per generare gli impulsi (di 1 ciclo di clock) che segnalano il passaggio da uno stato all'altro.
@@ -142,12 +154,12 @@ begin
             );
 	
 	-- Generazione del valore di fine conteggio
-	compute_end_count : PRBS14
+	compute_end_count : PRBS8
 	port map(
 				iCLK			  => iCLK,
 				iRST		  	=> sInternalReset_ps,
-				iPRBS14_en	=> sPRBS14_en,
-				oDATA		  	=> sPRBS14_out
+				iPRBS8_en	  => sPRBS8_en,
+				oDATA		  	=> sPRBS8_out
 				);
 	
 	-- Generazione del dato pseudo-casuale a 32 bit nella PRIMA modalità operativa
@@ -179,7 +191,7 @@ begin
 	
 	
 	-- Next State Evaluation
-	delta_proc : process (sPS, sEN1, sCounter, sStopValue)
+	delta_proc : process (sPS, sEN1, sCounter, sStopValue, sPacket_full1)
 	begin
 		case sPS is
 			when RESET =>		-- Sei in RESET
@@ -197,7 +209,7 @@ begin
 					sNS <= STANDBY;			-- Altrimenti, senza abilitazione, rimani qui in attesa senza fare niente
 				end if;
 			when COUNT =>		-- Sei in COUNT
-				if ((sEN1 = '0') and (sPacket_full1 = '1')) then
+				if (sEN1 = '0') then
 					sNS <= STANDBY;			-- Se la Test_Unit viene disabilitata, torna in STANDBY
 				elsif (sCounter = sStopValue) then
 					sNS <= RESTART_COUNT;	-- Se la Test_Unit è ancora attiva e il conteggio ha raggiunto il suo valore massimo, vai in RESTART
@@ -207,7 +219,7 @@ begin
 			when RESTART_COUNT =>	-- Sei in RESTART_COUNT
 				if ((sEN1 = '0') and (sPacket_full1 = '1')) then
 					sNS <= STANDBY;			-- Se la Test_Unit viene disabilitata, torna in STANDBY
-				elsif (sCounter = sStopValue) then
+				elsif ((sCounter = sStopValue) or (sPacket_full1 = '0')) then -- or (sPacket_full1 = '0') ----- (sCounter = sStopValue) or
 					sNS <= RESTART_COUNT;	-- Se la Test_Unit è ancora attiva e il conteggio è ancora nel suo valore massimo, rimani in RESTART_COUNT
 				else
 					sNS <= COUNT;				-- Altrimenti, se non siamo al valore massimo, ricominca a contare daccapo
@@ -243,23 +255,23 @@ begin
 	
 	
 	-- Internal Process. Processo asincrono per la determinzazione dei valori dei segnali interni della Test_Unit.
-	internal_proc : process (sPS, sEN1_R, sRestartCountEnable_ns_R, sRestartCountEnable_ns)
+	internal_proc : process (sPS, sEN1_R, sRestartCountEnable_ns_R, sRestartCountEnable_ns, sSop)
 	begin
 		case sPS is
 			when RESET =>							-- Sei in RESET
-				sPRBS14_en		 <= sEN1_R;											-- Se viene attivata la Test_Unit, estrai una nuova lunghezza temporale
+				sPRBS8_en		 <= '0';											-- Se viene attivata la Test_Unit, estrai una nuova lunghezza temporale
 				sPRBS32_en		 <= '0';
 			when STANDBY =>						-- Sei in STANDBY
-				sPRBS14_en		 <= sEN1_R or sRestartCountEnable_ns_R;		-- Se viene attivata la Test_Unit o se il prossimo stato è RESTART, estrai una nuova lunghezza temporale
+				sPRBS8_en		 <= '0';		-- Se viene attivata la Test_Unit o se il prossimo stato è RESTART, estrai una nuova lunghezza temporale
 				sPRBS32_en		 <= sRestartCountEnable_ns_R;					-- se il prossimo stato è RESTART, estrai un nuovo dato
 			when COUNT =>							-- Sei in COUNT
-				sPRBS14_en		 <= sRestartCountEnable_ns_R;					-- se il prossimo stato è RESTART, estrai una nuova lunghezza temporale
+				sPRBS8_en		 <= '0';					-- se il prossimo stato è RESTART, estrai una nuova lunghezza temporale
 				sPRBS32_en		 <= sRestartCountEnable_ns_R;					-- se il prossimo stato è RESTART, estrai un nuovo dato
 			when RESTART_COUNT =>				-- Sei in RESTART_COUNT
-				sPRBS14_en		 <= sRestartCountEnable_ns;					-- se il prossimo stato è RESTART, estrai una nuova lunghezza temporale
+				sPRBS8_en		 <= sSop;		          	    		-- se è appena iniziata la trasmissiamo di un pacchetto, estrai una nuova lunghezza temporale
 				sPRBS32_en		 <= sRestartCountEnable_ns;					-- se il prossimo stato è RESTART, estrai un nuovo dato
 			when others =>							-- Sei in uno stato non definito
-				sPRBS14_en		 <= '0';
+				sPRBS8_en		 <= '0';
 				sPRBS32_en		 <= '0';
 		end case;
 	end process;
@@ -310,7 +322,7 @@ begin
   length1_calculate_proc : process (iCLK)
 	begin
 		if rising_edge(iCLK) then
-			if ((sEN1_R = '1') or (sPacket_full1 = '1')) then
+			if ((sEN1_R = '1') or (sPacket_full1 = '1') or (sPS = STANDBY)) then
         sLength1 <= iSETTING_LENGTH - 10;    -- Se qualcuno abilita la Test_Unit, oppure si è appena concluso l'invio dell'ultima word necessaria per formare un pacchetto, aggiorna lunghezza desiderata
       end if;
     end if;
@@ -323,14 +335,23 @@ begin
 			if (sInternalReset_ps = '1') then
 				sWordCounter1 <= (others => '0');		  -- Se siamo in RESET, azzera il contatore	
         sPacket_full1 <= '0';
-			elsif (sRestartCountEnable_ns_R = '1') then 
+        sSop <= '0';
+			elsif (sRestartCountEnable_ns = '1') then 
         if (sWordCounter1 < sLength1 - 1) then
+          if (sWordCounter1 = 1) then
+            sSop <= '1';
+          else
+            sSop <= '0';
+          end if;
+          
           sWordCounter1 <= sWordCounter1 + 1;   -- Se il prossimo stato è RESTART_COUNT e mi mancano almeno due parole per completare il pacchetto, continua ad incrementare il contatore delle word
           sPacket_full1 <= '0';
         else
           sWordCounter1 <= (others => '0');    -- Se il prossimo stato è RESTART_COUNT e mi manca una sola parola per completare il pacchetto, alza il flag "sPacket_full1" e riazzera il contatore delle word
           sPacket_full1 <= '1';
         end if;
+      else
+        sPacket_full1 <= '0';
       end if;
     end if;
   end process;
@@ -343,7 +364,7 @@ begin
         sBusy1 <= '0';		   -- Se siamo in RESET, la Test_Unit si può considerare libera
 			elsif (sEN1 = '1') then
         sBusy1 <= '1';       -- Se qualcuno ha abilitato la Test_Unit, la stessa si può considerare occupata nel trasferimento di qualche dato
-      elsif ((sEN1 = '0') and (sPacket_full1 = '1')) then
+      elsif ((sEN1 = '0') and (sDataValid1 = '0')) then
         sBusy1 <= '0';       -- Se qualcuno ha disabilitato la Test_Unit ed è stato ultimato l'invio dell'ultima word necessaria per formare un pacchetto, possiamo considerare la Test_Unit libera
       end if;
     end if;
@@ -445,19 +466,19 @@ begin
  
  
   -- Data Flow per il controllo delle porte d'uscita
-  with iSETTING_CONFIG select
+  with sSettingConfig select
 		oDATA <=  sData1 when "01",
               sData2 when "10",
               sData3 when "11",
               (others => '0') when others;
   
-  with iSETTING_CONFIG select
+  with sSettingConfig select
 		oDATA_VALID <=  sDataValid1 when "01",
                     sDataValid2 when "10",
                     sDataValid3 when "11",
                     '0' when others;
   
-  with iSETTING_CONFIG select
+  with sSettingConfig select
 		oTEST_BUSY <=  sBusy1 when "01",
                    sBusy2 when "10",
                    sBusy3 when "11",
