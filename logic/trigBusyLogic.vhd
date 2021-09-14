@@ -20,9 +20,11 @@ entity trigBusyLogic is
   port(
     iCLK            : in  std_logic;    --!Clock (used at rising edge)
     iRST            : in  std_logic;    --!Synchronous Reset
+    iRST_COUNTERS   : in  std_logic;    --!Synchronous Reset for the counters
     iCFG            : in  std_logic_vector(31 downto 0);  --!Configuration
     iEXT_TRIG       : in  std_logic;    --!External Trigger
-    iBUSIES         : in  std_logic_vector(7 downto 0);  --!Busy signals from all over the FPGA
+    iBUSIES_AND     : in  std_logic_vector(7 downto 0);  --!Busy signals and'ed
+    iBUSIES_OR      : in  std_logic_vector(7 downto 0);  --!Busy signals or'ed
     oTRIG           : out std_logic;    --!Output trigger
     oTRIG_ID        : out std_logic_vector(7 downto 0);  --!Trigger type
     oTRIG_COUNT     : out std_logic_vector(31 downto 0);  --!Trigger number
@@ -59,7 +61,7 @@ begin
   sMainTrig <= sIntTrig   when sIntTrigEn = '1' else sExtTrigSynch;
   sTrigId <= cTRG_CALIB when sIntTrigEn = '1' else cTRG_PHYS;
 
-  sBusy <= unary_and(iBUSIES);
+  sBusy <= unary_and(iBUSIES_AND) or unary_or(iBUSIES_OR);
   -----------------------------------------------------------------------------
 
   --!@brief Synch the trigger to the local clock domain and take the rising edge
@@ -102,7 +104,7 @@ begin
       )
     port map (
       iCLK   => iCLK,
-      iRST   => iRST,
+      iRST   => iRST_COUNTERS,
       iEN    => sTrig,
       iLOAD  => '0',
       iDATA  => (others => '0'),
@@ -118,7 +120,7 @@ begin
       )
     port map (
       iCLK   => iCLK,
-      iRST   => iRST,
+      iRST   => iRST_COUNTERS,
       iEN    => sMainTrig and sBusy,
       iLOAD  => '0',
       iDATA  => (others => '0'),

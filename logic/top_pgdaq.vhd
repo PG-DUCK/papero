@@ -38,20 +38,6 @@ entity top_pgdaq is
     FPGA_CLK2_50 : in std_logic;
     FPGA_CLK3_50 : in std_logic;
 
-    --- HDMI -------------------------------------------------------------------
-    HDMI_I2C_SCL : inout std_logic;
-    HDMI_I2C_SDA : inout std_logic;
-    HDMI_I2S     : inout std_logic;
-    HDMI_LRCLK   : inout std_logic;
-    HDMI_MCLK    : inout std_logic;
-    HDMI_SCLK    : inout std_logic;
-    HDMI_TX_CLK  : out   std_logic;
-    HDMI_TX_D    : out   std_logic_vector(23 downto 0);
-    HDMI_TX_DE   : out   std_logic;
-    HDMI_TX_HS   : out   std_logic;
-    HDMI_TX_INT  : in    std_logic;
-    HDMI_TX_VS   : out   std_logic;
-
     --- HPS --------------------------------------------------------------------
     HPS_CONV_USB_N   : inout std_logic;
     HPS_DDR3_ADDR    : out   std_logic_vector(14 downto 0);
@@ -109,7 +95,13 @@ entity top_pgdaq is
     LED : out std_logic_vector(7 downto 0);
 
     --- SW ---------------------------------------------------------------------
-    SW : in std_logic_vector(3 downto 0)
+    SW : in std_logic_vector(3 downto 0);
+
+    -- TRIG BUSY ---------------------------------------------------------------
+    iEXT_TRIG : in  std_logic;
+    oBUSY     : out std_logic;
+    oTRIG     : out std_logic
+
     );
 end entity top_pgdaq;
 
@@ -127,17 +119,18 @@ architecture std of top_pgdaq is
   signal fpga_clk_50            : std_logic;
 
   -- Ausiliari
-  signal neg_fpga_debounced_buttons : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
-  signal neg_hps_fpga_reset_n       : std_logic;  -- segnale interno di RESET in logica positiva
-  signal inverter_hps_cold_reset    : std_logic;
-  signal inverter_hps_warm_reset    : std_logic;
-  signal inverter_hps_debug_reset   : std_logic;
-  signal h2f_user_clock             : std_logic;  -- 50 MHz user clock by HPS
+  signal fpga_debounced_buttons_n : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
+  signal hps_fpga_reset             : std_logic;  -- segnale interno di RESET in logica positiva
+  signal hps_cold_rst_n             : std_logic;
+  signal hps_warm_rst_n             : std_logic;
+  signal hps_debug_rst_n            : std_logic;
+  signal h2f_user_clock             : std_logic;  -- user clock from HPS
 
   -- fifo FPGA --> HPS contenente dati scientifici
   signal fast_fifo_f2h_data_in      : std_logic_vector(31 downto 0);  -- Data
   signal fast_fifo_f2h_wr_en        : std_logic;  -- Write Enable
   signal fast_fifo_f2h_full         : std_logic;  -- Fifo Full
+  signal fast_fifo_f2h_afull        : std_logic;  -- Fifo Almost Full
   signal fast_fifo_f2h_addr_csr     : std_logic_vector(2 downto 0);
   signal fast_fifo_f2h_rd_en_csr    : std_logic;
   signal fast_fifo_f2h_data_in_csr  : std_logic_vector(31 downto 0);
@@ -148,6 +141,7 @@ architecture std of top_pgdaq is
   signal fifo_f2h_data_in      : std_logic_vector(31 downto 0);  -- Data
   signal fifo_f2h_wr_en        : std_logic;  -- Write Enable
   signal fifo_f2h_full         : std_logic;  -- Fifo Full
+  signal fifo_f2h_afull        : std_logic;  -- Fifo Almost Full
   signal fifo_f2h_addr_csr     : std_logic_vector(2 downto 0);
   signal fifo_f2h_rd_en_csr    : std_logic;
   signal fifo_f2h_data_in_csr  : std_logic_vector(31 downto 0);
@@ -164,47 +158,35 @@ architecture std of top_pgdaq is
   signal fifo_h2f_wr_en_csr    : std_logic;
   signal fifo_h2f_data_out_csr : std_logic_vector(31 downto 0);
 
-  -- Interconnessione tra i moduli istanziati
-  signal warning_rx         : std_logic_vector(2 downto 0);  -- Segnale di avviso dei malfunzionamenti del Config_Receiver. "000"-->ok, "001"-->errore sui bit di parità, "010"-->errore nella struttura del pacchetto (word missed), "100"-->errore generico (ad esempio se la macchina finisce in uno stato non precisato).
-  signal sFIFO_DATA_sup_out : std_logic_vector(31 downto 0);  -- Dati in uscita dalla FIFO a monte del FastData_Transmitter
-  signal sFIFO_EMPTY_sup    : std_logic;  -- "Empty" della FIFO a monte del FastData_Transmitter
-  signal sFIFO_AEMPTY_sup   : std_logic;  -- "Almost Empty" della FIFO a monte del FastData_Transmitter
-  signal sFIFO_RE_sup       : std_logic;  -- "Read Enable" della FIFO a monte del FastData_Transmitter
-  signal sFIFO_AFULL_inf    : std_logic;  -- "Almost Full" della FIFO a valle del FastData_Transmitter
-  signal sFIFO_AFULL_sup    : std_logic;  -- "Almost Full" della FIFO a monte del FastData_Transmitter
-  signal sDATA              : std_logic_vector(31 downto 0);  -- Dato pseudocasuale in uscita dal generatore PRBS a 32 bit
-  signal sDATA_VALID        : std_logic;  -- Consistenza del dato pseudocasuale in uscita dal generatore PRBS a 32 bit
+  -- TDAQ Module
+  signal sExtTrig       : std_logic;
+  signal sMainTrig      : std_logic;
+  signal sMainBusy      : std_logic;
+  signal sTrgBusiesAnd  : std_logic_vector(7 downto 0);
+  signal sTrgBusiesOr   : std_logic_vector(7 downto 0);
+  signal sRegArray      : tRegArray;
 
-  -- Trigger and busy
-  signal sTrig              : std_logic;                      -- Main trigger
-  signal sTrigId            : std_logic_vector(7 downto 0);   --
-  signal sTrigCount         : std_logic_vector(31 downto 0);  --
-  signal sTrigWhenBusyCount : std_logic_vector(7 downto 0);   --
-  signal sBusy              : std_logic;
+  -- Timestamps
+  signal sIntTsEn     : std_logic;
+  signal sIntTsRst    : std_logic;
+  signal sIntTsCount  : std_logic_vector(63 downto 0);
+  signal sExtTsEn     : std_logic;
+  signal sExtTsRst    : std_logic;
+  signal sExtTsCount  : std_logic_vector(63 downto 0);
 
 begin
   -- connection of internal logics ----------------------------
   fpga_clk_50   <= FPGA_CLK1_50;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
 
-  neg_fpga_debounced_buttons <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
+  oBUSY <= sMainBusy;
+  oTRIG <= sMainTrig;
 
-  -- Il reset fornito dal soc_system utilizza la logica negata, i nostri moduli lavorano in logica positiva
-  HPS_RST_SYNCH : sync_stage
-    generic map (
-      pSTAGES => 3
-      )
-    port map (
-      iCLK => fpga_clk_50,
-      iRST => '0',
-      iD   => not hps_fpga_reset_n,
-      oQ   => neg_hps_fpga_reset_n
-      );
+  fpga_debounced_buttons_n <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
 
-
-  inverter_hps_cold_reset  <= not hps_cold_reset;
-  inverter_hps_warm_reset  <= not hps_warm_reset;
-  inverter_hps_debug_reset <= not hps_debug_reset;
+  hps_cold_rst_n  <= not hps_cold_reset;
+  hps_warm_rst_n  <= not hps_warm_reset;
+  hps_debug_rst_n <= not hps_debug_reset;
   --!@brief HPS instance
   SoC_inst : soc_system port map (
     --Clock&Reset
@@ -288,10 +270,10 @@ begin
     dipsw_pio_external_connection_export  => SW,  -- dipsw_pio_external_connection.export
     button_pio_external_connection_export => fpga_debounced_buttons,  -- button_pio_external_connection.export
     hps_0_h2f_reset_reset_n               => hps_fpga_reset_n,  -- hps_0_h2f_reset.reset_n
-    hps_0_f2h_cold_reset_req_reset_n      => inverter_hps_cold_reset,  -- hps_0_f2h_cold_reset_req.reset_n
-    hps_0_f2h_debug_reset_req_reset_n     => inverter_hps_debug_reset,  -- hps_0_f2h_debug_reset_req.reset_n
+    hps_0_f2h_cold_reset_req_reset_n      => hps_cold_rst_n,  -- hps_0_f2h_cold_reset_req.reset_n
+    hps_0_f2h_debug_reset_req_reset_n     => hps_debug_rst_n,  -- hps_0_f2h_debug_reset_req.reset_n
     hps_0_f2h_stm_hw_events_stm_hwevents  => stm_hw_events,  -- hps_0_f2h_stm_hw_events.stm_hwevents
-    hps_0_f2h_warm_reset_req_reset_n      => inverter_hps_warm_reset,  -- hps_0_f2h_warm_reset_req.reset_n
+    hps_0_f2h_warm_reset_req_reset_n      => hps_warm_rst_n,  -- hps_0_f2h_warm_reset_req.reset_n
     hps_0_h2f_user0_clock_clk             => h2f_user_clock,  -- hps_0_h2f_user0_clock.clk
 
     --Fifo Partion
@@ -385,123 +367,115 @@ begin
       pulse_out => hps_debug_reset
       );
 
-  -- Interfaccia di comunicazione tra FPGA e HPS per i dati di controllo
-  HPS_interface : HPS_intf
-    generic map(AF_HK_FIFO => cF2H_AFULL)
-    port map(
-      iCLK_intf       => fpga_clk_50,
-      iRST_intf       => neg_hps_fpga_reset_n,
-      iFWV_intf       => PGDAQ_SHA,
-      iFIFO_H2F_WR    => fifo_h2f_empty,
-      iFIFO_H2F_DATA  => fifo_h2f_data_out,
-      oFIFO_H2F_RE    => fifo_h2f_rd_en,
-      oFIFO_H2F_WARN  => warning_rx,
-      iREGISTER_ARRAY => ((others => '0'), (others => '0'), '0'),
-      iHKREADER_START => '1',
-      iFIFO_F2H_LEVEL => fifo_f2h_data_out_csr,
-      oFIFO_F2H_WE    => fifo_f2h_wr_en,
-      oFIFO_F2H_DATA  => fifo_f2h_data_in
-      );
+    --!@brief HPS delivers inverted-logic reset, our modules accept non-inverted reset
+    HPS_RST_SYNCH : sync_stage
+      generic map (
+        pSTAGES => 3
+        )
+      port map (
+        iCLK => h2f_user_clock,
+        iRST => '0',
+        iD   => not hps_fpga_reset_n,
+        oQ   => hps_fpga_reset
+        );
 
-  -- Generatore di dati pseudocasuali a 32 bit
-  data_generator_proc : Test_Unit
-    port map(
-      iCLK             => fpga_clk_50,
-      iRST             => SW(0),
-      iEN              => SW(1) and (not sFIFO_AFULL_sup),
-      iSETTING_CONFIG	 => SW(3 downto 2),
-      iSETTING_LENGTH	 => x"0000006e",
-      iTRIG	       		 => sTrig,
-      oDATA			       => sDATA,
-      oDATA_VALID		   => sDATA_VALID,
-      oTEST_BUSY	     => open
-				);
-  
-  -- FIFO a cavallo tra il PRBS e il FastData_Transmitter
-  fifo_monte : parametric_fifo_synch
-    generic map(
-      pWIDTH       => 32,
-      pDEPTH       => 4096,
-      pUSEDW_WIDTH => ceil_log2(4096),
-      pAEMPTY_VAL  => 2,
-      pAFULL_VAL   => 4086,
-      pSHOW_AHEAD  => "OFF"
-      )
-    port map(
-      iCLK    => fpga_clk_50,
-      iRST    => neg_hps_fpga_reset_n,
-      -- control interface
-      oAEMPTY => sFIFO_AEMPTY_sup,
-      oEMPTY  => sFIFO_EMPTY_sup,
-      oAFULL  => sFIFO_AFULL_sup,
-      iRD_REQ => sFIFO_RE_sup,
-      iWR_REQ => sDATA_VALID,
-      -- data interface
-      iDATA   => sDATA,
-      oQ      => sFIFO_DATA_sup_out
-      );
+  -- Continuosly read the level_fifo of FIFO HK
+  fifo_f2h_addr_csr  <= "000";  --> fifo_f2h_data_out_csr = Level_Fifo
+  fifo_f2h_rd_en_csr <= '1';    --> Aggiorna Level_Fifo ogni ciclo di clock
+  --!@brief Generate the Almost Full of the F2H housekeeping FIFO with the csr
+	F2H_HK_AFull_proc : process (fifo_f2h_data_out_csr)
+	begin
+		if (fifo_f2h_data_out_csr > cF2H_AFULL - 1) then
+			fifo_f2h_afull <= '1';	-- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> fifo_f2h_afull = '1'
+		else
+			fifo_f2h_afull <= '0';	-- Altrimenti, fifo_f2h_afull = '0'
+		end if;
+	end process;
 
-  -- Trasmettitore dati veloci
-  FIFO_f2h_fast_transmitter : FastData_Transmitter
-    port map(
-      iCLK             => fpga_clk_50,
-      iRST             => neg_hps_fpga_reset_n,
-      -- Enable
-      iEN              => '1',
-      -- Settings Packet
-      iSettingLength   => x"0000006e",
-      iFirmwareVersion => x"12345678",
-      iSettingTrigNum  => x"00000001",
-      iSettingTrigDet  => x"23",
-      iSettingTrigID   => x"45",
-      iSettingIntTime  => x"1a1a1a1a1b1b1b1b",
-      iSettingExtTime  => x"2a2a2a2a2b2b2b2b",
-      -- Fifo Management
-      iFIFO_DATA       => sFIFO_DATA_sup_out,
-      iFIFO_EMPTY      => sFIFO_EMPTY_sup,
-      iFIFO_AEMPTY     => sFIFO_AEMPTY_sup,
-      oFIFO_RE         => sFIFO_RE_sup,
-      oFIFO_DATA       => fast_fifo_f2h_data_in,
-      iFIFO_AFULL      => sFIFO_AFULL_inf,
-      oFIFO_WE         => fast_fifo_f2h_wr_en,
-      -- Output Flag
-      oBUSY            => open,
-      oWARNING         => open
-      );
-
-  -- Generazione del segnale di Almost Full della FIFO a valle del FastData_Transmitter in funzione del livello di riempimento della stessa
-  Almost_Full_proc : process (fast_fifo_f2h_data_out_csr)
+  -- Continuosly read the level_fifo of FIFO Fast_Data
+  fast_fifo_f2h_addr_csr  <= "000"; --> fast_fifo_f2h_data_out_csr = Level_Fifo
+  fast_fifo_f2h_rd_en_csr <= '1';   --> Aggiorna Level_Fifo ogni ciclo di clock
+	--!@brief Generate the Almost Full of the F2H Fast-Data FIFO with the csr
+  F2H_Scientific_AFull_proc : process (fast_fifo_f2h_data_out_csr)
   begin
     if (fast_fifo_f2h_data_out_csr > cFastF2H_AFULL) then
-      sFIFO_AFULL_inf <= '1';  -- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> sFIFO_AFULL_inf = '1'
+      fast_fifo_f2h_afull <= '1';  -- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> fast_fifo_f2h_afull = '1'
     else
-      sFIFO_AFULL_inf <= '0';           -- Altrimenti, sFifoAfull = '0'
+      fast_fifo_f2h_afull <= '0';  -- Altrimenti, fast_fifo_f2h_afull = '0'
     end if;
   end process;
 
+  sIntTsEn <= '1';
+  sIntTsRst <= sRegArray(rGOTO_STATE)(1) or sRegArray(rGOTO_STATE)(0)
+                or not sRegArray(rGOTO_STATE)(4);
+  --!@brief Internal timestamp counter
+  intTimestampCounter : counter
+  generic map (
+    pOVERLAP  => "Y",
+    pBUSWIDTH => 64
+    )
+  port map (
+    iCLK   => h2f_user_clock,
+    iEN    => sIntTsEn,
+    iRST   => sIntTsRst,
+    iLOAD  => '0',
+    iDATA  => (others => '0'),
+    oCOUNT => sIntTsCount
+    );
 
-  -- Data Flow per il controllo della FIFO di Housekeeping
-  fifo_f2h_addr_csr  <= "000";          --> fifo_f2h_data_out_csr = Level_Fifo
-  fifo_f2h_rd_en_csr <= '1';    --> Aggiorna Level_Fifo ogni ciclo di clock
+  sExtTsEn <= '1';
+  sExtTsRst <= sRegArray(rGOTO_STATE)(1) or sRegArray(rGOTO_STATE)(0);
+  --!@brief External timestamp counter
+  extTimestampCounter : counter
+  generic map (
+    pOVERLAP  => "Y",
+    pBUSWIDTH => 64
+    )
+  port map (
+    iCLK   => h2f_user_clock,
+    iEN    => sExtTsEn,
+    iRST   => sExtTsRst,
+    iLOAD  => '0',
+    iDATA  => (others => '0'),
+    oCOUNT => sExtTsCount
+    );
 
-  -- Data Flow per il controllo della FIFO Fast_Data
-  fast_fifo_f2h_addr_csr  <= "000";  --> fast_fifo_f2h_data_out_csr = Level_Fifo
-  fast_fifo_f2h_rd_en_csr <= '1';  --> Aggiorna Level_Fifo ogni ciclo di clock
-
-  -- Trigger and busy logic
-  TRIG_BUSY : trigBusyLogic
+  --!@brief Wrapper for all of the Trigger and Data Acquisition modules
+  --!@todo connect busies
+  sTrgBusiesAnd <= (others => '0');
+  sTrgBusiesOr <= (others => '0');
+  TdaqModule_i : TdaqModule
+    generic map (
+      pFDI_WIDTH => 32,
+      pFDI_DEPTH => 4096,
+      pGW_VER    => PGDAQ_SHA
+    )
     port map (
-      iCLK            => fpga_clk_50,
-      iRST            => neg_hps_fpga_reset_n,
-      iCFG            => x"00002B51",      --Temporary
-      iEXT_TRIG       => '0',              --Temporary
-      iBUSIES         => (others => '0'),  --Temporary
-      oTRIG           => sTrig,
-      oTRIG_ID        => sTrigId,
-      oTRIG_COUNT     => sTrigCount,
-      oTRIG_WHEN_BUSY => sTrigWhenBusyCount,
-      oBUSY           => sBusy
-      );
+    iCLK                => h2f_user_clock,
+    --
+    iRST_REG            => hps_fpga_reset,
+    oREG_ARRAY          => sRegArray,
+    iINT_TS             => sIntTsCount,
+    iEXT_TS             => sExtTsCount,
+    --
+    iEXT_TRIG           => iEXT_TRIG,
+    oTRIG               => sMainTrig,
+    oBUSY               => sMainBusy,
+    iTRG_BUSIES_AND     => sTrgBusiesAnd,
+    iTRG_BUSIES_OR      => sTrgBusiesOr,
+    --
+    iFIFO_H2F_EMPTY     => fifo_h2f_empty,
+    iFIFO_H2F_DATA      => fifo_h2f_data_out,
+    oFIFO_H2F_RE        => fifo_h2f_rd_en,
+    --
+    iFIFO_F2H_AFULL     => fifo_f2h_afull,
+    oFIFO_F2H_WE        => fifo_f2h_wr_en,
+    oFIFO_F2H_DATA      => fifo_f2h_data_in,
+    --
+    iFIFO_F2HFAST_AFULL => fast_fifo_f2h_afull,
+    oFIFO_F2HFAST_WE    => fast_fifo_f2h_wr_en,
+    oFIFO_F2HFAST_DATA  => fast_fifo_f2h_data_in
+    );
 
 
 end architecture;

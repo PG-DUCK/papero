@@ -11,22 +11,19 @@ use work.pgdaqPackage.all;
 
 --!@copydoc FastData_Transmitter.vhd
 entity FastData_Transmitter is
+	generic(
+		pGW_VER : std_logic_vector(31 downto 0)
+	);
 	port(
-	     iCLK					: in std_logic;								-- Clock
+	    iCLK					: in std_logic;								-- Clock
 		  iRST					: in std_logic;								-- Reset
 		  -- Enable
 		  iEN						: in std_logic;								-- Abilitazione del modulo FastData_Transmitter
 		  -- Settings Packet
-		  iSettingLength		: in std_logic_vector(31 downto 0);		-- Lunghezza del pacchetto --> Number of 32-bit payload words + 10
-		  iFirmwareVersion	: in std_logic_vector(31 downto 0);		-- Versione del firmware in uso
-		  iSettingTrigNum		: in std_logic_vector(31 downto 0);		-- Numero di trigger passati dall'ultimo reset
-		  iSettingTrigDet		: in std_logic_vector(7 downto 0);		-- Detector associato al trigger attuale
-		  iSettingTrigID		: in std_logic_vector(7 downto 0);		-- Identificativo della tipologia di trigger
-		  iSettingIntTime		: in std_logic_vector(63 downto 0);		-- Numero di fronti di salita di clock passati dall'ultimo reset e calcolati internamente all'FPGA
-		  iSettingExtTime		: in std_logic_vector(63 downto 0);		-- Numero di fronti di salita di clock passati dall'ultimo reset e calcolati esternamente all'FPGA
+		  iMETADATA			: in tF2hMetadata; --Packet header information
 		  -- Fifo Management
 		  iFIFO_DATA			: in 	std_logic_vector(31 downto 0);	-- "Data_Output" della FIFO a monte del FastData_Transmitter
-	     iFIFO_EMPTY			: in 	std_logic;								-- "Empty" della FIFO a monte del FastData_Transmitter
+	    iFIFO_EMPTY			: in 	std_logic;								-- "Empty" della FIFO a monte del FastData_Transmitter
 		  iFIFO_AEMPTY			: in std_logic;								-- "Almost_Empty" della FIFO a monte del FastData_Transmitter. ATTENZIONE!!!--> Per un corretto funzionamento, impostare pAEMPTY_VAL = 2 sulla FIFO a monte del FastData_Transmitter
 		  oFIFO_RE				: out std_logic;								-- "Read_Enable" della FIFO a monte del FastData_Transmitter
 		  oFIFO_DATA			: out std_logic_vector(31 downto 0);	-- "Data_Inutput" della FIFO a valle del FastData_Transmitter
@@ -76,8 +73,8 @@ begin
 	sLastOne				<= iFIFO_EMPTY xor iFIFO_AEMPTY;
 	oBUSY					<= sBusy;
 	oWARNING				<= sFsmError;
-	
-	
+
+
 	-- Calcola il CRC32 per il contenuto del pacchetto (eccetto per SoP, Len, and EoP)
    Calcolo_CRC32 : CRC32
    generic map(
@@ -90,7 +87,7 @@ begin
 				iDATA   => sFIFO_DATA,
 				oCRC    => sEstimated_CRC32
 				);
-	
+
 
 	-- Implementazione della macchina a stati
 	StateFSM_proc : process (iCLK)
@@ -127,7 +124,7 @@ begin
 						else
 							sPS	 <= IDLE;
 						end if;
-						
+
 					-- Stato di START-OF-PACKET. Inoltro della parola "BABA1AFA"
 					when SOP =>
 						if (iFIFO_AFULL = '0') then
@@ -137,97 +134,97 @@ begin
 						else
 							sPS			 <= SOP;
 						end if;
-					
+
 					-- Stato di LENGTH. Inoltro della parola contenente la lunghezza del pacchetto: Payload 32-bit words + 10
 					when LENG =>
 						if (iFIFO_AFULL = '0') then
-							sFIFO_DATA	 <= iSettingLength;
+							sFIFO_DATA	 <= iMETADATA.pktLen; --!@todo Store the packet length at the beginning of the packet
 							sFIFO_WE		 <= '1';
 							sPS			 <= FWV;
 						else
 							sPS			 <= LENG;
 						end if;
-					
+
 					-- Stato di FIRMWARE-VERSION. Inoltro della parola contenente la Versione del Firmware in uso (SHA dell'ultimo commit)
 					when FWV =>
 						if (iFIFO_AFULL = '0') then
-							sFIFO_DATA	 <= iFirmwareVersion;
+							sFIFO_DATA	 <= pGW_VER;
 							sFIFO_WE		 <= '1';
 							sCRC32_en	 <= '1';
 							sPS			 <= TRIG_NUM;
 						else
 							sPS			 <= FWV;
 						end if;
-					
+
 					-- Stato di TRIGGER-NUMBER. Inoltro della parola contenente il numero di trigger
 					when TRIG_NUM =>
 						if (iFIFO_AFULL = '0') then
-							sFIFO_DATA	 <= iSettingTrigNum;
+							sFIFO_DATA	 <= iMETADATA.trigNum;
 							sFIFO_WE		 <= '1';
 							sCRC32_en	 <= '1';
 							sPS			 <= TRIG_TYPE;
 						else
 							sPS			 <= TRIG_NUM;
 						end if;
-						
+
 					-- Stato di TRIGGER-TYPE. Inoltro della parola contenente il Detector-ID e il Trigger-ID
 					when TRIG_TYPE =>
 						if (iFIFO_AFULL = '0') then
-							sFIFO_DATA	 <= x"0000" & iSettingTrigDet & iSettingTrigID;
+							sFIFO_DATA	 <= x"0000" & iMETADATA.detId & iMETADATA.trigId;
 							sFIFO_WE		 <= '1';
 							sCRC32_en	 <= '1';
 							sPS			 <= INT_TIME_0;
 						else
 							sPS			 <= TRIG_TYPE;
 						end if;
-						
+
 					-- Stato di INTERNAL-TIMESTAMP-MSW. Inoltro della "Most_Significant_Word" contenente il Timestamp calcolato all'interno dell'FPGA
 					when INT_TIME_0 =>
 						if (iFIFO_AFULL = '0') then
-							sFIFO_DATA	 <= iSettingIntTime(63 downto 32);
+							sFIFO_DATA	 <= iMETADATA.intTime(63 downto 32);
 							sFIFO_WE		 <= '1';
 							sCRC32_en	 <= '1';
 							sPS			 <= INT_TIME_1;
 						else
 							sPS			 <= INT_TIME_0;
 						end if;
-						
+
 					-- Stato di INTERNAL-TIMESTAMP-LSW. Inoltro della "Least_Significant_Word" contenente il Timestamp calcolato all'interno dell'FPGA
 					when INT_TIME_1 =>
 						if (iFIFO_AFULL = '0') then
-							sFIFO_DATA	 <= iSettingIntTime(31 downto 0);
+							sFIFO_DATA	 <= iMETADATA.intTime(31 downto 0);
 							sFIFO_WE		 <= '1';
 							sCRC32_en	 <= '1';
 							sPS			 <= EXT_TIME_0;
 						else
 							sPS			 <= INT_TIME_1;
 						end if;
-						
+
 					-- Stato di EXTERNAL-TIMESTAMP-MSW. Inoltro della "Most_Significant_Word" contenente il Timestamp calcolato all'esterno dell'FPGA
 					when EXT_TIME_0 =>
 						if (iFIFO_AFULL = '0') then
-							sFIFO_DATA	 <= iSettingExtTime(63 downto 32);
+							sFIFO_DATA	 <= iMETADATA.extTime(63 downto 32);
 							sFIFO_WE		 <= '1';
 							sCRC32_en	 <= '1';
 							sPS			 <= EXT_TIME_1;
 						else
 							sPS			 <= EXT_TIME_0;
 						end if;
-						
+
 					-- Stato di EXTERNAL-TIMESTAMP-LSW. Inoltro della "Least_Significant_Word" contenente il Timestamp calcolato all'esterno dell'FPGA
 					when EXT_TIME_1 =>
 						if (iFIFO_AFULL = '0') then
-							sFIFO_DATA	 <= iSettingExtTime(31 downto 0);
+							sFIFO_DATA	 <= iMETADATA.extTime(31 downto 0);
 							sFIFO_WE		 <= '1';
 							sCRC32_en	 <= '1';
 							sPS			 <= PAYLOAD;
 						else
 							sPS			 <= EXT_TIME_1;
 						end if;
-						
+
 					-- Stato di PAYLOAD. Inoltro delle parole di payload dalla FIFO a monte a quella a valle rispetto al FastData_Transmitter
 					when PAYLOAD =>
-						if (DataCounter_WE < DataCounter_RE or DataCounter_WE < iSettingLength - 10) then
+						if (DataCounter_WE < DataCounter_RE or DataCounter_WE < iMETADATA.pktLen - 10) then
 							if (sFIFO_RE_d = '1') then
 								sFIFO_WE			<= '1';
 								DataCounter_WE <= DataCounter_WE + 1;
@@ -243,15 +240,15 @@ begin
 							DataCounter_WE <= (others => '0');
 							sPS				<= TRAILER;
 						end if;
-						
-						if (sFIFO_RE = '0' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < iSettingLength - 10) then
+
+						if (sFIFO_RE = '0' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < iMETADATA.pktLen - 10) then
 							sFIFO_RE			<= '1';
 							sFIFO_DATA		<= sScientificData;
 							DataCounter_RE <= DataCounter_RE + 1;
-						elsif (sFIFO_RE = '1' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < iSettingLength - 10) then
+						elsif (sFIFO_RE = '1' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < iMETADATA.pktLen - 10) then
 							sFIFO_RE		<= '0';
 							sFIFO_DATA	<= sScientificData;
-						elsif (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' and DataCounter_RE < iSettingLength - 10) then
+						elsif (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' and DataCounter_RE < iMETADATA.pktLen - 10) then
 							sFIFO_RE			<= '1';
 							sFIFO_DATA		<= sScientificData;
 							DataCounter_RE <= DataCounter_RE + 1;
@@ -259,7 +256,7 @@ begin
 							sFIFO_RE		<= '0';
 							sFIFO_DATA	<= sScientificData;
 						end if;
-						
+
 					-- Stato di TRAILER. Inoltro della parola di trailer "0BADFACE"
 					when TRAILER =>
 						if (iFIFO_AFULL = '0') then
@@ -269,7 +266,7 @@ begin
 						else
 							sPS			 <= TRAILER;
 						end if;
-						
+
 					-- Stato di CRC. Inoltro del CRC-32/MPEG-2 calcolato su tutto il pacchetto (tranne per Sop, Length e Trailer)
 					when CRC =>
 						if (iFIFO_AFULL = '0') then
@@ -279,7 +276,7 @@ begin
 						else
 							sPS			 <= CRC;
 						end if;
-						
+
 					-- Stato non previsto.
 					when others =>
 						sFIFO_RE   	 <= '0';
@@ -298,7 +295,7 @@ begin
 					-- Stato di PAYLOAD. Inoltro delle parole di payload dalla FIFO a monte a quella a valle rispetto al FastData_Transmitter
 					when PAYLOAD =>
 						sFIFO_DATA	<= sScientificData;
-						if (DataCounter_WE < DataCounter_RE or DataCounter_WE < iSettingLength - 10) then
+						if (DataCounter_WE < DataCounter_RE or DataCounter_WE < iMETADATA.pktLen - 10) then
 							if (sFIFO_RE_d = '1') then
 								sFIFO_WE			<= '1';
 								DataCounter_WE <= DataCounter_WE + 1;
@@ -314,19 +311,19 @@ begin
 							DataCounter_WE <= (others => '0');
 							sPS				<= TRAILER;
 						end if;
-					
+
 					-- Stato non previsto.
 					when others =>
 						sFIFO_RE   	 <= '0';
 						sFIFO_WE		 <= '0';
 						sCRC32_rst	 <= '0';
 						sCRC32_en	 <= '0';
-					end case;				
+					end case;
 			end if;
 		end if;
 	end process;
-	
-	
+
+
 	-- Flip Flop D per ritardare il segnale di "Read_Enable" della FIFO a monte del FastData_Transmitter. Lo scopo è quello di evitare di leggere il dato in uscita dalla FIFO quando questo non è ancora pronto.
    delay_Wait_Request_proc : process (iCLK)
    begin
@@ -338,6 +335,6 @@ begin
 			end if;
 		end if;
    end process;
-	
-	
+
+
 end Behavior;

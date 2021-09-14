@@ -32,7 +32,8 @@ use work.pgdaqPackage.all;
 entity hkReader is
   generic(
     pFIFO_WIDTH : natural := 32; --!FIFO data width
-    pPARITY     : string  := "EVEN" --!Parity polarity ("EVEN" or "ODD")
+    pPARITY     : string  := "EVEN"; --!Parity polarity ("EVEN" or "ODD")
+    pGW_VER     : std_logic_vector(31 downto 0)  --!Firmware version from HoG
     );
   port (
     iCLK        : in  std_logic;        --!Main clock
@@ -41,8 +42,7 @@ entity hkReader is
     oCNT        : out tControlOut;      --!Control output flags
     iINT_START  : in  std_logic;        --!Enable for the internal start
     --Register array
-    iFW_VER     : in  std_logic_vector(31 downto 0);  --!Firmware version from HoG
-    iREG_ARRAY  : in  tRegisterArray;   --!Register array input
+    iREG_ARRAY  : in  tRegArray;   --!Register array input
     --Output FIFO interface
     oFIFO_DATA  : out std_logic_vector(pFIFO_WIDTH-1 downto 0);  --!Fifo Data in
     oFIFO_WR    : out std_logic;        --!Fifo write-request in
@@ -54,7 +54,7 @@ end entity hkReader;
 architecture std of hkReader is
   -- Constants -----------------------------------------------------------------
   --!Packet length: 2*Number of registers + header + trailer
-  constant cPKT_LEN         : natural := (cREGISTERS * 2) + 5;
+  constant cPKT_LEN         : natural := (cHPS_REGISTERS * 2) + 5;
 
   -- Signals -------------------------------------------------------------------
   --FSM
@@ -68,11 +68,12 @@ architecture std of hkReader is
   signal sFifoWr   : std_logic;
 
   --Register counter
-  signal sRegCounter : natural range 0 to (2**cREG_ADDR - 1);
+  signal sRegCounter : natural range 0 to (cHPS_REGISTERS-1);
 
   --Internal Start
   signal sStartCounter : std_logic_vector(31 downto 0);
   signal sStart        : std_logic;
+  signal sExtStartRE   : std_logic;
 
   --Parity
   signal sParity  : std_logic_vector(3 downto 0);
@@ -83,6 +84,16 @@ architecture std of hkReader is
 begin
   oFIFO_DATA <= sFifoData;
   oFIFO_WR   <= sFifoWr;
+
+  --!@brief Rising edge of the start signal
+  start_re : edge_detector
+  port map (
+    iCLK    => iCLK,
+    iRST    => '0',
+    iD      => iCNT.start,
+    oEDGE_R => sExtStartRE
+    );
+
   --!@brief FSM to send an HK packet. A-full is checked only at the beginning.
   --!@param[in] iCLK Clock, used on rising edge
   --!@return sHkState Next state of the FSM
@@ -113,7 +124,7 @@ begin
           --Wait for a start and check if
           when IDLE =>
             sFifoWr <= '0';
-            START_IF : if (iCNT.start = '1' or sStart = '1') then
+            START_IF : if (sExtStartRE = '1' or sStart = '1') then
               sHkState <= WAIT_FOR_FIFO;
             end if START_IF;
 
@@ -138,7 +149,7 @@ begin
 
           --Send the hog firmware version word
           when FW_VER =>
-            sFifoData <= iFW_VER;
+            sFifoData <= pGW_VER;
             sHkState   <= HDR;
 
           --Send the header word
