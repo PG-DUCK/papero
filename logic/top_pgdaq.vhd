@@ -277,7 +277,7 @@ begin
     hps_0_h2f_user0_clock_clk             => h2f_user_clock,  -- hps_0_h2f_user0_clock.clk
 
     --Fifo Partion
-    fast_fifo_fpga_to_hps_clk_clk          => h2f_user_clock,  -- fast_fifo_fpga_to_hps_clk.clk
+    fast_fifo_fpga_to_hps_clk_clk          => fpga_clk_50,  -- fast_fifo_fpga_to_hps_clk.clk
     fast_fifo_fpga_to_hps_rst_reset_n      => '1',  -- fast_fifo_fpga_to_hps_rst.reset_n
     fast_fifo_fpga_to_hps_in_writedata     => fast_fifo_f2h_data_in,  --       fifo_fpga_to_hps_in.writedata
     fast_fifo_fpga_to_hps_in_write         => fast_fifo_f2h_wr_en,  --                          .write
@@ -288,7 +288,7 @@ begin
     fast_fifo_fpga_to_hps_in_csr_write     => fast_fifo_f2h_wr_en_csr,  --                          .write
     fast_fifo_fpga_to_hps_in_csr_readdata  => fast_fifo_f2h_data_out_csr,  --                          .readdata
 
-    fifo_fpga_to_hps_clk_clk          => h2f_user_clock,  --         fifo_fpga_to_hps_clk.clk
+    fifo_fpga_to_hps_clk_clk          => fpga_clk_50,  --         fifo_fpga_to_hps_clk.clk
     fifo_fpga_to_hps_rst_reset_n      => '1',  --         fifo_fpga_to_hps_rst.reset_n
     fifo_fpga_to_hps_in_writedata     => fifo_f2h_data_in,  --     fast_fifo_fpga_to_hps_in.writedata
     fifo_fpga_to_hps_in_write         => fifo_f2h_wr_en,  --                             .write
@@ -299,7 +299,7 @@ begin
     fifo_fpga_to_hps_in_csr_write     => fifo_f2h_wr_en_csr,  --                             .write
     fifo_fpga_to_hps_in_csr_readdata  => fifo_f2h_data_out_csr,  --                             .readdata
 
-    fifo_hps_to_fpga_clk_clk           => h2f_user_clock,  --    fifo_hps_to_fpga_clk.clk
+    fifo_hps_to_fpga_clk_clk           => fpga_clk_50,  --    fifo_hps_to_fpga_clk.clk
     fifo_hps_to_fpga_rst_reset_n       => '1',  --    fifo_hps_to_fpga_rst.reset_n
     fifo_hps_to_fpga_out_readdata      => fifo_h2f_data_out,  --     fifo_fpga_to_hps_in.writedata
     fifo_hps_to_fpga_out_read          => fifo_h2f_rd_en,  --                        .write

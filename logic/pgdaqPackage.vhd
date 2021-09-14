@@ -309,16 +309,16 @@ package pgdaqPackage is
 			);
 	end component;
 
-	--!@copydoc PRBS14.vhd
-	--!Modulo per la generazione di dati pseudo-casuali a 14 bit
-	component PRBS14 is
-		port(
-			iCLK			: in std_logic;
-			iRST			: in std_logic;
-			iPRBS14_en	: in std_logic;
-			oDATA			: out std_logic_vector(13 downto 0)
-			);
-	end component;
+  --!@copydoc PRBS8.vhd
+  --!Modulo per la generazione di dati pseudo-casuali a 8 bit
+  component PRBS8 is
+    port(
+      iCLK			: in std_logic;
+      iRST			: in std_logic;
+      iPRBS8_en	: in std_logic;
+      oDATA			: out std_logic_vector(7 downto 0)
+      );
+  end component;
 
 	--!@copydoc PRBS32.vhd
 	--!Modulo per la generazione di dati pseudo-casuali a 32 bit
@@ -331,17 +331,21 @@ package pgdaqPackage is
 			);
 	end component;
 
-	--!@copydoc Test_Unit.vhd
-	--!Unità di test per verificare il funzionamento della sola scheda DAQ
-	component Test_Unit is
-		port(
-			iCLK			: in std_logic;								-- Porta per il clock
-			iRST			: in std_logic;								-- Porta per il reset
-			iEN			: in std_logic;								-- Porta per l'abilitazione della unità di test
-			oDATA			: out std_logic_vector(31 downto 0);	-- Numero binario a 32 bit pseudo-casuale
-			oDATA_VALID	: out std_logic								-- Segnale che attesta la validità dei dati in uscita dalla Test_Unit. Se oDATA_VALID=1 --> il valore di "oDATA" è consistente
-			);
-	end component;
+  --!@copydoc Test_Unit.vhd
+  --!Unità di test per verificare il funzionamento della sola scheda DAQ
+  component Test_Unit is
+    port(
+      iCLK			        : in std_logic;					                -- Porta per il clock
+      iRST		        	: in std_logic;							            -- Porta per il reset
+      iEN		          	: in std_logic;								          -- Porta per l'abilitazione della unità di test
+      iSETTING_CONFIG		: in std_logic_vector(1 downto 0);		  -- Configurazione modalità operativa: "00"-->dati pseudocasuali generati con un tempo pseudocasuale, "01" dati pseudocasuali generati negli istanti di trigger, "10" dati pseudocasuali generati di continuo (rate massima)
+      iSETTING_LENGTH		: in std_logic_vector(31 downto 0);		  -- Lunghezza del pacchetto --> Number of 32-bit payload words + 10
+      iTRIG             : in std_logic;                         -- Ingresso per il segnale di trigger proveniente dalla trigBusyLogic
+      oDATA		        	: out std_logic_vector(31 downto 0);    -- Numero binario a 32 bit pseudo-casuale
+      oDATA_VALID     	: out std_logic;						            -- Segnale che attesta la validità dei dati in uscita dalla Test_Unit. Se oDATA_VALID=1 --> il valore di "oDATA" è consistente
+      oTEST_BUSY        : out std_logic                         -- La Test_Unit è impegnata e non può essere interrotta, altrimenti il pacchetto dati verrebbe incompleto
+      );
+  end component;
 
 	--!@copydoc FastData_Transmitter.vhd
 	--!Trasmettitore dei dati scientifici
@@ -421,6 +425,26 @@ package pgdaqPackage is
     oFIFO_F2HFAST_WE    : out std_logic;
     oFIFO_F2HFAST_DATA  : out std_logic_vector(31 downto 0)
   );
+  end component;
+
+  --!Generatore di segnale PWM
+  component Variable_PWM_FSM is
+  generic (
+           period     : integer;			  -- Periodo di conteggio del contatore (che di fatto andrà a definire la frequenza del segnale PWM) espresso in "numero di cicli di clock"
+           duty_cycle : integer;        -- Numero di cicli di clock per i quali l'uscita dovrà tenersi "alta"
+           neg        : integer;        -- Logica di funzionamento del dispositivo. Se neg=0-->logica normale, se neg=1-->logica negata
+           R_vs_F     : integer := 0    -- Parametro che seleziona quali fronti d'onda conteggiare. Se R_vs_F=0--> rising edge, se R_vs_F=1--> falling edge
+          );
+  port (
+        SWITCH            : in std_logic;        -- Ingresso per abilitare il segnale PWM
+        ENABLE_COUNTER    : in std_logic;        -- Ingresso per abilitare il contatore per la generazione del segnale PWM
+        RESET_RF_COUNTER  : in std_logic;        -- Ingresso per il reset del contatore dei fronti d'onda
+        CLK               : in std_logic;        -- Ingresso del segnale di Clock
+        LED               : out std_logic;       -- Uscita del dispositivo
+        RISING_LED        : out std_logic;       -- Uscita di segnalazione dei fronti di salita
+        FALLING_LED       : out std_logic;       -- Uscita di segnalazione dei fronti di discesa
+        RISE_FALL_COUNTER : out std_logic_vector(7 downto 0)    -- Uscita contenente il numero di fronti di salita/discesa rilevati dal detector
+       );
   end component;
 
 

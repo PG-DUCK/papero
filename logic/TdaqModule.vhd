@@ -79,9 +79,12 @@ architecture std of TdaqModule is
   signal sTrigWhenBusyCount : std_logic_vector(7 downto 0);
   signal sTrigCfg : std_logic_vector(31 downto 0);
   signal sBusy : std_logic;
+  signal sTrig : std_logic;
 
   -- Test unit
   signal sTestUnitEn : std_logic;
+  signal sTestUnitBusy : std_logic;
+  signal sTestUnitCfg : std_logic_vector(1 downto 0);
 
 begin
   -- Register Array assignments
@@ -95,6 +98,7 @@ begin
   sHkRdrIntstart  <= sRegArray(rUNITS_EN)(4);
   sHkRdrCnt.start      <= sRegArray(rUNITS_EN)(5);
   sHkRdrCnt.en         <= sRegArray(rUNITS_EN)(6);
+  sTestUnitCfg <= sRegArray(rUNITS_EN)(9 downto 8);
   --
   sTrigCfg      <= sRegArray(rTRIGBUSY_LOGIC);
   --
@@ -166,11 +170,15 @@ begin
   --!@brief PRBS-32 generator
   PRBS_generator : Test_Unit
     port map(
-      iCLK        => iCLK,
-      iRST        => sRst,
-      iEN         => sTestUnitEn and not sFdiFifoOut.aFull,
-      oDATA       => sFdiFifoIn.data,
-      oDATA_VALID => sFdiFifoIn.wr
+      iCLK            => iCLK,
+      iRST            => sRst,
+      iEN             => sTestUnitEn and not sFdiFifoOut.aFull,
+      iSETTING_CONFIG => sTestUnitCfg,
+      iSETTING_LENGTH => sRegArray(rPKT_LEN),
+      iTRIG           => sTrig,
+      oDATA           => sFdiFifoIn.data,
+      oDATA_VALID     => sFdiFifoIn.wr,
+      oTEST_BUSY      => sTestUnitBusy
       );
 
   --!@brief FIFO in input of the fast data tx
@@ -254,7 +262,7 @@ begin
   sFpgaRegIntf.we(rPIUMONE)   <= '1';
 
   sRegWarning <= x"00000" & "000" & sF2hFastWarning & x"0" & "0" & sCrWarning;
-  sRegBusy <= sBusy & "000" & iTRG_BUSIES_AND & iTRG_BUSIES_OR & sF2hFastBusy
+  sRegBusy <= sBusy & "00" & sTestUnitBusy & iTRG_BUSIES_AND & iTRG_BUSIES_OR & sF2hFastBusy
               & iFIFO_F2H_AFULL & iFIFO_F2HFAST_AFULL
               & sFdiFifoOut.aFull & sTrigWhenBusyCount;
 

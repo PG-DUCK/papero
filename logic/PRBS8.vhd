@@ -1,8 +1,8 @@
 -------------------------------------------------------
---------  PSEUDO RANDOM BINARY SEQUENCE 14bit  --------
+--------  PSEUDO RANDOM BINARY SEQUENCE 8bit  --------
 -------------------------------------------------------
---!@file PRBS14.vhd
---!@brief Implementazione di un algoritmo PRBS a 14 bit utile per generare un intervallo temporale casiale tra l'uscita di un pachetto e il successivo
+--!@file PRBS8.vhd
+--!@brief Implementazione di un algoritmo PRBS a 8 bit utile per generare un intervallo temporale casuale tra l'uscita di un pachetto e il successivo
 --!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
 
 library IEEE;
@@ -12,39 +12,39 @@ use IEEE.NUMERIC_STD.all;
 use work.pgdaqPackage.all;
 
 
---!@copydoc PRBS14.vhd
-entity PRBS14 is
+--!@copydoc PRBS8.vhd
+entity PRBS8 is
 	port(
 	     iCLK			: in std_logic;								-- Segnale di clock
 		  iRST			: in std_logic;								-- Segnale di reset
-		  iPRBS14_en	: in std_logic;								-- Segnale di abilitazione del PRBS14
-	     oDATA			: out std_logic_vector(13 downto 0)		-- Numero binario a 14 bit pseudo-casuale
+		  iPRBS8_en	: in std_logic;								-- Segnale di abilitazione del PRBS8
+	     oDATA			: out std_logic_vector(7 downto 0)		-- Numero binario a 8 bit pseudo-casuale
 	    );
-end PRBS14;
+end PRBS8;
 
---!@copydoc PRBS14.vhd
-architecture Behavior of PRBS14 is
-signal sDataReg	: std_logic_vector(13 downto 0);		-- Registro di 14 bit usato per realizzare lo shift register
+--!@copydoc PRBS8.vhd
+architecture Behavior of PRBS8 is
+signal sDataReg	: std_logic_vector(7 downto 0);		-- Registro di 8 bit usato per realizzare lo shift register
 signal sTapData	: std_logic;								-- Segnale dato dalla combinazione dei tap del registro
 
 begin
-	-- Instanziamento del Flip-Flop D per realizzare lo stage0 di uno shift register a 14 bit
+	-- Instanziamento del Flip-Flop D per realizzare lo stage0 di uno shift register a 8 bit
 	stage_0 : FFD
 	port map(
 				iCLK		=> iCLK,
 				iRST		=> iRST,
-				iENABLE	=> iPRBS14_en,
+				iENABLE	=> iPRBS8_en,
 				iD			=> sTapData,
 				oQ			=> sDataReg(0)
 				);
 	
-	-- Instanziamento di ulteriori 13 Flip-Flop D per realizzare gli stage1...stage13 di uno shift register a 14 bit
-	FFD_generator : for i in 0 to 12 generate
+	-- Instanziamento di ulteriori 7 Flip-Flop D per realizzare gli stage1...stage7 di uno shift register a 8 bit
+	FFD_generator : for i in 0 to 6 generate
 		stage_N : FFD
 		port map(
 				iCLK		=> iCLK,
 				iRST		=> iRST,
-				iENABLE	=> iPRBS14_en,
+				iENABLE	=> iPRBS8_en,
 				iD			=> sDataReg(i),
 				oQ			=> sDataReg(i+1)
 				);
@@ -56,9 +56,9 @@ begin
 	-- La scelta dei tap è legata alla periodicità della sequenza d'uscita.
 	-- Affinché la periodicità dell'uscita dello shift register sia la più grande possibile,
 	-- la funzione combinatoria per la generazione del bit d'ingresso deve essere associata
-	-- a un polinomio "primitivo". In questo caso è stato scelto: x^14 + x^5 + x^3 + x^1 + 1.
-	-- tap --> [esponente della 'x' - 1] --> 14-1, 5-1, 3-1, 1-1.
-	sTapData <= (sDataReg(13) xor sDataReg(4) xor sDataReg(2) xor sDataReg(0));
+	-- a un polinomio "primitivo". In questo caso è stato scelto: x^8 + x^4 + x^3 + x^2 + 1.
+	-- tap --> [esponente della 'x' - 1] --> 8-1, 4-1, 3-1, 2-1.
+	sTapData <= (sDataReg(7) xor sDataReg(3) xor sDataReg(2) xor sDataReg(1));
 	
 	
 	-- Data Flow per il cotrollo dell'uscita
