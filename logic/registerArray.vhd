@@ -14,14 +14,14 @@ use work.pgdaqPackage.all;
 --!@copydoc registerArray.vhd
 entity registerArray is
   port (
-    iCLK       : in  std_logic;       --!Main clock
-    iRST       : in  std_logic;       --!Main reset
-    iCNT       : in  tControlIn;      --!Control input signals
-    oCNT       : out tControlOut;     --!Control output flags
+    iCLK       : in  std_logic;         --!Main clock
+    iRST       : in  std_logic;         --!Main reset
+    iCNT       : in  tControlIn;        --!Control input signals
+    oCNT       : out tControlOut;       --!Control output flags
     --Register array
-    oREG_ARRAY : out tRegArray;       --!Complete Registers array
-    iHPS_REG   : in  tRegIntf;        --!HPS interface
-    iFPGA_REG  : in  tFpgaRegIntf     --!FPGA interface
+    oREG_ARRAY : out tRegArray;         --!Complete Registers array
+    iHPS_REG   : in  tRegIntf;          --!HPS interface
+    iFPGA_REG  : in  tFpgaRegIntf       --!FPGA interface
     );
 end registerArray;
 
@@ -50,8 +50,8 @@ begin
         sHpsReg  <= cHPS_REG_NULL;
         sFpgaReg <= cFPGA_REG_NULL;
       else
-        sHpsReg  <= sHpsReg;   --default value, update if necessary
-        sFpgaReg <= sFpgaReg;  --default value, update if necessary
+        sHpsReg  <= sHpsReg;            --default value, update if necessary
+        sFpgaReg <= sFpgaReg;           --default value, update if necessary
 
         HPS_WE_IF : if (iHPS_REG.we = '1') then
           sHpsReg(slv2int(iHPS_REG.addr)) <= iHPS_REG.reg;

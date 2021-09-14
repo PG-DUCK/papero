@@ -8,14 +8,16 @@ use ieee.numeric_std.all;
 
 --!@copydoc edge_detector_md.vhd
 entity edge_detector_md is  -- Dichiarazione dell'interfaccia del modulo "edge_detector_md". Questo dispositivo rileva la presenza di fronti d'onda di salita e di discesa del segnale d'ingresso.
-  generic(channels : integer   := 1;
-          R_vs_F   : std_logic := '0'  -- Definiamo con "R_vs_F" il parametro che seleziona quali fronti d'onda conteggiare. Se R_vs_F=0--> rising edge, se R_vs_F=1--> falling edge.
-          );
-  port(iCLK  : in  std_logic;           -- Clock.
-       iRST  : in  std_logic;           -- Reset.
-       iD    : in  std_logic_vector(channels - 1 downto 0);  -- Canali d'Ingresso.
-       oEDGE : out std_logic_vector(channels - 1 downto 0)  -- Uscita del detector dei fronti d'onda.
-       );
+  generic(
+    channels : integer   := 1;
+    R_vs_F   : std_logic := '0'  -- Definiamo con "R_vs_F" il parametro che seleziona quali fronti d'onda conteggiare. Se R_vs_F=0--> rising edge, se R_vs_F=1--> falling edge.
+    );
+  port(
+    iCLK  : in  std_logic;              -- Clock.
+    iRST  : in  std_logic;              -- Reset.
+    iD    : in  std_logic_vector(channels - 1 downto 0);  -- Canali d'Ingresso.
+    oEDGE : out std_logic_vector(channels - 1 downto 0)  -- Uscita del detector dei fronti d'onda.
+    );
 end edge_detector_md;
 
 --!@copydoc edge_detector_md.vhd

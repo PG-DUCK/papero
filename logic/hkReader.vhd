@@ -31,8 +31,8 @@ use work.pgdaqPackage.all;
 --!@copydoc hkReader.vhd
 entity hkReader is
   generic(
-    pFIFO_WIDTH : natural := 32; --!FIFO data width
-    pPARITY     : string  := "EVEN"; --!Parity polarity ("EVEN" or "ODD")
+    pFIFO_WIDTH : natural := 32;        --!FIFO data width
+    pPARITY     : string  := "EVEN";    --!Parity polarity ("EVEN" or "ODD")
     pGW_VER     : std_logic_vector(31 downto 0)  --!Firmware version from HoG
     );
   port (
@@ -42,7 +42,7 @@ entity hkReader is
     oCNT        : out tControlOut;      --!Control output flags
     iINT_START  : in  std_logic;        --!Enable for the internal start
     --Register array
-    iREG_ARRAY  : in  tRegArray;   --!Register array input
+    iREG_ARRAY  : in  tRegArray;        --!Register array input
     --Output FIFO interface
     oFIFO_DATA  : out std_logic_vector(pFIFO_WIDTH-1 downto 0);  --!Fifo Data in
     oFIFO_WR    : out std_logic;        --!Fifo write-request in
@@ -54,7 +54,7 @@ end entity hkReader;
 architecture std of hkReader is
   -- Constants -----------------------------------------------------------------
   --!Packet length: 2*Number of registers + header + trailer
-  constant cPKT_LEN         : natural := (cHPS_REGISTERS * 2) + 5;
+  constant cPKT_LEN : natural := (cHPS_REGISTERS * 2) + 5;
 
   -- Signals -------------------------------------------------------------------
   --FSM
@@ -76,7 +76,7 @@ architecture std of hkReader is
   signal sExtStartRE   : std_logic;
 
   --Parity
-  signal sParity  : std_logic_vector(3 downto 0);
+  signal sParity : std_logic_vector(3 downto 0);
 
   --CRC32
   signal sCrc : tCrc32;
@@ -87,12 +87,12 @@ begin
 
   --!@brief Rising edge of the start signal
   start_re : edge_detector
-  port map (
-    iCLK    => iCLK,
-    iRST    => '0',
-    iD      => iCNT.start,
-    oEDGE_R => sExtStartRE
-    );
+    port map (
+      iCLK    => iCLK,
+      iRST    => '0',
+      iD      => iCNT.start,
+      oEDGE_R => sExtStartRE
+      );
 
   --!@brief FSM to send an HK packet. A-full is checked only at the beginning.
   --!@param[in] iCLK Clock, used on rising edge
@@ -109,16 +109,16 @@ begin
       RST_EN_IF : if (iRST = '1') then
         sFsmError   <= '0';
         sRegCounter <= 0;
-        sFifoWr    <= '0';
-        sFifoData  <= (others => '0');
+        sFifoWr     <= '0';
+        sFifoData   <= (others => '0');
         sParity     <= (others => '0');
         sHkState    <= IDLE;
 
       elsif (iCNT.en = '1') then
         --default values, to be overwritten when necessary
         sRegCounter <= 0;
-        sFifoWr    <= '1';
-        sFifoData  <= (others => '0');
+        sFifoWr     <= '1';
+        sFifoData   <= (others => '0');
         sParity     <= (others => '0');
         case (sHkState) is
           --Wait for a start and check if
@@ -140,45 +140,45 @@ begin
           --Send the Start-of-Packet word
           when SOP =>
             sFifoData <= cF2H_HK_SOP;
-            sHkState   <= LEN;
+            sHkState  <= LEN;
 
           --Send the length word
           when LEN =>
             sFifoData <= int2slv(cPKT_LEN, sFifoData'length);
-            sHkState   <= FW_VER;
+            sHkState  <= FW_VER;
 
           --Send the hog firmware version word
           when FW_VER =>
             sFifoData <= pGW_VER;
-            sHkState   <= HDR;
+            sHkState  <= HDR;
 
           --Send the header word
           when HDR =>
             sFifoData <= cF2H_HK_HDR;
-            sHkState   <= REGISTER_CONTENT;
+            sHkState  <= REGISTER_CONTENT;
 
           --Send the content of the registers
           when REGISTER_CONTENT =>
             sRegCounter <= sRegCounter;
-            sFifoData  <= iREG_ARRAY(sRegCounter);
+            sFifoData   <= iREG_ARRAY(sRegCounter);
             sHkState    <= REGISTER_ADDRESS;
-            sParity(0)     <= parity8bit(pPARITY,
-                                iREG_ARRAY(sRegCounter)(7 downto 0));
-            sParity(1)     <= parity8bit(pPARITY,
-                                iREG_ARRAY(sRegCounter)(15 downto 8));
-            sParity(2)     <= parity8bit(pPARITY,
-                                iREG_ARRAY(sRegCounter)(23 downto 16));
-            sParity(3)     <= parity8bit(pPARITY,
-                                iREG_ARRAY(sRegCounter)(31 downto 24));
+            sParity(0) <= parity8bit(pPARITY,
+                                     iREG_ARRAY(sRegCounter)(7 downto 0));
+            sParity(1) <= parity8bit(pPARITY,
+                                     iREG_ARRAY(sRegCounter)(15 downto 8));
+            sParity(2) <= parity8bit(pPARITY,
+                                     iREG_ARRAY(sRegCounter)(23 downto 16));
+            sParity(3) <= parity8bit(pPARITY,
+                                     iREG_ARRAY(sRegCounter)(31 downto 24));
 
           --Send the address of the registers and check if completed
           when REGISTER_ADDRESS =>
             vAddrParity(0) := parity8bit(pPARITY,
-                                        int2slv(sRegCounter, 16)(7 downto 0));
+                                         int2slv(sRegCounter, 16)(7 downto 0));
             vAddrParity(1) := parity8bit(pPARITY,
-                                        int2slv(sRegCounter, 16)(15 downto 8));
+                                         int2slv(sRegCounter, 16)(15 downto 8));
             sFifoData <= "00" & vAddrParity & sParity & x"00"
-                          & int2slv(sRegCounter, 16);
+                         & int2slv(sRegCounter, 16);
             END_REG_IF : if (sRegCounter < cREGISTERS-1) then
               sRegCounter <= sRegCounter + 1;
               sHkState    <= REGISTER_CONTENT;
@@ -190,16 +190,16 @@ begin
           --Send the End-of-Packet word
           when EOP =>
             sFifoData <= cF2H_HK_EOP;
-            sHkState   <= CRC;
+            sHkState  <= CRC;
 
           --Send the CRC word
           when CRC =>
             sFifoData <= sCrc.crc;
-            sHkState   <= IDLE;
+            sHkState  <= IDLE;
 
           --State not foreseen
           when others =>
-            sFifoWr  <= '0';
+            sFifoWr   <= '0';
             sFsmError <= '1';           --Reset only with a reset
             sHkState  <= IDLE;
 
@@ -239,21 +239,21 @@ begin
 
   sCrc.rst <= '1' when sHkState = IDLE else
               '0';
-  sCrc.en <= sFifoWr when  sHkState = HDR
-                        or sHkState = REGISTER_CONTENT
-                        or sHkState = REGISTER_ADDRESS
-                        or sHkState = EOP else
+  sCrc.en <= sFifoWr when sHkState = HDR
+             or sHkState = REGISTER_CONTENT
+             or sHkState = REGISTER_ADDRESS
+             or sHkState = EOP else
              '0';
   sCrc.data <= sFifoData;
   --!Compute the CRC32 for packet content (except for SoP, Len, and EoP)
   CRC32_compute : CRC32
-  port map (
-    iCLK    => iCLK,
-    iRST    => sCrc.rst,
-    iCRC_EN => sCrc.en,
-    iDATA   => sCrc.data,
-    oCRC    => sCrc.crc
-    );
+    port map (
+      iCLK    => iCLK,
+      iRST    => sCrc.rst,
+      iCRC_EN => sCrc.en,
+      iDATA   => sCrc.data,
+      oCRC    => sCrc.crc
+      );
 
 
 end architecture std;

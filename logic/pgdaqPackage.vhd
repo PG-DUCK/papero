@@ -13,10 +13,10 @@ use work.basic_package.all;
 --!@copydoc pgdaqPackage.vhd
 package pgdaqPackage is
   -- Constants -----------------------------------------------------------------
-  constant cREG_WIDTH : natural := 32;  --!Register width
+  constant cREG_WIDTH      : natural := 32;  --!Register width
   constant cHPS_REGISTERS  : natural := 16;  --!Number of HPS-RW, FPGA-R registers
-  constant cFPGA_REGISTERS : natural := 16; --!Number of HPS-R, FPGA-RW registers
-  constant cREGISTERS : natural := cHPS_REGISTERS + cFPGA_REGISTERS; --!Total number of registers
+  constant cFPGA_REGISTERS : natural := 16;  --!Number of HPS-R, FPGA-RW registers
+  constant cREGISTERS      : natural := cHPS_REGISTERS + cFPGA_REGISTERS;  --!Total number of registers
 
   constant cHPS_REG_ADDR  : natural := ceil_log2(cHPS_REGISTERS);  --!Register address width
   constant cFPGA_REG_ADDR : natural := ceil_log2(cFPGA_REGISTERS);  --!Register address width
@@ -26,22 +26,22 @@ package pgdaqPackage is
   constant cF2H_HK_HDR    : std_logic_vector(31 downto 0) := x"4EADE500";  --!Fixed Header for the FPGA-2-HPS FSM
   constant cF2H_HK_EOP    : std_logic_vector(31 downto 0) := x"600DF00D";  --!End of Packet for the FPGA-2-HPS FSM
   constant cF2H_HK_PERIOD : natural                       := 50000000;  --!Period for internal counter to read HKs; max: 2^32 (85 s)
-  constant cF2H_AFULL     : natural                       := 949; --!Almost full threshold for the HK FIFO: 1021 - (6 + 32*2) - 2
-  constant cFastF2H_AFULL : natural                       := 4085; --!Almost full threshold for the data FIFO
+  constant cF2H_AFULL     : natural                       := 949;  --!Almost full threshold for the HK FIFO: 1021 - (6 + 32*2) - 2
+  constant cFastF2H_AFULL : natural                       := 4085;  --!Almost full threshold for the data FIFO
 
   --Trigger types
-  constant cTRG_PHYS  : std_logic_vector(7 downto 0) := "00000001"; --!Physics trigger (from external pin)
-  constant cTRG_CALIB : std_logic_vector(7 downto 0) := "00000010"; --!Calibration trigger (internal)
+  constant cTRG_PHYS  : std_logic_vector(7 downto 0) := "00000001";  --!Physics trigger (from external pin)
+  constant cTRG_CALIB : std_logic_vector(7 downto 0) := "00000010";  --!Calibration trigger (internal)
 
   -- Types ---------------------------------------------------------------------
-  constant rGOTO_STATE : natural := 0;
-  constant rUNITS_EN : natural := 1;
+  constant rGOTO_STATE     : natural := 0;
+  constant rUNITS_EN       : natural := 1;
   constant rTRIGBUSY_LOGIC : natural := 2;
-  constant rDET_ID : natural := 3;
-  constant rPKT_LEN : natural := 4;
-  constant rFE_CLK_PARAM : natural := 5;
-  constant rADC_CLK_PARAM : natural := 6;
-  constant rMSD_PARAM : natural := 7;
+  constant rDET_ID         : natural := 3;
+  constant rPKT_LEN        : natural := 4;
+  constant rFE_CLK_PARAM   : natural := 5;
+  constant rADC_CLK_PARAM  : natural := 6;
+  constant rMSD_PARAM      : natural := 7;
   --!Register array HPS-RW, FPGA-R
   type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
@@ -50,18 +50,18 @@ package pgdaqPackage is
     x"0000028A", x"00040028", x"00040002", x"00070145",
     x"00000000", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000"
-  );  --!Null vector for HPS register array
+    );                                  --!Null vector for HPS register array
 
-  constant rGW_VER : natural := 0;
-  constant rINT_TS_MSB : natural := 1;
-  constant rINT_TS_LSB : natural := 2;
-  constant rEXT_TS_MSB : natural := 3;
-  constant rEXT_TS_LSB : natural := 4;
-  constant rWARNING : natural := 5;
-  constant rBUSY : natural := 6;
-  constant rTRG_COUNT : natural := 7;
+  constant rGW_VER           : natural := 0;
+  constant rINT_TS_MSB       : natural := 1;
+  constant rINT_TS_LSB       : natural := 2;
+  constant rEXT_TS_MSB       : natural := 3;
+  constant rEXT_TS_LSB       : natural := 4;
+  constant rWARNING          : natural := 5;
+  constant rBUSY             : natural := 6;
+  constant rTRG_COUNT        : natural := 7;
   constant rFDI_FIFO_NUMWORD : natural := 8;
-  constant rPIUMONE : natural := 15;
+  constant rPIUMONE          : natural := 15;
   --!Register array HPS-R, FPGA-RW
   type tFpgaRegArray is array (0 to cFPGA_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
@@ -70,7 +70,7 @@ package pgdaqPackage is
     x"00000000", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"c1a0c1a0"
-  );  --!Null vector for FPGA register array
+    );                                  --!Null vector for FPGA register array
 
   --!Complete Registers array
   type tRegArray is array (0 to cREGISTERS-1) of
@@ -78,15 +78,15 @@ package pgdaqPackage is
 
   --!Registers interface
   type tRegIntf is record
-    reg  : std_logic_vector(cREG_WIDTH-1 downto 0);    --!Content to be written
-    addr : std_logic_vector(cHPS_REG_ADDR-1 downto 0); --!Address to be updated
-    we   : std_logic;                                  --!Write enable
+    reg  : std_logic_vector(cREG_WIDTH-1 downto 0);  --!Content to be written
+    addr : std_logic_vector(cHPS_REG_ADDR-1 downto 0);  --!Address to be updated
+    we   : std_logic;                   --!Write enable
   end record tRegIntf;
 
   --!FPGA Registers interface
   type tFpgaRegIntf is record
-    regs : tFpgaRegArray; --!FPGA registers
-    we   : std_logic_vector(cFPGA_REGISTERS-1 downto 0); --!Write enable vector
+    regs : tFpgaRegArray;               --!FPGA registers
+    we   : std_logic_vector(cFPGA_REGISTERS-1 downto 0);  --!Write enable vector
   end record tFpgaRegIntf;
 
   --!Control interface for a generic block: input signals
@@ -114,27 +114,27 @@ package pgdaqPackage is
   --!Input signals of a typical FIFO memory of 32 bit
   type tFifo32In is record
     data : std_logic_vector(31 downto 0);  --!Input data port
-    rd   : std_logic;                                     --!Read request
-    wr   : std_logic;                                     --!Write request
+    rd   : std_logic;                      --!Read request
+    wr   : std_logic;                      --!Write request
   end record tFifo32In;
 
   --!Output signals of a typical FIFO memory of 32 bit
   type tFifo32Out is record
     q      : std_logic_vector(31 downto 0);  --!Output data port
-    aEmpty : std_logic;                                     --!Almost empty
-    empty  : std_logic;                                     --!Empty
-    aFull  : std_logic;                                     --!Almost full
-    full   : std_logic;                                     --!Full
+    aEmpty : std_logic;                      --!Almost empty
+    empty  : std_logic;                      --!Empty
+    aFull  : std_logic;                      --!Almost full
+    full   : std_logic;                      --!Full
   end record tFifo32Out;
 
   --!Metadata for the F2H Fast TX
   type tF2hMetadata is record
-    pktLen    : std_logic_vector(31 downto 0);  --!Packet Length: Number of 32-bit payload words + 10
-    trigNum   : std_logic_vector(31 downto 0);  --!Trigger Counter
-    detId     : std_logic_vector(7 downto 0);   --!Detector ID
-    trigId    : std_logic_vector(7 downto 0);   --!Trigger ID
-    intTime   : std_logic_vector(63 downto 0);  --!Internal Timestamp
-    extTime   : std_logic_vector(63 downto 0);  --!External Timestamp
+    pktLen  : std_logic_vector(31 downto 0);  --!Packet Length: Number of 32-bit payload words + 10
+    trigNum : std_logic_vector(31 downto 0);  --!Trigger Counter
+    detId   : std_logic_vector(7 downto 0);   --!Detector ID
+    trigId  : std_logic_vector(7 downto 0);   --!Trigger ID
+    intTime : std_logic_vector(63 downto 0);  --!Internal Timestamp
+    extTime : std_logic_vector(63 downto 0);  --!External Timestamp
   end record tF2hMetadata;
 
   -- Components ----------------------------------------------------------------
@@ -196,7 +196,7 @@ package pgdaqPackage is
          CR_RST_in               : in  std_logic;
          CR_FIFO_WAIT_REQUEST_in : in  std_logic;
          CR_DATA_in              : in  std_logic_vector(31 downto 0);
-			CR_FWV_in					: in  std_logic_vector(31 downto 0);
+         CR_FWV_in               : in  std_logic_vector(31 downto 0);
          CR_FIFO_READ_EN_out     : out std_logic;
          CR_DATA_out             : out std_logic_vector(31 downto 0);
          CR_ADDRESS_out          : out std_logic_vector(15 downto 0);
@@ -243,9 +243,9 @@ package pgdaqPackage is
 
   --!@copydoc CRC32.vhd
   component CRC32 is
-  generic(
-    pINITIAL_VAL : std_logic_vector(31 downto 0) := x"FFFFFFFF"
-    );
+    generic(
+      pINITIAL_VAL : std_logic_vector(31 downto 0) := x"FFFFFFFF"
+      );
     port (
       iCLK    : in  std_logic;          --!Main Clock (used at rising edge)
       iRST    : in  std_logic;          --!Main Reset (synchronous)
@@ -297,82 +297,82 @@ package pgdaqPackage is
   end component;
 
 
-	--!@copydoc FFD.vhd
-	--!Unità di base per realizzare gli shift register dei moduli PRBS
-	component FFD is
-		port(
-			iCLK		: in std_logic;
-			iRST		: in std_logic;
-			iENABLE	: in std_logic;
-			iD			: in std_logic;
-			oQ			: out std_logic
-			);
-	end component;
+  --!@copydoc FFD.vhd
+  --!Unità di base per realizzare gli shift register dei moduli PRBS
+  component FFD is
+    port(
+      iCLK    : in  std_logic;
+      iRST    : in  std_logic;
+      iENABLE : in  std_logic;
+      iD      : in  std_logic;
+      oQ      : out std_logic
+      );
+  end component;
 
   --!@copydoc PRBS8.vhd
   --!Modulo per la generazione di dati pseudo-casuali a 8 bit
   component PRBS8 is
     port(
-      iCLK			: in std_logic;
-      iRST			: in std_logic;
-      iPRBS8_en	: in std_logic;
-      oDATA			: out std_logic_vector(7 downto 0)
+      iCLK      : in  std_logic;
+      iRST      : in  std_logic;
+      iPRBS8_en : in  std_logic;
+      oDATA     : out std_logic_vector(7 downto 0)
       );
   end component;
 
-	--!@copydoc PRBS32.vhd
-	--!Modulo per la generazione di dati pseudo-casuali a 32 bit
-	component PRBS32 is
-		port(
-			iCLK			: in std_logic;
-			iRST			: in std_logic;
-			iPRBS32_en	: in std_logic;
-			oDATA			: out std_logic_vector(31 downto 0)
-			);
-	end component;
+  --!@copydoc PRBS32.vhd
+  --!Modulo per la generazione di dati pseudo-casuali a 32 bit
+  component PRBS32 is
+    port(
+      iCLK       : in  std_logic;
+      iRST       : in  std_logic;
+      iPRBS32_en : in  std_logic;
+      oDATA      : out std_logic_vector(31 downto 0)
+      );
+  end component;
 
   --!@copydoc Test_Unit.vhd
   --!Unità di test per verificare il funzionamento della sola scheda DAQ
   component Test_Unit is
     port(
-      iCLK			        : in std_logic;					                -- Porta per il clock
-      iRST		        	: in std_logic;							            -- Porta per il reset
-      iEN		          	: in std_logic;								          -- Porta per l'abilitazione della unità di test
-      iSETTING_CONFIG		: in std_logic_vector(1 downto 0);		  -- Configurazione modalità operativa: "00"-->dati pseudocasuali generati con un tempo pseudocasuale, "01" dati pseudocasuali generati negli istanti di trigger, "10" dati pseudocasuali generati di continuo (rate massima)
-      iSETTING_LENGTH		: in std_logic_vector(31 downto 0);		  -- Lunghezza del pacchetto --> Number of 32-bit payload words + 10
-      iTRIG             : in std_logic;                         -- Ingresso per il segnale di trigger proveniente dalla trigBusyLogic
-      oDATA		        	: out std_logic_vector(31 downto 0);    -- Numero binario a 32 bit pseudo-casuale
-      oDATA_VALID     	: out std_logic;						            -- Segnale che attesta la validità dei dati in uscita dalla Test_Unit. Se oDATA_VALID=1 --> il valore di "oDATA" è consistente
-      oTEST_BUSY        : out std_logic                         -- La Test_Unit è impegnata e non può essere interrotta, altrimenti il pacchetto dati verrebbe incompleto
+      iCLK            : in  std_logic;  -- Porta per il clock
+      iRST            : in  std_logic;  -- Porta per il reset
+      iEN             : in  std_logic;  -- Porta per l'abilitazione della unità di test
+      iSETTING_CONFIG : in  std_logic_vector(1 downto 0);  -- Configurazione modalità operativa: "00"-->dati pseudocasuali generati con un tempo pseudocasuale, "01" dati pseudocasuali generati negli istanti di trigger, "10" dati pseudocasuali generati di continuo (rate massima)
+      iSETTING_LENGTH : in  std_logic_vector(31 downto 0);  -- Lunghezza del pacchetto --> Number of 32-bit payload words + 10
+      iTRIG           : in  std_logic;  -- Ingresso per il segnale di trigger proveniente dalla trigBusyLogic
+      oDATA           : out std_logic_vector(31 downto 0);  -- Numero binario a 32 bit pseudo-casuale
+      oDATA_VALID     : out std_logic;  -- Segnale che attesta la validità dei dati in uscita dalla Test_Unit. Se oDATA_VALID=1 --> il valore di "oDATA" è consistente
+      oTEST_BUSY      : out std_logic  -- La Test_Unit è impegnata e non può essere interrotta, altrimenti il pacchetto dati verrebbe incompleto
       );
   end component;
 
-	--!@copydoc FastData_Transmitter.vhd
-	--!Trasmettitore dei dati scientifici
-	component FastData_Transmitter is
+  --!@copydoc FastData_Transmitter.vhd
+  --!Trasmettitore dei dati scientifici
+  component FastData_Transmitter is
     generic(
-  		pGW_VER : std_logic_vector(31 downto 0)
-  	);
-	port(
-		  iCLK					: in std_logic;								-- Clock
-		  iRST					: in std_logic;								-- Reset
-		  -- Enable
-		  iEN						: in std_logic;								-- Abilitazione del modulo FastData_Transmitter
+      pGW_VER : std_logic_vector(31 downto 0)
+      );
+    port(
+      iCLK         : in  std_logic;     -- Clock
+      iRST         : in  std_logic;     -- Reset
+      -- Enable
+      iEN          : in  std_logic;  -- Abilitazione del modulo FastData_Transmitter
       -- Settings Packet
-		  iMETADATA			: in tF2hMetadata; --Packet header information all'FPGA
-		  -- Fifo Management
-		  iFIFO_DATA			: in std_logic_vector(31 downto 0);		-- "Data_Output" della FIFO a monte del FastData_Transmitter
-		  iFIFO_EMPTY			: in std_logic;								-- "Empty" della FIFO a monte del FastData_Transmitter
-		  iFIFO_AEMPTY			: in std_logic;								-- "Almost_Empty" della FIFO a monte del FastData_Transmitter. ATTENZIONE!!!--> Per un corretto funzionamento, impostare pAEMPTY_VAL = 2 sulla FIFO a monte del FastData_Transmitter
-		  oFIFO_RE				: out std_logic;								-- "Read_Enable" della FIFO a monte del FastData_Transmitter
-		  oFIFO_DATA			: out std_logic_vector(31 downto 0);	-- "Data_Inutput" della FIFO a valle del FastData_Transmitter
-		  iFIFO_AFULL			: in std_logic;								-- "Almost_Full" della FIFO a valle del FastData_Transmitter
-		  oFIFO_WE				: out std_logic;								-- "Write_Enable" della FIFO a valle del FastData_Transmitter
-		  -- Output Flag
-		  oBUSY					: out std_logic;								-- Il trasmettitore è impegnato in un trasferimento dati. '0'-->ok, '1'-->busy
-		  oWARNING				: out std_logic								-- Malfunzionamenti. '0'-->ok, '1'--> errore: la macchina è finita in uno stato non precisato
-		 );
-	end component;
+      iMETADATA    : in  tF2hMetadata;  --Packet header information all'FPGA
+      -- Fifo Management
+      iFIFO_DATA   : in  std_logic_vector(31 downto 0);  -- "Data_Output" della FIFO a monte del FastData_Transmitter
+      iFIFO_EMPTY  : in  std_logic;  -- "Empty" della FIFO a monte del FastData_Transmitter
+      iFIFO_AEMPTY : in  std_logic;  -- "Almost_Empty" della FIFO a monte del FastData_Transmitter. ATTENZIONE!!!--> Per un corretto funzionamento, impostare pAEMPTY_VAL = 2 sulla FIFO a monte del FastData_Transmitter
+      oFIFO_RE     : out std_logic;  -- "Read_Enable" della FIFO a monte del FastData_Transmitter
+      oFIFO_DATA   : out std_logic_vector(31 downto 0);  -- "Data_Inutput" della FIFO a valle del FastData_Transmitter
+      iFIFO_AFULL  : in  std_logic;  -- "Almost_Full" della FIFO a valle del FastData_Transmitter
+      oFIFO_WE     : out std_logic;  -- "Write_Enable" della FIFO a valle del FastData_Transmitter
+      -- Output Flag
+      oBUSY        : out std_logic;  -- Il trasmettitore è impegnato in un trasferimento dati. '0'-->ok, '1'-->busy
+      oWARNING     : out std_logic  -- Malfunzionamenti. '0'-->ok, '1'--> errore: la macchina è finita in uno stato non precisato
+      );
+  end component;
 
   --!@copydoc trigBusyLogic.vhd
   component trigBusyLogic is
@@ -394,57 +394,57 @@ package pgdaqPackage is
 
   --!@copydoc TdaqModule.vhd
   component TdaqModule is
-  generic (
-    pFDI_WIDTH : natural;
-    pFDI_DEPTH : natural;
-    pGW_VER    : std_logic_vector(31 downto 0)
-  );
-  port (
-    iCLK                : in  std_logic;
-    --# {{RegArray|RegArray}}
-    iRST_REG            : in  std_logic;
-    oREG_ARRAY          : out tRegArray;
-    iINT_TS             : in  std_logic_vector(63 downto 0);
-    iEXT_TS             : in  std_logic_vector(63 downto 0);
-    --# {{TrigBusy|TrigBusy}}
-    iEXT_TRIG           : in  std_logic;
-    oTRIG               : out std_logic;
-    oBUSY               : out std_logic;
-    iTRG_BUSIES_AND     : in  std_logic_vector(7 downto 0);
-    iTRG_BUSIES_OR      : in  std_logic_vector(7 downto 0);
-    --# {{H2F_FIFO|H2F_FIFO}}
-    iFIFO_H2F_EMPTY     : in  std_logic;
-    iFIFO_H2F_DATA      : in  std_logic_vector(31 downto 0);
-    oFIFO_H2F_RE        : out std_logic;
-    --# {{F2H_FIFO|F2H_FIFO}}
-    iFIFO_F2H_AFULL     : in  std_logic;
-    oFIFO_F2H_WE        : out std_logic;
-    oFIFO_F2H_DATA      : out std_logic_vector(31 downto 0);
-    --# {{F2H_FastFIFO|F2H_FastFIFO}}
-    iFIFO_F2HFAST_AFULL : in  std_logic;
-    oFIFO_F2HFAST_WE    : out std_logic;
-    oFIFO_F2HFAST_DATA  : out std_logic_vector(31 downto 0)
-  );
+    generic (
+      pFDI_WIDTH : natural;
+      pFDI_DEPTH : natural;
+      pGW_VER    : std_logic_vector(31 downto 0)
+      );
+    port (
+      iCLK                : in  std_logic;
+      --# {{RegArray|RegArray}}
+      iRST_REG            : in  std_logic;
+      oREG_ARRAY          : out tRegArray;
+      iINT_TS             : in  std_logic_vector(63 downto 0);
+      iEXT_TS             : in  std_logic_vector(63 downto 0);
+      --# {{TrigBusy|TrigBusy}}
+      iEXT_TRIG           : in  std_logic;
+      oTRIG               : out std_logic;
+      oBUSY               : out std_logic;
+      iTRG_BUSIES_AND     : in  std_logic_vector(7 downto 0);
+      iTRG_BUSIES_OR      : in  std_logic_vector(7 downto 0);
+      --# {{H2F_FIFO|H2F_FIFO}}
+      iFIFO_H2F_EMPTY     : in  std_logic;
+      iFIFO_H2F_DATA      : in  std_logic_vector(31 downto 0);
+      oFIFO_H2F_RE        : out std_logic;
+      --# {{F2H_FIFO|F2H_FIFO}}
+      iFIFO_F2H_AFULL     : in  std_logic;
+      oFIFO_F2H_WE        : out std_logic;
+      oFIFO_F2H_DATA      : out std_logic_vector(31 downto 0);
+      --# {{F2H_FastFIFO|F2H_FastFIFO}}
+      iFIFO_F2HFAST_AFULL : in  std_logic;
+      oFIFO_F2HFAST_WE    : out std_logic;
+      oFIFO_F2HFAST_DATA  : out std_logic_vector(31 downto 0)
+      );
   end component;
 
   --!Generatore di segnale PWM
   component Variable_PWM_FSM is
-  generic (
-           period     : integer;			  -- Periodo di conteggio del contatore (che di fatto andrà a definire la frequenza del segnale PWM) espresso in "numero di cicli di clock"
-           duty_cycle : integer;        -- Numero di cicli di clock per i quali l'uscita dovrà tenersi "alta"
-           neg        : integer;        -- Logica di funzionamento del dispositivo. Se neg=0-->logica normale, se neg=1-->logica negata
-           R_vs_F     : integer := 0    -- Parametro che seleziona quali fronti d'onda conteggiare. Se R_vs_F=0--> rising edge, se R_vs_F=1--> falling edge
-          );
-  port (
-        SWITCH            : in std_logic;        -- Ingresso per abilitare il segnale PWM
-        ENABLE_COUNTER    : in std_logic;        -- Ingresso per abilitare il contatore per la generazione del segnale PWM
-        RESET_RF_COUNTER  : in std_logic;        -- Ingresso per il reset del contatore dei fronti d'onda
-        CLK               : in std_logic;        -- Ingresso del segnale di Clock
-        LED               : out std_logic;       -- Uscita del dispositivo
-        RISING_LED        : out std_logic;       -- Uscita di segnalazione dei fronti di salita
-        FALLING_LED       : out std_logic;       -- Uscita di segnalazione dei fronti di discesa
-        RISE_FALL_COUNTER : out std_logic_vector(7 downto 0)    -- Uscita contenente il numero di fronti di salita/discesa rilevati dal detector
-       );
+    generic (
+      period     : integer;  -- Periodo di conteggio del contatore (che di fatto andrà a definire la frequenza del segnale PWM) espresso in "numero di cicli di clock"
+      duty_cycle : integer;  -- Numero di cicli di clock per i quali l'uscita dovrà tenersi "alta"
+      neg        : integer;  -- Logica di funzionamento del dispositivo. Se neg=0-->logica normale, se neg=1-->logica negata
+      R_vs_F     : integer := 0  -- Parametro che seleziona quali fronti d'onda conteggiare. Se R_vs_F=0--> rising edge, se R_vs_F=1--> falling edge
+      );
+    port (
+      SWITCH            : in  std_logic;  -- Ingresso per abilitare il segnale PWM
+      ENABLE_COUNTER    : in  std_logic;  -- Ingresso per abilitare il contatore per la generazione del segnale PWM
+      RESET_RF_COUNTER  : in  std_logic;  -- Ingresso per il reset del contatore dei fronti d'onda
+      CLK               : in  std_logic;  -- Ingresso del segnale di Clock
+      LED               : out std_logic;  -- Uscita del dispositivo
+      RISING_LED        : out std_logic;  -- Uscita di segnalazione dei fronti di salita
+      FALLING_LED       : out std_logic;  -- Uscita di segnalazione dei fronti di discesa
+      RISE_FALL_COUNTER : out std_logic_vector(7 downto 0)  -- Uscita contenente il numero di fronti di salita/discesa rilevati dal detector
+      );
   end component;
 
 
@@ -493,7 +493,7 @@ package body pgdaqPackage is
   end function;
 
   function unary_or(slv : in std_logic_vector) return std_logic is
-    variable or_v : std_logic := '0';  -- Null input returns '0'
+    variable or_v : std_logic := '0';   -- Null input returns '0'
   begin
     for i in slv'range loop
       or_v := or_v or slv(i);

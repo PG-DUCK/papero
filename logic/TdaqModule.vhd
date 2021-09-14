@@ -14,114 +14,114 @@ use work.pgdaqPackage.all;
 entity TdaqModule is
   generic(
     pFDI_WIDTH : natural := 32;
-    pFDI_DEPTH  : natural := 4096;
+    pFDI_DEPTH : natural := 4096;
     pGW_VER    : std_logic_vector(31 downto 0)
-  );
+    );
   port (
-    iCLK        : in  std_logic;  --!Main clock on the FPGA side
+    iCLK                : in  std_logic;  --!Main clock on the FPGA side
     --Register Array
-    iRST_REG    : in  std_logic;  --!Reset of the Register array
-    oREG_ARRAY  : out tRegArray;  --!Complete Registers array
-    iINT_TS     : in  std_logic_vector(63 downto 0); --!Internal timestamp
-    iEXT_TS     : in  std_logic_vector(63 downto 0); --!External timestamp
+    iRST_REG            : in  std_logic;  --!Reset of the Register array
+    oREG_ARRAY          : out tRegArray;  --!Complete Registers array
+    iINT_TS             : in  std_logic_vector(63 downto 0);  --!Internal timestamp
+    iEXT_TS             : in  std_logic_vector(63 downto 0);  --!External timestamp
     --Trigger and Busy logic
-    iEXT_TRIG       : in  std_logic;
-    oTRIG           : out std_logic;
-    oBUSY           : out std_logic;
-    iTRG_BUSIES_AND : in  std_logic_vector(7 downto 0);
-    iTRG_BUSIES_OR  : in  std_logic_vector(7 downto 0);
+    iEXT_TRIG           : in  std_logic;
+    oTRIG               : out std_logic;
+    oBUSY               : out std_logic;
+    iTRG_BUSIES_AND     : in  std_logic_vector(7 downto 0);
+    iTRG_BUSIES_OR      : in  std_logic_vector(7 downto 0);
     --H2F
-		iFIFO_H2F_EMPTY		: in  std_logic; --!FIFO H2F Wait Request
-		iFIFO_H2F_DATA		: in  std_logic_vector(31 downto 0);	--!FIFO H2F q
-		oFIFO_H2F_RE		: out std_logic;  --!FIFO H2F Read Request
-		--F2H
-		iFIFO_F2H_AFULL : in  std_logic;  --!FIFO F2H Almost full
-		oFIFO_F2H_WE		: out std_logic;	--!FIFO F2H Write Request
-		oFIFO_F2H_DATA		: out std_logic_vector(31 downto 0);  --!FIFO F2H data
-		--F2H FAST
-		iFIFO_F2HFAST_AFULL : in  std_logic;  --!FIFO F2H FAST Almost full
-		oFIFO_F2HFAST_WE		: out std_logic;  --!FIFO F2H Write Request
-		oFIFO_F2HFAST_DATA		: out std_logic_vector(31 downto 0) --!FIFO F2H data
+    iFIFO_H2F_EMPTY     : in  std_logic;  --!FIFO H2F Wait Request
+    iFIFO_H2F_DATA      : in  std_logic_vector(31 downto 0);  --!FIFO H2F q
+    oFIFO_H2F_RE        : out std_logic;  --!FIFO H2F Read Request
+    --F2H
+    iFIFO_F2H_AFULL     : in  std_logic;  --!FIFO F2H Almost full
+    oFIFO_F2H_WE        : out std_logic;  --!FIFO F2H Write Request
+    oFIFO_F2H_DATA      : out std_logic_vector(31 downto 0);  --!FIFO F2H data
+    --F2H FAST
+    iFIFO_F2HFAST_AFULL : in  std_logic;  --!FIFO F2H FAST Almost full
+    oFIFO_F2HFAST_WE    : out std_logic;  --!FIFO F2H Write Request
+    oFIFO_F2HFAST_DATA  : out std_logic_vector(31 downto 0)   --!FIFO F2H data
     );
 end entity TdaqModule;
 
 --!@copydoc TdaqModule.vhd
 architecture std of TdaqModule is
   -- Global
-  signal sRst : std_logic;
+  signal sRst         : std_logic;
   signal sRstCounters : std_logic;
 
   -- HPS interface
-  signal sHkRdrCnt : tControlIn;
-  signal sHkRdrIntstart : std_logic;
-  signal sF2hFastCnt : tControlIn;
+  signal sHkRdrCnt        : tControlIn;
+  signal sHkRdrIntstart   : std_logic;
+  signal sF2hFastCnt      : tControlIn;
   signal sF2hFastMetaData : tF2hMetadata;
-  signal sF2hFastBusy : std_logic;
-  signal sF2hFastWarning : std_logic;
-  signal sCrWarning : std_logic_vector(2 downto 0);
+  signal sF2hFastBusy     : std_logic;
+  signal sF2hFastWarning  : std_logic;
+  signal sCrWarning       : std_logic_vector(2 downto 0);
 
   -- Register Array
-  signal sRegArray : tRegArray;
-  signal sRegConfigRx	 : tRegIntf;
-  signal sFpgaRegIntf   : tFpgaRegIntf;
-  signal sRegWarning : std_logic_vector(31 downto 0);
-  signal sRegBusy : std_logic_vector(31 downto 0);
+  signal sRegArray    : tRegArray;
+  signal sRegConfigRx : tRegIntf;
+  signal sFpgaRegIntf : tFpgaRegIntf;
+  signal sRegWarning  : std_logic_vector(31 downto 0);
+  signal sRegBusy     : std_logic_vector(31 downto 0);
 
   -- Fast-Data Input FIFO
-  signal sFdiFifoIn : tFifo32In;
-  signal sFdiFifoOut : tFifo32Out;
+  signal sFdiFifoIn    : tFifo32In;
+  signal sFdiFifoOut   : tFifo32Out;
   signal sFdiFifoUsedW : std_logic_vector(ceil_log2(pFDI_DEPTH)-1 downto 0);
 
   -- Trigger and Busy logic
-  signal sTrigEn    : std_logic;
-  signal sTrigId    : std_logic_vector(7 downto 0);
-  signal sTrigCount : std_logic_vector(31 downto 0);
+  signal sTrigEn            : std_logic;
+  signal sTrigId            : std_logic_vector(7 downto 0);
+  signal sTrigCount         : std_logic_vector(31 downto 0);
   signal sTrigWhenBusyCount : std_logic_vector(7 downto 0);
-  signal sTrigCfg : std_logic_vector(31 downto 0);
-  signal sBusy : std_logic;
-  signal sTrig : std_logic;
+  signal sTrigCfg           : std_logic_vector(31 downto 0);
+  signal sBusy              : std_logic;
+  signal sTrig              : std_logic;
 
   -- Test unit
-  signal sTestUnitEn : std_logic;
+  signal sTestUnitEn   : std_logic;
   signal sTestUnitBusy : std_logic;
-  signal sTestUnitCfg : std_logic_vector(1 downto 0);
+  signal sTestUnitCfg  : std_logic_vector(1 downto 0);
 
 begin
   -- Register Array assignments
-  sRst          <= sRegArray(rGOTO_STATE)(0);
-  sRstCounters  <= sRegArray(rGOTO_STATE)(1);
-  sTrigEn       <= sRegArray(rGOTO_STATE)(4);
+  sRst                    <= sRegArray(rGOTO_STATE)(0);
+  sRstCounters            <= sRegArray(rGOTO_STATE)(1);
+  sTrigEn                 <= sRegArray(rGOTO_STATE)(4);
   --
-  sF2hFastCnt.en <= sRegArray(rUNITS_EN)(0);
-  sF2hFastCnt.start <= sRegArray(rUNITS_EN)(0);
-  sTestUnitEn   <= sRegArray(rUNITS_EN)(1);
-  sHkRdrIntstart  <= sRegArray(rUNITS_EN)(4);
-  sHkRdrCnt.start      <= sRegArray(rUNITS_EN)(5);
-  sHkRdrCnt.en         <= sRegArray(rUNITS_EN)(6);
-  sTestUnitCfg <= sRegArray(rUNITS_EN)(9 downto 8);
+  sF2hFastCnt.en          <= sRegArray(rUNITS_EN)(0);
+  sF2hFastCnt.start       <= sRegArray(rUNITS_EN)(0);
+  sTestUnitEn             <= sRegArray(rUNITS_EN)(1);
+  sHkRdrIntstart          <= sRegArray(rUNITS_EN)(4);
+  sHkRdrCnt.start         <= sRegArray(rUNITS_EN)(5);
+  sHkRdrCnt.en            <= sRegArray(rUNITS_EN)(6);
+  sTestUnitCfg            <= sRegArray(rUNITS_EN)(9 downto 8);
   --
-  sTrigCfg      <= sRegArray(rTRIGBUSY_LOGIC);
+  sTrigCfg                <= sRegArray(rTRIGBUSY_LOGIC);
   --
   sF2hFastMetaData.detId  <= sRegArray(rDET_ID)(7 downto 0);
   --
-  sF2hFastMetaData.pktLen   <= sRegArray(rPKT_LEN);
+  sF2hFastMetaData.pktLen <= sRegArray(rPKT_LEN);
 
   -- Metadata assignments
-  sF2hFastMetaData.trigNum  <= sTrigCount;
-  sF2hFastMetaData.trigId   <= sTrigId;
-  sF2hFastMetaData.intTime  <= iINT_TS;
-  sF2hFastMetaData.extTime  <= iEXT_TS;
+  sF2hFastMetaData.trigNum <= sTrigCount;
+  sF2hFastMetaData.trigId  <= sTrigId;
+  sF2hFastMetaData.intTime <= iINT_TS;
+  sF2hFastMetaData.extTime <= iEXT_TS;
 
   --Ports assignments
   oREG_ARRAY <= sRegArray;
-  oBUSY <= sBusy;
+  oBUSY      <= sBusy;
 
   --!@brief FPGA-HPS communication interfaces
   --!@todo connect sF2hFastBusy to the trigBusyLogic
   HPS_interfaces : HPS_intf
     generic map(
       pGW_VER => pGW_VER
-    )
+      )
     port map(
       iCLK                => iCLK,
       iRST                => sRst,
@@ -157,15 +157,15 @@ begin
 
   --!@brief Bank of registers, always enabled
   Config_Registers : registerArray
-  port map(
-  			iCLK       => iCLK,
-  			iRST       => iRST_REG,
-  			iCNT       => ('1', '1'),
-  			oCNT       => open,
-  			oREG_ARRAY => sRegArray,
-  			iHPS_REG   => sRegConfigRx,
-  			iFPGA_REG  => sFpgaRegIntf
-  			);
+    port map(
+      iCLK       => iCLK,
+      iRST       => iRST_REG,
+      iCNT       => ('1', '1'),
+      oCNT       => open,
+      oREG_ARRAY => sRegArray,
+      iHPS_REG   => sRegConfigRx,
+      iFPGA_REG  => sFpgaRegIntf
+      );
 
   --!@brief PRBS-32 generator
   PRBS_generator : Test_Unit
@@ -225,8 +225,8 @@ begin
       );
 
   -- FPGA-registers mapping
-  sFpgaRegIntf.regs(rGW_VER) <= pGW_VER;
-  sFpgaRegIntf.we(rGW_VER)   <= '1';
+  sFpgaRegIntf.regs(rGW_VER)     <= pGW_VER;
+  sFpgaRegIntf.we(rGW_VER)       <= '1';
   sFpgaRegIntf.regs(rINT_TS_MSB) <= iINT_TS(63 downto 32);
   sFpgaRegIntf.we(rINT_TS_MSB)   <= '1';
   sFpgaRegIntf.regs(rINT_TS_LSB) <= iINT_TS(31 downto 0);
@@ -235,34 +235,34 @@ begin
   sFpgaRegIntf.we(rEXT_TS_MSB)   <= '1';
   sFpgaRegIntf.regs(rEXT_TS_LSB) <= iEXT_TS(31 downto 0);
   sFpgaRegIntf.we(rEXT_TS_LSB)   <= '1';
-  sFpgaRegIntf.regs(rWARNING) <= sRegWarning;
-  sFpgaRegIntf.we(rWARNING)   <= '1';
-  sFpgaRegIntf.regs(rBUSY) <= sRegBusy;
-  sFpgaRegIntf.we(rBUSY)   <= '1';
-  sFpgaRegIntf.regs(rTRG_COUNT) <= sTrigCount;
-  sFpgaRegIntf.we(rTRG_COUNT)   <= '1';
+  sFpgaRegIntf.regs(rWARNING)    <= sRegWarning;
+  sFpgaRegIntf.we(rWARNING)      <= '1';
+  sFpgaRegIntf.regs(rBUSY)       <= sRegBusy;
+  sFpgaRegIntf.we(rBUSY)         <= '1';
+  sFpgaRegIntf.regs(rTRG_COUNT)  <= sTrigCount;
+  sFpgaRegIntf.we(rTRG_COUNT)    <= '1';
   sFpgaRegIntf.regs(rFDI_FIFO_NUMWORD)
-                  (sFdiFifoUsedW'left downto 0) <= sFdiFifoUsedW;
+    (sFdiFifoUsedW'left downto 0) <= sFdiFifoUsedW;
   sFpgaRegIntf.regs(rFDI_FIFO_NUMWORD)
-                  (cREG_WIDTH-1 downto sFdiFifoUsedW'left+1) <= (others => '0');
-  sFpgaRegIntf.we(rFDI_FIFO_NUMWORD)   <= '1';
-  sFpgaRegIntf.regs(9) <= (others => '0');
-  sFpgaRegIntf.we(9)   <= '0';
-  sFpgaRegIntf.regs(10) <= (others => '0');
-  sFpgaRegIntf.we(10)   <= '0';
-  sFpgaRegIntf.regs(11) <= (others => '0');
-  sFpgaRegIntf.we(11)   <= '0';
-  sFpgaRegIntf.regs(12) <= (others => '0');
-  sFpgaRegIntf.we(12)   <= '0';
-  sFpgaRegIntf.regs(13) <= (others => '0');
-  sFpgaRegIntf.we(13)   <= '0';
-  sFpgaRegIntf.regs(14) <= (others => '0');
-  sFpgaRegIntf.we(14)   <= '0';
-  sFpgaRegIntf.regs(rPIUMONE) <= x"c1a0c1a0";
-  sFpgaRegIntf.we(rPIUMONE)   <= '1';
+    (cREG_WIDTH-1 downto sFdiFifoUsedW'left+1) <= (others => '0');
+  sFpgaRegIntf.we(rFDI_FIFO_NUMWORD) <= '1';
+  sFpgaRegIntf.regs(9)               <= (others => '0');
+  sFpgaRegIntf.we(9)                 <= '0';
+  sFpgaRegIntf.regs(10)              <= (others => '0');
+  sFpgaRegIntf.we(10)                <= '0';
+  sFpgaRegIntf.regs(11)              <= (others => '0');
+  sFpgaRegIntf.we(11)                <= '0';
+  sFpgaRegIntf.regs(12)              <= (others => '0');
+  sFpgaRegIntf.we(12)                <= '0';
+  sFpgaRegIntf.regs(13)              <= (others => '0');
+  sFpgaRegIntf.we(13)                <= '0';
+  sFpgaRegIntf.regs(14)              <= (others => '0');
+  sFpgaRegIntf.we(14)                <= '0';
+  sFpgaRegIntf.regs(rPIUMONE)        <= x"c1a0c1a0";
+  sFpgaRegIntf.we(rPIUMONE)          <= '1';
 
   sRegWarning <= x"00000" & "000" & sF2hFastWarning & x"0" & "0" & sCrWarning;
-  sRegBusy <= sBusy & "00" & sTestUnitBusy & iTRG_BUSIES_AND & iTRG_BUSIES_OR & sF2hFastBusy
+  sRegBusy    <= sBusy & "00" & sTestUnitBusy & iTRG_BUSIES_AND & iTRG_BUSIES_OR & sF2hFastBusy
               & iFIFO_F2H_AFULL & iFIFO_F2HFAST_AFULL
               & sFdiFifoOut.aFull & sTrigWhenBusyCount;
 

@@ -44,14 +44,14 @@ architecture std of trigBusyLogic is
 
   signal sTrig     : std_logic;
   signal sMainTrig : std_logic;
-  signal sTrigId : std_logic_vector(7 downto 0);
+  signal sTrigId   : std_logic_vector(7 downto 0);
 
   signal sBusy : std_logic;
 
 begin
   -- Combinatorial assignments ------------------------------------------------
-  oTRIG <= sTrig;
-  oBUSY <= sBusy;
+  oTRIG    <= sTrig;
+  oBUSY    <= sBusy;
   oTRIG_ID <= sTrigId;
 
   sIntTrigEn     <= iCFG(0);
@@ -59,7 +59,7 @@ begin
 
   sTrig     <= sMainTrig and not sBusy;
   sMainTrig <= sIntTrig   when sIntTrigEn = '1' else sExtTrigSynch;
-  sTrigId <= cTRG_CALIB when sIntTrigEn = '1' else cTRG_PHYS;
+  sTrigId   <= cTRG_CALIB when sIntTrigEn = '1' else cTRG_PHYS;
 
   sBusy <= unary_and(iBUSIES_AND) or unary_or(iBUSIES_OR);
   -----------------------------------------------------------------------------

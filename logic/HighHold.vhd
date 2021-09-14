@@ -9,16 +9,18 @@ use IEEE.NUMERIC_STD.all;
 
 --!@copydoc HighHold.vhd
 entity HighHold is
-  generic(channels   : integer   := 1;
-          BAS_vs_BSS : std_logic := '0'  -- Modalità operativa dell'HighHold. mode=0 --> segnali d'ingresso bas (By-Asynchronous-Signals), ovvero l'HighHold opera per segnali provenienti direttamente dalle porte (clock, switch, pin di GPIO..).
-          );  -- Modalità operativa dell'HighHold. mode=1 --> segnali d'ingresso bss (By-Synchronous-Signals), ovvero l'HighHold opera per ingressi provienti da un processo o da una qualsivoglia elaborazione sincronizzata (come i Flip-Flop).
-  port(CLK_in      : in  std_logic;     -- Segnale di clock.
-       DATA_in     : in  std_logic_vector(channels - 1 downto 0);  -- Segnale d'ingresso.
-       DELAY_1_out : out std_logic_vector(channels - 1 downto 0);  -- Segnale d'uscita con ritenuta del livello "alto" di 1 ciclo di clock.
-       DELAY_2_out : out std_logic_vector(channels - 1 downto 0);  -- Segnale d'uscita con ritenuta del livello "alto" di 2 ciclo di clock.
-       DELAY_3_out : out std_logic_vector(channels - 1 downto 0);  -- Segnale d'uscita con ritenuta del livello "alto" di 3 ciclo di clock.
-       DELAY_4_out : out std_logic_vector(channels - 1 downto 0)  -- Segnale d'uscita con ritenuta del livello "alto" di 4 ciclo di clock.
-       );
+  generic(
+    channels   : integer   := 1;
+    BAS_vs_BSS : std_logic := '0'  -- Modalità operativa dell'HighHold. mode=0 --> segnali d'ingresso bas (By-Asynchronous-Signals), ovvero l'HighHold opera per segnali provenienti direttamente dalle porte (clock, switch, pin di GPIO..).
+    );  -- Modalità operativa dell'HighHold. mode=1 --> segnali d'ingresso bss (By-Synchronous-Signals), ovvero l'HighHold opera per ingressi provienti da un processo o da una qualsivoglia elaborazione sincronizzata (come i Flip-Flop).
+  port(
+    CLK_in      : in  std_logic;        -- Segnale di clock.
+    DATA_in     : in  std_logic_vector(channels - 1 downto 0);  -- Segnale d'ingresso.
+    DELAY_1_out : out std_logic_vector(channels - 1 downto 0);  -- Segnale d'uscita con ritenuta del livello "alto" di 1 ciclo di clock.
+    DELAY_2_out : out std_logic_vector(channels - 1 downto 0);  -- Segnale d'uscita con ritenuta del livello "alto" di 2 ciclo di clock.
+    DELAY_3_out : out std_logic_vector(channels - 1 downto 0);  -- Segnale d'uscita con ritenuta del livello "alto" di 3 ciclo di clock.
+    DELAY_4_out : out std_logic_vector(channels - 1 downto 0)  -- Segnale d'uscita con ritenuta del livello "alto" di 4 ciclo di clock.
+    );
 end HighHold;
 
 --!@copydoc HighHold.vhd
