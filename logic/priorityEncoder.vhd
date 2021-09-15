@@ -1,5 +1,6 @@
 --!@file priorityEncoder.vhd
 --!@brief Combine the ADC 16-bit FIFOs into one output 32-bit FIFO
+--!@todo It now takes 2 clock cycles for each 32-bit word. If speed is requested, remove dpFIFO and read two multi_FIFO word at a time
 --!@author Mattia Barbanera (mattia.barbanera@infn.it)
 --!@author Matteo D'Antonio (matteo.dantonio@studenti.unipg.it)
 --!@author Keida Kanxheri (keida.kanxheri@pg.infn.it)
@@ -36,6 +37,9 @@ end priorityEncoder;
 
 --!@copydoc priorityEncoder.vhd
 architecture std of priorityEncoder is
+  --Constants
+  constant cLENCONV_AFULL_THR : natural := pFIFODEPTH - 3;
+
   --FSM
   type tPeState is (IDLE, ACTIVE);
   signal sPeState                  : tPeState;
@@ -46,6 +50,7 @@ architecture std of priorityEncoder is
   signal sLenConvWr   : std_logic;
   signal sLenConvRd   : std_logic;
   signal sLenConvOut  : tFifoFdiOut;
+  signal sLenConvUsedW : std_logic_vector(ceil_log2(pFIFODEPTH)-1 downto 0);
 
 begin
   init_gen : for ii in 0 to cTOTAL_ADCS-1 generate
@@ -66,7 +71,7 @@ begin
           oMULTI_FIFO(ii).rd <= '0';
         end loop read_gen_0;
         sPeState <= IDLE;
-      elsif (sLenConvOut.full = '0') then
+      elsif (sLenConvUsedW < int2slv(cLENCONV_AFULL_THR, sLenConvUsedW'length)) then
 
         --Default assignment, updated where necessary
         read_gen_1 : for ii in 0 to cTOTAL_ADCS-1 loop
@@ -133,7 +138,7 @@ begin
       --
       oEMPTY_W => open,
       oFULL_W  => sLenConvOut.full,
-      oUSEDW_W => open,
+      oUSEDW_W => sLenConvUsedW,
       iWR_REQ  => sLenConvWr,
       iDATA    => sLenConvData,
       --

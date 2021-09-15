@@ -9,6 +9,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 use work.basic_package.all;
+use work.FOOTpackage.all;
 
 --!@copydoc pgdaqPackage.vhd
 package pgdaqPackage is
