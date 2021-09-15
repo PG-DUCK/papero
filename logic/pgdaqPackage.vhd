@@ -21,6 +21,10 @@ package pgdaqPackage is
   constant cHPS_REG_ADDR  : natural := ceil_log2(cHPS_REGISTERS);  --!Register address width
   constant cFPGA_REG_ADDR : natural := ceil_log2(cFPGA_REGISTERS);  --!Register address width
 
+  constant cFDI_WIDTH : natural := 32; --!Width of FDI FIFO
+  constant cFDI_DEPTH : natural := 4096; --!Number of words in the FDI FIFO
+  constant cLENCONV_DEPTH : natural := 16; --!Number of words in the length converter FIFO
+
   --Housekeeping reader
   constant cF2H_HK_SOP    : std_logic_vector(31 downto 0) := x"55AADEAD";  --!Start of Packet for the FPGA-2-HPS FSM
   constant cF2H_HK_HDR    : std_logic_vector(31 downto 0) := x"4EADE500";  --!Fixed Header for the FPGA-2-HPS FSM
@@ -126,6 +130,22 @@ package pgdaqPackage is
     aFull  : std_logic;                      --!Almost full
     full   : std_logic;                      --!Full
   end record tFifo32Out;
+
+  --!Input signals of a typical FIFO memory of cFDI_WIDTH bit
+  type tFifoFdiIn is record
+    data : std_logic_vector(cFDI_WIDTH-1 downto 0);  --!Input data port
+    rd   : std_logic;                      --!Read request
+    wr   : std_logic;                      --!Write request
+  end record tFifoFdiIn;
+
+  --!Output signals of a typical FIFO memory of cFDI_WIDTH bit
+  type tFifoFdiOut is record
+    q      : std_logic_vector(cFDI_WIDTH-1 downto 0);  --!Output data port
+    aEmpty : std_logic;                      --!Almost empty
+    empty  : std_logic;                      --!Empty
+    aFull  : std_logic;                      --!Almost full
+    full   : std_logic;                      --!Full
+  end record tFifoFdiOut;
 
   --!Metadata for the F2H Fast TX
   type tF2hMetadata is record
@@ -426,6 +446,26 @@ package pgdaqPackage is
       oFIFO_F2HFAST_DATA  : out std_logic_vector(31 downto 0)
       );
   end component;
+
+  --!@copydoc priorityEncoder.vhd
+  component priorityEncoder is
+    generic (
+      pFIFOWIDTH : natural;
+      pFIFODEPTH : natural
+      );
+    port (
+      iCLK            : in  std_logic;
+      iRST            : in  std_logic;
+      --# {{MULTI_FIFO Interface|MULTI_FIFO Interface}}
+      iMULTI_FIFO     : in  tMultiAdcFifoOut;
+      oMULTI_FIFO     : out tMultiAdcFifoIn;
+      --# {{FastDATA Interface|FastDATA Interface}}
+      oFASTDATA_DATA  : out std_logic_vector(pFIFOWIDTH-1 downto 0);
+      oFASTDATA_WE    : out std_logic;
+      iFASTDATA_AFULL : in  std_logic
+      );
+  end component;
+
 
   --!Generatore di segnale PWM
   component Variable_PWM_FSM is

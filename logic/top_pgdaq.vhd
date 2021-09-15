@@ -455,8 +455,8 @@ begin
   sTrgBusiesOr  <= (others => '0');
   TdaqModule_i : TdaqModule
     generic map (
-      pFDI_WIDTH => 32,
-      pFDI_DEPTH => 4096,
+      pFDI_WIDTH => cFDI_WIDTH,
+      pFDI_DEPTH => cFDI_DEPTH,
       pGW_VER    => PGDAQ_SHA
       )
     port map (
