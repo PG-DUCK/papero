@@ -42,6 +42,8 @@ architecture std of trigBusyLogic is
   signal sTrigCounter   : std_logic_vector(31 downto 0);
   signal sIntTrigPeriod : std_logic_vector(31 downto 0);
 
+  signal sPhysCalibn : std_logic;
+
   signal sTrig     : std_logic;
   signal sMainTrig : std_logic;
   signal sTrigId   : std_logic_vector(7 downto 0);
@@ -55,11 +57,15 @@ begin
   oTRIG_ID <= sTrigId;
 
   sIntTrigEn     <= iCFG(0);
+  sPhysCalibn    <= iCFG(1);
   sIntTrigPeriod <= iCFG(iCFG'left downto 4) & "0000";
 
   sTrig     <= sMainTrig and not sBusy;
   sMainTrig <= sIntTrig   when sIntTrigEn = '1' else sExtTrigSynch;
-  sTrigId   <= cTRG_CALIB when sIntTrigEn = '1' else cTRG_PHYS;
+  sTrigId <= cTRG_PHYS_INT  when (sIntTrigEn = '1' and sPhysCalibn = '1') else
+             cTRG_CALIB_INT when (sIntTrigEn = '1' and sPhysCalibn = '0') else
+             cTRG_CALIB_EXT when (sIntTrigEn = '0' and sPhysCalibn = '1') else
+             cTRG_PHYS_EXT  when (sIntTrigEn = '0' and sPhysCalibn = '0');
 
   sBusy <= unary_and(iBUSIES_AND) or unary_or(iBUSIES_OR);
   -----------------------------------------------------------------------------

@@ -30,8 +30,10 @@ package pgdaqPackage is
   constant cFastF2H_AFULL : natural                       := 4085;  --!Almost full threshold for the data FIFO
 
   --Trigger types
-  constant cTRG_PHYS  : std_logic_vector(7 downto 0) := "00000001";  --!Physics trigger (from external pin)
-  constant cTRG_CALIB : std_logic_vector(7 downto 0) := "00000010";  --!Calibration trigger (internal)
+  constant cTRG_PHYS_INT  : std_logic_vector(7 downto 0) := "00000000";  --!Physics trigger (from internal counter)
+  constant cTRG_PHYS_EXT  : std_logic_vector(7 downto 0) := "00000001";  --!Physics trigger (from external pin)
+  constant cTRG_CALIB_INT : std_logic_vector(7 downto 0) := "00000010";  --!Calibration trigger (internal)
+  constant cTRG_CALIB_EXT : std_logic_vector(7 downto 0) := "00000100";  --!Calibration trigger (external)
 
   -- Types ---------------------------------------------------------------------
   constant rGOTO_STATE     : natural := 0;
