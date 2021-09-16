@@ -46,10 +46,10 @@ architecture std of priorityEncoder is
   signal sFifoCount, sFifoCountDel : natural range 0 to min_pow2_gte(cTOTAL_ADCs)-1 := 0;
 
   --dpFIFO
-  signal sLenConvData : std_logic_vector(cADC_DATA_WIDTH-1 downto 0);
-  signal sLenConvWr   : std_logic;
-  signal sLenConvRd   : std_logic;
-  signal sLenConvOut  : tFifoFdiOut;
+  signal sLenConvData  : std_logic_vector(cADC_DATA_WIDTH-1 downto 0);
+  signal sLenConvWr    : std_logic;
+  signal sLenConvRd    : std_logic;
+  signal sLenConvOut   : tFifoFdiOut;
   signal sLenConvUsedW : std_logic_vector(ceil_log2(pFIFODEPTH)-1 downto 0);
 
 begin

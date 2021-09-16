@@ -486,5 +486,23 @@ begin
       oFIFO_F2HFAST_DATA  => fast_fifo_f2h_data_in
       );
 
+  DetectorInterface_i : DetectorInterface
+  port map (
+    iCLK            => h2f_user_clock,
+    iRST            => iRST,
+    iEN             => iEN,
+    iTRIG           => iTRIG,
+    oCNT            => oCNT,
+    iMSD_CONFIG     => iMSD_CONFIG,
+    oFE0            => oFE0,
+    oADC0           => oADC0,
+    oFE1            => oFE1,
+    oADC1           => oADC1,
+    iMULTI_ADC      => iMULTI_ADC,
+    oFASTDATA_DATA  => oFASTDATA_DATA,
+    oFASTDATA_WE    => oFASTDATA_WE,
+    iFASTDATA_AFULL => iFASTDATA_AFULL
+  );
+
 
 end architecture;

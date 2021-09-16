@@ -488,6 +488,32 @@ package pgdaqPackage is
       );
   end component;
 
+  --!@copydoc DetectorInterface.vhd
+  component DetectorInterface is
+    port (
+      iCLK            : in  std_logic;
+      iRST            : in  std_logic;
+      --# {{Controls|Controls}}
+      iEN             : in  std_logic;
+      iTRIG           : in  std_logic;
+      oCNT            : out tControlIntfOut;
+      iMSD_CONFIG     : in  msd_config;
+      --# {{Detector 0|Detector 0}}
+      oFE0            : out tFpga2FeIntf;
+      oADC0           : out tFpga2AdcIntf;
+      --# {{Detector 1|Detector 1}}
+      oFE1            : out tFpga2FeIntf;
+      oADC1           : out tFpga2AdcIntf;
+      --# {{ADCs Inputs|ADCs Inputs}}
+      iMULTI_ADC      : in  tMultiAdc2FpgaIntf;
+      --# {{FastDATA Interface|FastDATA Interface}}
+      oFASTDATA_DATA  : out std_logic_vector(cREG_WIDTH-1 downto 0);
+      oFASTDATA_WE    : out std_logic;
+      iFASTDATA_AFULL : in  std_logic
+    );
+  end component;
+
+
 
 
   -- Functions -----------------------------------------------------------------
