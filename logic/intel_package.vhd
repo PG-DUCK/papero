@@ -112,6 +112,7 @@ package intel_package is
       memory_oct_rzqin                       : in    std_logic                     := 'X';  -- oct_rzqin
       reset_reset_n                          : in    std_logic                     := 'X';  -- reset_n
       hps_0_h2f_user0_clock_clk              : out   std_logic;  -- clk
+      hps_0_h2f_user1_clock_clk              : out   std_logic;  -- clk
       fifo_hps_to_fpga_clk_clk               : in    std_logic                     := 'X';  -- clk
       fifo_hps_to_fpga_rst_reset_n           : in    std_logic                     := 'X';  -- reset_n
       fifo_fpga_to_hps_clk_clk               : in    std_logic                     := 'X';  -- clk

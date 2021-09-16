@@ -168,7 +168,9 @@ architecture std of top_pgdaq is
   signal hps_cold_rst_n           : std_logic;
   signal hps_warm_rst_n           : std_logic;
   signal hps_debug_rst_n          : std_logic;
-  signal h2f_user_clock           : std_logic;  -- user clock from HPS
+  signal sClk                     : std_logic;  -- FPGA clock
+  signal h2f_clk_50MHz            : std_logic;  -- user clock (50 MHz) from HPS
+  signal h2f_clk_96MHz            : std_logic;  -- user clock (96 MHz) from HPS
 
   -- fifo FPGA --> HPS contenente dati scientifici
   signal fast_fifo_f2h_data_in      : std_logic_vector(31 downto 0);  -- Data
@@ -242,6 +244,7 @@ architecture std of top_pgdaq is
 begin
   -- connection of internal logics ----------------------------
   fpga_clk_50   <= FPGA_CLK1_50;
+  sClk          <= h2f_clk_50MHz;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
 
   fpga_debounced_buttons_n <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
@@ -250,6 +253,7 @@ begin
   hps_warm_rst_n  <= not hps_warm_reset;
   hps_debug_rst_n <= not hps_debug_reset;
   --!@brief HPS instance
+  --!@todo Are clock 50MHz and clock 96MHz inverted?
   SoC_inst : soc_system port map (
     --Clock&Reset
     clk_clk                               => fpga_clk_50,  -- clk.clk
@@ -336,10 +340,11 @@ begin
     hps_0_f2h_debug_reset_req_reset_n     => hps_debug_rst_n,  -- hps_0_f2h_debug_reset_req.reset_n
     hps_0_f2h_stm_hw_events_stm_hwevents  => stm_hw_events,  -- hps_0_f2h_stm_hw_events.stm_hwevents
     hps_0_f2h_warm_reset_req_reset_n      => hps_warm_rst_n,  -- hps_0_f2h_warm_reset_req.reset_n
-    hps_0_h2f_user0_clock_clk             => h2f_user_clock,  -- hps_0_h2f_user0_clock.clk
+    hps_0_h2f_user0_clock_clk             => h2f_clk_96MHz,  -- hps_0_h2f_user0_clock.clk
+    hps_0_h2f_user1_clock_clk             => h2f_clk_50MHz,  -- hps_0_h2f_user1_clock.clk
 
     --Fifo Partion
-    fast_fifo_fpga_to_hps_clk_clk          => fpga_clk_50,  -- fast_fifo_fpga_to_hps_clk.clk
+    fast_fifo_fpga_to_hps_clk_clk          => sClk,  -- fast_fifo_fpga_to_hps_clk.clk
     fast_fifo_fpga_to_hps_rst_reset_n      => '1',  -- fast_fifo_fpga_to_hps_rst.reset_n
     fast_fifo_fpga_to_hps_in_writedata     => fast_fifo_f2h_data_in,  --       fifo_fpga_to_hps_in.writedata
     fast_fifo_fpga_to_hps_in_write         => fast_fifo_f2h_wr_en,  --                          .write
@@ -350,7 +355,7 @@ begin
     fast_fifo_fpga_to_hps_in_csr_write     => fast_fifo_f2h_wr_en_csr,  --                          .write
     fast_fifo_fpga_to_hps_in_csr_readdata  => fast_fifo_f2h_data_out_csr,  --                          .readdata
 
-    fifo_fpga_to_hps_clk_clk          => fpga_clk_50,  --         fifo_fpga_to_hps_clk.clk
+    fifo_fpga_to_hps_clk_clk          => sClk,  --         fifo_fpga_to_hps_clk.clk
     fifo_fpga_to_hps_rst_reset_n      => '1',  --         fifo_fpga_to_hps_rst.reset_n
     fifo_fpga_to_hps_in_writedata     => fifo_f2h_data_in,  --     fast_fifo_fpga_to_hps_in.writedata
     fifo_fpga_to_hps_in_write         => fifo_f2h_wr_en,  --                             .write
@@ -361,7 +366,7 @@ begin
     fifo_fpga_to_hps_in_csr_write     => fifo_f2h_wr_en_csr,  --                             .write
     fifo_fpga_to_hps_in_csr_readdata  => fifo_f2h_data_out_csr,  --                             .readdata
 
-    fifo_hps_to_fpga_clk_clk           => fpga_clk_50,  --    fifo_hps_to_fpga_clk.clk
+    fifo_hps_to_fpga_clk_clk           => sClk,  --    fifo_hps_to_fpga_clk.clk
     fifo_hps_to_fpga_rst_reset_n       => '1',  --    fifo_hps_to_fpga_rst.reset_n
     fifo_hps_to_fpga_out_readdata      => fifo_h2f_data_out,  --     fifo_fpga_to_hps_in.writedata
     fifo_hps_to_fpga_out_read          => fifo_h2f_rd_en,  --                        .write
@@ -444,7 +449,7 @@ begin
       pSTAGES => 3
       )
     port map (
-      iCLK => h2f_user_clock,
+      iCLK => sClk,
       iRST => '0',
       iD   => not hps_fpga_reset_n,
       oQ   => hps_fpga_reset
@@ -486,7 +491,7 @@ begin
       pBUSWIDTH => 64
       )
     port map (
-      iCLK   => h2f_user_clock,
+      iCLK   => sClk,
       iEN    => sIntTsEn,
       iRST   => sIntTsRst,
       iLOAD  => '0',
@@ -504,7 +509,7 @@ begin
       pBUSWIDTH => 64
       )
     port map (
-      iCLK   => h2f_user_clock,
+      iCLK   => sClk,
       iEN    => sExtTsEn,
       iRST   => sExtTsRst,
       iLOAD  => '0',
@@ -523,7 +528,7 @@ begin
       pGW_VER    => PGDAQ_SHA
       )
     port map (
-      iCLK                => h2f_user_clock,
+      iCLK                => sClk,
       --
       iRST_REG            => hps_fpga_reset,
       oREG_ARRAY          => sRegArray,
@@ -566,7 +571,7 @@ begin
   --!@todo Connect error, compl flags
   MsdInterface : DetectorInterface
     port map (
-      iCLK            => h2f_user_clock,
+      iCLK            => sClk,
       iRST            => sDetIntfRst,
       iEN             => sDetIntfEn,
       iTRIG           => sMainTrig,
@@ -617,7 +622,7 @@ begin
   sMultiAdc(8).SData <= iADC_B_SDATA3;
   sMultiAdc(9).SData <= iADC_B_SDATA4;
 
-  oHK <= (others => '0');               --!@todo Add actual signals for debug
+  oHK <= (others => '0'); --!@todo Add actual signals for debug
 
   --- I/O synchronization and buffering ----------------------------------------
   BCO_CLK_SYNCH : sync_edge
@@ -625,7 +630,7 @@ begin
       pSTAGES => 2
       )
     port map (
-      iCLK => h2f_user_clock,
+      iCLK => sClk,
       iRST => '0',
       iD   => iBCO_CLK,
       oQ   => sBcoClkSynch
@@ -636,16 +641,16 @@ begin
       pSTAGES => 2
       )
     port map (
-      iCLK => h2f_user_clock,
+      iCLK => sClk,
       iRST => '0',
       iD   => iBCO_RST,
       oQ   => sBcoRstSynch
       );
 
   sMultiAdcSynch <= sMultiAdc;
-  IOFFD : process(h2f_user_clock)
+  IOFFD : process(sClk)
   begin
-    if rising_edge(h2f_user_clock) then
+    if rising_edge(sClk) then
       oBUSY <= sMainBusy;
       oTRIG <= sMainTrig;
     --!@todo synchronize also the ADC incoming data and the CD and SCLK ret

@@ -63,6 +63,7 @@ Logic/img
 tb/
 *.sopcinfo
 ip/soc_system/soc_system/
+ip/soc_system/.qsys_edit
 bin/
 Projects/
 *.cmp

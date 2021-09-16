@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData 
+ <parameter name="bonusData"><![CDATA[bonusData
 {
    element ILC
    {
@@ -452,6 +452,11 @@
  <interface
    name="hps_0_h2f_user0_clock"
    internal="hps_0.h2f_user0_clock"
+   type="clock"
+   dir="start" />
+ <interface
+   name="hps_0_h2f_user1_clock"
+   internal="hps_0.h2f_user1_clock"
    type="clock"
    dir="start" />
  <interface name="hps_0_hps_io" internal="hps_0.hps_io" type="conduit" dir="end" />
@@ -956,8 +961,9 @@
   <parameter name="S2FCLK_COLDRST_Enable" value="false" />
   <parameter name="S2FCLK_PENDINGRST_Enable" value="false" />
   <parameter name="S2FCLK_USER0CLK_Enable" value="true" />
-  <parameter name="S2FCLK_USER1CLK_Enable" value="false" />
-  <parameter name="S2FCLK_USER1CLK_FREQ" value="100.0" />
+  <parameter name="S2FCLK_USER0CLK_FREQ" value="50.0" />
+  <parameter name="S2FCLK_USER1CLK_Enable" value="true" />
+  <parameter name="S2FCLK_USER1CLK_FREQ" value="96.0" />
   <parameter name="S2FCLK_USER2CLK" value="4" />
   <parameter name="S2FCLK_USER2CLK_Enable" value="false" />
   <parameter name="S2FCLK_USER2CLK_FREQ" value="100.0" />
