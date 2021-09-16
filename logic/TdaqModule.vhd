@@ -30,6 +30,10 @@ entity TdaqModule is
     oBUSY               : out std_logic;
     iTRG_BUSIES_AND     : in  std_logic_vector(7 downto 0);
     iTRG_BUSIES_OR      : in  std_logic_vector(7 downto 0);
+    --FastDATA-Detector interface
+    iFASTDATA_DATA      : in  std_logic_vector(cREG_WIDTH-1 downto 0);
+    iFASTDATA_WE        : in  std_logic;
+    oFASTDATA_AFULL     : out std_logic;
     --H2F
     iFIFO_H2F_EMPTY     : in  std_logic;  --!FIFO H2F Wait Request
     iFIFO_H2F_DATA      : in  std_logic_vector(31 downto 0);  --!FIFO H2F q
@@ -82,9 +86,12 @@ architecture std of TdaqModule is
   signal sTrig              : std_logic;
 
   -- Test unit
-  signal sTestUnitEn   : std_logic;
-  signal sTestUnitBusy : std_logic;
-  signal sTestUnitCfg  : std_logic_vector(1 downto 0);
+  signal sTestUnitEn    : std_logic;
+  signal sTestUnitBusy  : std_logic;
+  signal sTestUnitCfg   : std_logic_vector(1 downto 0);
+  signal sTestUnitData  : std_logic_vector(cREG_WIDTH-1 downto 0);
+  signal sTestUnitWr    : std_logic;
+  signal sTestUnitAfull : std_logic;
 
 begin
   -- Register Array assignments
@@ -172,15 +179,21 @@ begin
     port map(
       iCLK            => iCLK,
       iRST            => sRst,
-      iEN             => sTestUnitEn and not sFdiFifoOut.aFull,
+      iEN             => sTestUnitEn and not sTestUnitAfull,
       iSETTING_CONFIG => sTestUnitCfg,
       iSETTING_LENGTH => sRegArray(rPKT_LEN),
       iTRIG           => sTrig,
-      oDATA           => sFdiFifoIn.data,
-      oDATA_VALID     => sFdiFifoIn.wr,
+      oDATA           => sTestUnitData,
+      oDATA_VALID     => sTestUnitWr,
       oTEST_BUSY      => sTestUnitBusy
       );
 
+  sFdiFifoIn.data <= iFASTDATA_DATA when sTestUnitEn = '0' else
+                     sTestUnitData;
+  sFdiFifoIn.wr <= iFASTDATA_WE when sTestUnitEn = '0' else
+                   sTestUnitWr;
+  sTestUnitAfull  <= sFdiFifoOut.aFull;
+  oFASTDATA_AFULL <= sFdiFifoOut.aFull;
   --!@brief FIFO in input of the fast data tx
   fast_data_input_FDI_fifo : parametric_fifo_synch
     generic map(

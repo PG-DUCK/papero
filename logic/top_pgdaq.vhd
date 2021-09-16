@@ -11,6 +11,7 @@ use ieee.std_logic_unsigned.all;
 use work.intel_package.all;
 use work.pgdaqPackage.all;
 use work.basic_package.all;
+use work.FOOTpackage.all;
 
 
 --!@copydoc top_pgdaq.vhd
@@ -97,10 +98,53 @@ entity top_pgdaq is
     --- SW ---------------------------------------------------------------------
     SW : in std_logic_vector(3 downto 0);
 
-    -- TRIG BUSY ---------------------------------------------------------------
-    iEXT_TRIG : in  std_logic;
-    oBUSY     : out std_logic;
-    oTRIG     : out std_logic
+    --- GPIO -------------------------------------------------------------------
+    --Detector side A
+    oNC_A          : out std_logic;     --GPIO1-16
+    oFE_A_TEST     : out std_logic;     --GPIO1-0
+    oFE_A_RESET    : out std_logic;     --GPIO1-2
+    oFE_A0_HOLD    : out std_logic;     --GPIO1-4
+    oFE_A0_SHIFT   : out std_logic;     --GPIO1-8
+    oFE_A0_CLK     : out std_logic;     --GPIO1-12
+    oFE_A1_HOLD    : out std_logic;     --GPIO1-6
+    oFE_A1_SHIFT   : out std_logic;     --GPIO1-10
+    oFE_A1_CLK     : out std_logic;     --GPIO1-14
+    oADC_A_CS      : out std_logic;     --GPIO1-22
+    oADC_A_SCLK    : out std_logic;     --GPIO1-24
+    iADC_A_CS_RET  : in  std_logic;     --GPIO1-18
+    iADC_A_SCK_RET : in  std_logic;     --GPIO1-20
+    iADC_A_SDATA0  : in  std_logic;     --GPIO1-26
+    iADC_A_SDATA1  : in  std_logic;     --GPIO1-28
+    iADC_A_SDATA2  : in  std_logic;     --GPIO1-30
+    iADC_A_SDATA3  : in  std_logic;     --GPIO1-32
+    iADC_A_SDATA4  : in  std_logic;     --GPIO1-34
+    --Detector side B
+    oNC_B          : out std_logic;     --GPIO1-17
+    oFE_B_TEST     : out std_logic;     --GPIO1-3
+    oFE_B_RESET    : out std_logic;     --GPIO1-1
+    oFE_B0_HOLD    : out std_logic;     --GPIO1-5
+    oFE_B0_SHIFT   : out std_logic;     --GPIO1-9
+    oFE_B0_CLK     : out std_logic;     --GPIO1-13
+    oFE_B1_HOLD    : out std_logic;     --GPIO1-7
+    oFE_B1_SHIFT   : out std_logic;     --GPIO1-11
+    oFE_B1_CLK     : out std_logic;     --GPIO1-15
+    oADC_B_CS      : out std_logic;     --GPIO1-23
+    oADC_B_SCLK    : out std_logic;     --GPIO1-25
+    iADC_B_CS_RET  : in  std_logic;     --GPIO1-19
+    iADC_B_SCK_RET : in  std_logic;     --GPIO1-21
+    iADC_B_SDATA0  : in  std_logic;     --GPIO1-27
+    iADC_B_SDATA1  : in  std_logic;     --GPIO1-29
+    iADC_B_SDATA2  : in  std_logic;     --GPIO1-31
+    iADC_B_SDATA3  : in  std_logic;     --GPIO1-33
+    iADC_B_SDATA4  : in  std_logic;     --GPIO1-35
+    --Central Acquisition side
+    iBCO_CLK       : in  std_logic;     --GPIO0-16
+    iBCO_RST       : in  std_logic;     --GPIO0-0
+    iEXT_TRIG      : in  std_logic;     --GPIO0-32
+    oBUSY          : out std_logic;     --GPIO0-1
+    oTRIG          : out std_logic;     --GPIO0-27
+
+    oHK : out std_logic_vector(30 downto 0)  --All the remainings
 
     );
 end entity top_pgdaq;
@@ -174,13 +218,31 @@ architecture std of top_pgdaq is
   signal sExtTsRst   : std_logic;
   signal sExtTsCount : std_logic_vector(63 downto 0);
 
+  --Detector interface
+  signal sDetIntfRst    : std_logic;
+  signal sDetIntfEn     : std_logic;
+  signal sDetIntfCntOut : tControlIntfOut;
+  signal sDetIntfCfg    : msd_config;
+  signal sDetIntfQ      : std_logic_vector(cREG_WIDTH-1 downto 0);
+  signal sDetIntfWe     : std_logic;
+  signal sDetIntfAfull  : std_logic;
+  signal sFeA           : tFpga2FeIntf;
+  signal sFeB           : tFpga2FeIntf;
+  signal sAdcA          : tFpga2AdcIntf;
+  signal sAdcB          : tFpga2AdcIntf;
+  signal sMultiAdc      : tMultiAdc2FpgaIntf;
+
+  signal sMultiAdcSynch : tMultiAdc2FpgaIntf;
+  signal sBcoClkSynch   : std_logic;
+  signal sBcoRstSynch   : std_logic;
+  signal sBusy          : std_logic;
+  signal sErrors        : std_logic;
+  signal sDebug         : std_logic_vector(7 downto 0);
+
 begin
   -- connection of internal logics ----------------------------
   fpga_clk_50   <= FPGA_CLK1_50;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
-
-  oBUSY <= sMainBusy;
-  oTRIG <= sMainTrig;
 
   fpga_debounced_buttons_n <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
 
@@ -432,8 +494,9 @@ begin
       oCOUNT => sIntTsCount
       );
 
-  sExtTsEn  <= '1';
-  sExtTsRst <= sRegArray(rGOTO_STATE)(1) or sRegArray(rGOTO_STATE)(0);
+  sExtTsEn  <= sBcoClkSynch;
+  sExtTsRst <= sBcoRstSynch or sRegArray(rGOTO_STATE)(1)
+               or sRegArray(rGOTO_STATE)(0) or not sRegArray(rGOTO_STATE)(4);
   --!@brief External timestamp counter
   extTimestampCounter : counter
     generic map (
@@ -451,8 +514,8 @@ begin
 
   --!@brief Wrapper for all of the Trigger and Data Acquisition modules
   --!@todo connect busies
-  sTrgBusiesAnd <= (others => '0');
-  sTrgBusiesOr  <= (others => '0');
+  sTrgBusiesAnd   <= (others => '0');
+  sTrgBusiesOr    <= (0 => sDetIntfCntOut.busy, others => '0');
   TdaqModule_i : TdaqModule
     generic map (
       pFDI_WIDTH => cFDI_WIDTH,
@@ -473,6 +536,10 @@ begin
       iTRG_BUSIES_AND     => sTrgBusiesAnd,
       iTRG_BUSIES_OR      => sTrgBusiesOr,
       --
+      iFASTDATA_DATA      => sDetIntfQ,
+      iFASTDATA_WE        => sDetIntfWe,
+      oFASTDATA_AFULL     => sDetIntfAfull,
+      --
       iFIFO_H2F_EMPTY     => fifo_h2f_empty,
       iFIFO_H2F_DATA      => fifo_h2f_data_out,
       oFIFO_H2F_RE        => fifo_h2f_rd_en,
@@ -486,23 +553,103 @@ begin
       oFIFO_F2HFAST_DATA  => fast_fifo_f2h_data_in
       );
 
-  DetectorInterface_i : DetectorInterface
-  port map (
-    iCLK            => h2f_user_clock,
-    iRST            => iRST,
-    iEN             => iEN,
-    iTRIG           => iTRIG,
-    oCNT            => oCNT,
-    iMSD_CONFIG     => iMSD_CONFIG,
-    oFE0            => oFE0,
-    oADC0           => oADC0,
-    oFE1            => oFE1,
-    oADC1           => oADC1,
-    iMULTI_ADC      => iMULTI_ADC,
-    oFASTDATA_DATA  => oFASTDATA_DATA,
-    oFASTDATA_WE    => oFASTDATA_WE,
-    iFASTDATA_AFULL => iFASTDATA_AFULL
-  );
+  sDetIntfRst              <= sRegArray(rGOTO_STATE)(0);
+  sDetIntfEn               <= not sRegArray(rUNITS_EN)(1);
+  sDetIntfCfg.feClkDuty    <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.feClkDiv     <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.adcClkDuty   <= sRegArray(rADC_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.adcClkDiv    <= sRegArray(rADC_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.cfgPlane     <= sRegArray(rMSD_PARAM)(31 downto 16);
+  sDetIntfCfg.intTrgPeriod <= (others => '0');
+  sDetIntfCfg.trg2Hold     <= sRegArray(rMSD_PARAM)(15 downto 0);
+  --!@brief Detector interface
+  --!@todo Connect error, compl flags
+  MsdInterface : DetectorInterface
+    port map (
+      iCLK            => h2f_user_clock,
+      iRST            => sDetIntfRst,
+      iEN             => sDetIntfEn,
+      iTRIG           => sMainTrig,
+      oCNT            => sDetIntfCntOut,  --Temporary
+      iMSD_CONFIG     => sDetIntfCfg,
+      oFE0            => sFeA,
+      oADC0           => sAdcA,
+      oFE1            => sFeB,
+      oADC1           => sAdcB,
+      iMULTI_ADC      => sMultiAdcSynch,
+      oFASTDATA_DATA  => sDetIntfQ,
+      oFASTDATA_WE    => sDetIntfWe,
+      iFASTDATA_AFULL => sDetIntfAfull
+      );
 
+  -- GPIO connections ----------------------------------------------------------
+  oNC_A              <= '0';
+  oFE_A_TEST         <= sFeA.TestOn;
+  oFE_A_RESET        <= sFeA.DRst;
+  oFE_A0_HOLD        <= not sFeA.Hold;
+  oFE_A0_SHIFT       <= sFeA.ShiftIn;
+  oFE_A0_CLK         <= not sFeA.Clk;
+  oFE_A1_HOLD        <= sFeA.Hold;
+  oFE_A1_SHIFT       <= sFeA.ShiftIn;
+  oFE_A1_CLK         <= sFeA.Clk;
+  oADC_A_CS          <= sAdcA.Cs;
+  oADC_A_SCLK        <= sAdcA.Sclk;
+  sMultiAdc(0).SData <= iADC_A_SDATA0;
+  sMultiAdc(1).SData <= iADC_A_SDATA1;
+  sMultiAdc(2).SData <= iADC_A_SDATA2;
+  sMultiAdc(3).SData <= iADC_A_SDATA3;
+  sMultiAdc(4).SData <= iADC_A_SDATA4;
+  --Detector side B
+  oNC_B              <= '0';
+  oFE_B_TEST         <= sFeB.TestOn;
+  oFE_B_RESET        <= sFeB.DRst;
+  oFE_B0_HOLD        <= not sFeB.Hold;
+  oFE_B0_SHIFT       <= sFeB.ShiftIn;
+  oFE_B0_CLK         <= not sFeB.Clk;
+  oFE_B1_HOLD        <= sFeB.Hold;
+  oFE_B1_SHIFT       <= sFeB.ShiftIn;
+  oFE_B1_CLK         <= sFeB.Clk;
+  oADC_B_CS          <= sAdcB.Cs;
+  oADC_B_SCLK        <= sAdcB.Sclk;
+  sMultiAdc(5).SData <= iADC_B_SDATA0;
+  sMultiAdc(6).SData <= iADC_B_SDATA1;
+  sMultiAdc(7).SData <= iADC_B_SDATA2;
+  sMultiAdc(8).SData <= iADC_B_SDATA3;
+  sMultiAdc(9).SData <= iADC_B_SDATA4;
+
+  oHK <= (others => '0');               --!@todo Add actual signals for debug
+
+  --- I/O synchronization and buffering ----------------------------------------
+  BCO_CLK_SYNCH : sync_edge
+    generic map (
+      pSTAGES => 2
+      )
+    port map (
+      iCLK => h2f_user_clock,
+      iRST => '0',
+      iD   => iBCO_CLK,
+      oQ   => sBcoClkSynch
+      );
+
+  BCO_RST_SYNCH : sync_edge
+    generic map (
+      pSTAGES => 2
+      )
+    port map (
+      iCLK => h2f_user_clock,
+      iRST => '0',
+      iD   => iBCO_RST,
+      oQ   => sBcoRstSynch
+      );
+
+  sMultiAdcSynch <= sMultiAdc;
+  IOFFD : process(h2f_user_clock)
+  begin
+    if rising_edge(h2f_user_clock) then
+      oBUSY <= sMainBusy;
+      oTRIG <= sMainTrig;
+    --!@todo synchronize also the ADC incoming data and the CD and SCLK ret
+    end if;
+  end process IOFFD;
 
 end architecture;
