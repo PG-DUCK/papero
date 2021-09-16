@@ -61,8 +61,9 @@ package pgdaqPackage is
   constant rEXT_TS_LSB       : natural := 4;
   constant rWARNING          : natural := 5;
   constant rBUSY             : natural := 6;
-  constant rTRG_COUNT        : natural := 7;
-  constant rFDI_FIFO_NUMWORD : natural := 8;
+  constant rEXT_TRG_COUNT    : natural := 7;
+  constant rINT_TRG_COUNT    : natural := 8;
+  constant rFDI_FIFO_NUMWORD : natural := 9;
   constant rPIUMONE          : natural := 15;
   --!Register array HPS-R, FPGA-RW
   type tFpgaRegArray is array (0 to cFPGA_REGISTERS-1) of
@@ -389,6 +390,8 @@ package pgdaqPackage is
       oTRIG           : out std_logic;
       oTRIG_ID        : out std_logic_vector(7 downto 0);
       oTRIG_COUNT     : out std_logic_vector(31 downto 0);
+      oEXT_TRIG_COUNT : out std_logic_vector(31 downto 0);
+      oINT_TRIG_COUNT : out std_logic_vector(31 downto 0);
       oTRIG_WHEN_BUSY : out std_logic_vector(7 downto 0);
       oBUSY           : out std_logic
       );

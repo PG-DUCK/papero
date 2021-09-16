@@ -76,6 +76,8 @@ architecture std of TdaqModule is
   signal sTrigEn            : std_logic;
   signal sTrigId            : std_logic_vector(7 downto 0);
   signal sTrigCount         : std_logic_vector(31 downto 0);
+  signal sExtTrigCount      : std_logic_vector(31 downto 0);
+  signal sIntTrigCount      : std_logic_vector(31 downto 0);
   signal sTrigWhenBusyCount : std_logic_vector(7 downto 0);
   signal sTrigCfg           : std_logic_vector(31 downto 0);
   signal sBusy              : std_logic;
@@ -220,6 +222,8 @@ begin
       oTRIG           => oTRIG,
       oTRIG_ID        => sTrigId,
       oTRIG_COUNT     => sTrigCount,
+      oEXT_TRIG_COUNT => sExtTrigCount,
+      oINT_TRIG_COUNT => sIntTrigCount,
       oTRIG_WHEN_BUSY => sTrigWhenBusyCount,
       oBUSY           => sBusy
       );
@@ -239,15 +243,15 @@ begin
   sFpgaRegIntf.we(rWARNING)      <= '1';
   sFpgaRegIntf.regs(rBUSY)       <= sRegBusy;
   sFpgaRegIntf.we(rBUSY)         <= '1';
-  sFpgaRegIntf.regs(rTRG_COUNT)  <= sTrigCount;
-  sFpgaRegIntf.we(rTRG_COUNT)    <= '1';
+  sFpgaRegIntf.regs(rEXT_TRG_COUNT)  <= sExtTrigCount;
+  sFpgaRegIntf.we(rEXT_TRG_COUNT)    <= '1';
+  sFpgaRegIntf.regs(rINT_TRG_COUNT)  <= (others => '0');
+  sFpgaRegIntf.we(rINT_TRG_COUNT)    <= '1';
   sFpgaRegIntf.regs(rFDI_FIFO_NUMWORD)
     (sFdiFifoUsedW'left downto 0) <= sFdiFifoUsedW;
   sFpgaRegIntf.regs(rFDI_FIFO_NUMWORD)
     (cREG_WIDTH-1 downto sFdiFifoUsedW'left+1) <= (others => '0');
   sFpgaRegIntf.we(rFDI_FIFO_NUMWORD) <= '1';
-  sFpgaRegIntf.regs(9)               <= (others => '0');
-  sFpgaRegIntf.we(9)                 <= '0';
   sFpgaRegIntf.regs(10)              <= (others => '0');
   sFpgaRegIntf.we(10)                <= '0';
   sFpgaRegIntf.regs(11)              <= (others => '0');

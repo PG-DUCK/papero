@@ -27,12 +27,15 @@ entity trigBusyLogic is
     iBUSIES_OR      : in  std_logic_vector(7 downto 0);  --!Busy signals or'ed
     oTRIG           : out std_logic;    --!Output trigger
     oTRIG_ID        : out std_logic_vector(7 downto 0);  --!Trigger type
-    oTRIG_COUNT     : out std_logic_vector(31 downto 0);  --!Trigger number
+    oTRIG_COUNT     : out std_logic_vector(31 downto 0);  --!Total Trigger number
+    oEXT_TRIG_COUNT : out std_logic_vector(31 downto 0);  --!External Trigger number
+    oINT_TRIG_COUNT : out std_logic_vector(31 downto 0);  --!Internal Trigger number
     oTRIG_WHEN_BUSY : out std_logic_vector(7 downto 0);  --!Triggers occurred when system is busy
     oBUSY           : out std_logic     --!Output busy
     );
 end entity trigBusyLogic;
 
+--!@todo sTotTrigNum computed with a synchronous process
 --!@copydoc trigBusyLogic.vhd
 architecture std of trigBusyLogic is
   signal sExtTrigSynch : std_logic;
@@ -45,8 +48,13 @@ architecture std of trigBusyLogic is
   signal sPhysCalibn : std_logic;
 
   signal sTrig     : std_logic;
-  signal sMainTrig : std_logic;
+  signal sTrigWhenBusy : std_logic;
+  signal sMainTrigExt : std_logic;
+  signal sMainTrigInt : std_logic;
   signal sTrigId   : std_logic_vector(7 downto 0);
+  signal sExtTrigNum : std_logic_vector(oEXT_TRIG_COUNT'length-2 downto 0);
+  signal sIntTrigNum : std_logic_vector(oINT_TRIG_COUNT'length-2 downto 0);
+  signal sTotTrigNum : std_logic_vector(oTRIG_COUNT'length-1 downto 0);
 
   signal sBusy : std_logic;
 
@@ -60,8 +68,16 @@ begin
   sPhysCalibn    <= iCFG(1);
   sIntTrigPeriod <= iCFG(iCFG'left downto 4) & "0000";
 
-  sTrig     <= sMainTrig and not sBusy;
-  sMainTrig <= sIntTrig   when sIntTrigEn = '1' else sExtTrigSynch;
+  sTrig <= sMainTrigInt when sIntTrigEn = '1' else sMainTrigExt;
+  sTrigWhenBusy <= (sExtTrigSynch or sIntTrig) and sBusy;
+  sMainTrigExt <= sExtTrigSynch and not sBusy;
+  sMainTrigInt <= sIntTrig and not sBusy;
+
+  sTotTrigNum <= ('0' & sExtTrigNum) + ('0' & sIntTrigNum);
+  oTRIG_COUNT     <= sTotTrigNum;
+  oEXT_TRIG_COUNT <= '0' & sExtTrigNum;
+  oINT_TRIG_COUNT <= '0' & sIntTrigNum;
+
   sTrigId <= cTRG_PHYS_INT  when (sIntTrigEn = '1' and sPhysCalibn = '1') else
              cTRG_CALIB_INT when (sIntTrigEn = '1' and sPhysCalibn = '0') else
              cTRG_CALIB_EXT when (sIntTrigEn = '0' and sPhysCalibn = '1') else
@@ -102,19 +118,35 @@ begin
     end if CLK_IF_TRIG;
   end process IntStart_proc;
 
-  --!@brief Actual triggers counter
-  TRIG_COUNTER : counter
+  --!@brief Actual external triggers counter
+  EXT_TRIG_COUNTER : counter
     generic map (
       pOVERLAP  => "Y",
-      pBUSWIDTH => oTRIG_COUNT'length
+      pBUSWIDTH => oEXT_TRIG_COUNT'length-1
       )
     port map (
       iCLK   => iCLK,
       iRST   => iRST_COUNTERS,
-      iEN    => sTrig,
+      iEN    => sMainTrigExt,
       iLOAD  => '0',
       iDATA  => (others => '0'),
-      oCOUNT => oTRIG_COUNT,
+      oCOUNT => sExtTrigNum,
+      oCARRY => open
+      );
+
+  --!@brief Actual internal triggers counter
+  INT_TRIG_COUNTER : counter
+    generic map (
+      pOVERLAP  => "Y",
+      pBUSWIDTH => oINT_TRIG_COUNT'length-1
+      )
+    port map (
+      iCLK   => iCLK,
+      iRST   => iRST_COUNTERS,
+      iEN    => sMainTrigInt,
+      iLOAD  => '0',
+      iDATA  => (others => '0'),
+      oCOUNT => sIntTrigNum,
       oCARRY => open
       );
 
@@ -127,7 +159,7 @@ begin
     port map (
       iCLK   => iCLK,
       iRST   => iRST_COUNTERS,
-      iEN    => sMainTrig and sBusy,
+      iEN    => sTrigWhenBusy,
       iLOAD  => '0',
       iDATA  => (others => '0'),
       oCOUNT => oTRIG_WHEN_BUSY,
