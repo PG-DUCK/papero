@@ -161,6 +161,10 @@ architecture std of top_pgdaq is
   signal hps_debug_reset        : std_logic;
   signal stm_hw_events          : std_logic_vector(27 downto 0);
   signal fpga_clk_50            : std_logic;
+  signal sRegAddrPio            : std_logic_vector(31 downto 0);
+  signal sRegContentPio         : std_logic_vector(31 downto 0);
+  signal sRegAddrInt, sRegAddrSyn : std_logic_vector(31 downto 0);
+  signal sRegContentInt, sRegContentSyn : std_logic_vector(31 downto 0);
 
   -- Ausiliari
   signal fpga_debounced_buttons_n : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
@@ -342,7 +346,9 @@ begin
     hps_0_f2h_warm_reset_req_reset_n      => hps_warm_rst_n,  -- hps_0_f2h_warm_reset_req.reset_n
     hps_0_h2f_user0_clock_clk             => h2f_clk_96MHz,  -- hps_0_h2f_user0_clock.clk
     hps_0_h2f_user1_clock_clk             => h2f_clk_50MHz,  -- hps_0_h2f_user1_clock.clk
-
+    --
+    regcontent_pio_export                 => sRegContentPio, -- regcontent_pio.export
+    regaddr_pio_export                    => sRegAddrPio,    --    regaddr_pio.export
     --Fifo Partion
     fast_fifo_fpga_to_hps_clk_clk          => sClk,  -- fast_fifo_fpga_to_hps_clk.clk
     fast_fifo_fpga_to_hps_rst_reset_n      => '1',  -- fast_fifo_fpga_to_hps_rst.reset_n
@@ -454,6 +460,22 @@ begin
       iD   => not hps_fpga_reset_n,
       oQ   => hps_fpga_reset
       );
+
+  RegAddrSync_proc : process (sClk)
+  begin
+    if (rising_edge(sClk)) then
+      sRegAddrInt <= sRegAddrPio;
+      sRegAddrSyn <= sRegAddrInt;
+    end if;
+  end process RegAddrSync_proc;
+
+  RegContSync_proc : process (fpga_clk_50)
+  begin
+    if (rising_edge(fpga_clk_50)) then
+      sRegContentInt <= sRegArray(slv2int(sRegAddrSyn(ceil_log2(cREGISTERS)-1 downto 0)));
+      sRegContentPio <= sRegContentInt;
+    end if;
+  end process RegContSync_proc;
 
   -- Continuosly read the level_fifo of FIFO HK
   fifo_f2h_addr_csr  <= "000";          --> fifo_f2h_data_out_csr = Level_Fifo

@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData
+ <parameter name="bonusData"><![CDATA[bonusData 
 {
    element ILC
    {
@@ -27,6 +27,38 @@
       datum baseAddress
       {
          value = "196608";
+         type = "String";
+      }
+   }
+   element RegAddr_pio
+   {
+      datum _sortIndex
+      {
+         value = "16";
+         type = "int";
+      }
+   }
+   element RegAddr_pio.s1
+   {
+      datum baseAddress
+      {
+         value = "4096";
+         type = "String";
+      }
+   }
+   element RegContent_pio
+   {
+      datum _sortIndex
+      {
+         value = "15";
+         type = "int";
+      }
+   }
+   element RegContent_pio.s1
+   {
+      datum baseAddress
+      {
+         value = "8192";
          type = "String";
       }
    }
@@ -466,6 +498,16 @@
    type="conduit"
    dir="end" />
  <interface name="memory" internal="hps_0.memory" type="conduit" dir="end" />
+ <interface
+   name="regaddr_pio"
+   internal="RegAddr_pio.external_connection"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="regcontent_pio"
+   internal="RegContent_pio.external_connection"
+   type="conduit"
+   dir="end" />
  <interface name="reset" internal="clk_0.clk_in_reset" type="reset" dir="end" />
  <module
    name="ILC"
@@ -475,6 +517,42 @@
   <parameter name="CLOCK_RATE" value="50000000" />
   <parameter name="INTR_TYPE" value="0" />
   <parameter name="IRQ_PORT_CNT" value="3" />
+ </module>
+ <module
+   name="RegAddr_pio"
+   kind="altera_avalon_pio"
+   version="20.1"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="50000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="32" />
+ </module>
+ <module
+   name="RegContent_pio"
+   kind="altera_avalon_pio"
+   version="20.1"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="50000000" />
+  <parameter name="direction" value="Input" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="32" />
  </module>
  <module name="button_pio" kind="altera_avalon_pio" version="20.1" enabled="1">
   <parameter name="bitClearingEdgeCapReg" value="true" />
@@ -961,7 +1039,6 @@
   <parameter name="S2FCLK_COLDRST_Enable" value="false" />
   <parameter name="S2FCLK_PENDINGRST_Enable" value="false" />
   <parameter name="S2FCLK_USER0CLK_Enable" value="true" />
-  <parameter name="S2FCLK_USER0CLK_FREQ" value="50.0" />
   <parameter name="S2FCLK_USER1CLK_Enable" value="true" />
   <parameter name="S2FCLK_USER1CLK_FREQ" value="96.0" />
   <parameter name="S2FCLK_USER2CLK" value="4" />
@@ -1332,6 +1409,24 @@
  <connection
    kind="avalon"
    version="20.1"
+   start="mm_bridge_0.m0"
+   end="RegContent_pio.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x2000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="20.1"
+   start="mm_bridge_0.m0"
+   end="RegAddr_pio.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x1000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="20.1"
    start="fpga_only_master.master"
    end="jtag_uart.avalon_jtag_slave">
   <parameter name="arbitrationPriority" value="1" />
@@ -1423,6 +1518,12 @@
    end="f2sdram_only_master.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="mm_bridge_0.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="ILC.clk" />
+ <connection
+   kind="clock"
+   version="20.1"
+   start="clk_0.clk"
+   end="RegContent_pio.clk" />
+ <connection kind="clock" version="20.1" start="clk_0.clk" end="RegAddr_pio.clk" />
  <connection
    kind="clock"
    version="20.1"
@@ -1533,6 +1634,16 @@
    version="20.1"
    start="clk_0.clk_reset"
    end="mm_bridge_0.reset" />
+ <connection
+   kind="reset"
+   version="20.1"
+   start="clk_0.clk_reset"
+   end="RegContent_pio.reset" />
+ <connection
+   kind="reset"
+   version="20.1"
+   start="clk_0.clk_reset"
+   end="RegAddr_pio.reset" />
  <connection
    kind="reset"
    version="20.1"
