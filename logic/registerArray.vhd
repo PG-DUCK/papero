@@ -38,7 +38,7 @@ begin
     sRegisters(hh) <= sHpsReg(hh);
   end generate HPS_REG_GEN;
   FPGA_REG_GEN : for ff in 0 to cFPGA_REGISTERS-1 generate
-    sRegisters(ff+cHPS_REGISTERS) <= sHpsReg(ff);
+    sRegisters(ff+cHPS_REGISTERS) <= sFpgaReg(ff);
   end generate FPGA_REG_GEN;
   ------------------------------------------------------------------------------
 
