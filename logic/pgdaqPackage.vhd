@@ -35,8 +35,10 @@ package pgdaqPackage is
   constant cFastF2H_AFULL : natural                       := 4085;  --!Almost full threshold for the data FIFO
 
   --Trigger types
-  constant cTRG_PHYS  : std_logic_vector(7 downto 0) := "00000001";  --!Physics trigger (from external pin)
-  constant cTRG_CALIB : std_logic_vector(7 downto 0) := "00000010";  --!Calibration trigger (internal)
+  constant cTRG_PHYS_INT  : std_logic_vector(7 downto 0) := "00000000";  --!Physics trigger (from internal counter)
+  constant cTRG_PHYS_EXT  : std_logic_vector(7 downto 0) := "00000001";  --!Physics trigger (from external pin)
+  constant cTRG_CALIB_INT : std_logic_vector(7 downto 0) := "00000010";  --!Calibration trigger (internal)
+  constant cTRG_CALIB_EXT : std_logic_vector(7 downto 0) := "00000100";  --!Calibration trigger (external)
 
   -- Types ---------------------------------------------------------------------
   constant rGOTO_STATE     : natural := 0;
@@ -64,8 +66,9 @@ package pgdaqPackage is
   constant rEXT_TS_LSB       : natural := 4;
   constant rWARNING          : natural := 5;
   constant rBUSY             : natural := 6;
-  constant rTRG_COUNT        : natural := 7;
-  constant rFDI_FIFO_NUMWORD : natural := 8;
+  constant rEXT_TRG_COUNT    : natural := 7;
+  constant rINT_TRG_COUNT    : natural := 8;
+  constant rFDI_FIFO_NUMWORD : natural := 9;
   constant rPIUMONE          : natural := 15;
   --!Register array HPS-R, FPGA-RW
   type tFpgaRegArray is array (0 to cFPGA_REGISTERS-1) of
@@ -409,6 +412,8 @@ package pgdaqPackage is
       oTRIG           : out std_logic;
       oTRIG_ID        : out std_logic_vector(7 downto 0);
       oTRIG_COUNT     : out std_logic_vector(31 downto 0);
+      oEXT_TRIG_COUNT : out std_logic_vector(31 downto 0);
+      oINT_TRIG_COUNT : out std_logic_vector(31 downto 0);
       oTRIG_WHEN_BUSY : out std_logic_vector(7 downto 0);
       oBUSY           : out std_logic
       );

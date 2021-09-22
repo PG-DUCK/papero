@@ -42,7 +42,7 @@ L'HPS può configurare l'FPGA accedendo a tali registri sia in lettura che in sc
 | -- | ------- | ------- |
 | 0  | Stato Top-Level. 4: Start/Stop trigger, 1: Reset contatori, 0: Reset(logica FPGA tranne registerArray) | XXXXXX00 |
 | 1  | Units Enable. [9:8] Test Unit configuration, 6: hkReader Enable, 5: Ricevi periodicamente (1 s) contenuto registerArray, 4: Ricevi contenuto attuale del registerArray, 1: Test_Unit/Detector_n Enable e data multiplexer, 0: FastData_Transmitter Enable,  | XXXXX001 |
-| 2  | CFG trigBusyLogic. [31:4]: Periodo del trigger interno (a multipli di 320 ns), 0: Abilitazione trigger interno | 02faf080 |
+| 2  | CFG trigBusyLogic. [31:4]: Periodo del trigger interno (a multipli di 320 ns), 1: Calibrazione, 0: Abilitazione trigger interno | 02faf080 |
 | 3  | [7:0] Detector ID | XXXXXXFF |
 | 4  | Setting length[31:0]: Lunghezza pacchetto dati scientifici (Payload 32-bit words + 10) | 0000028A |
 | 5  | FE-clock  parameters. [31:16] duty cycle and [15:0] divider | 00040028 |
@@ -55,6 +55,7 @@ L'HPS può configurare l'FPGA accedendo a tali registri sia in lettura che in sc
 | 20  | External Timestamp "low". [31:0]: Numero di clock passati dall'ultimo Reset calcolati esternamente (word meno significativa) |  |
 | 21  | WARNING del sistema. [11:8]: FastData_Transmitter, [7:4]: hkReader, [3:0]: Config_Receiver |  |
 | 22  | BUSY. 31: Busy flag, 28: TestUnit, [27:20] Busies AND, [19:12] Busies OR, 11: FastData TX, 10: HK FIFO aFull, 9: Fast FIFO aFull, 8: FDI FIFO aFull, [7:0] Triggers occurred when busy is asserted |  |
-| 23  | Trigger counter. [31:0]: Numero di impulsi di trigger dall'ultimo Reset |  |
-| 24  | PRBS_FIFO. [15:0]: Numero di parole presenti nella PRBS_FIFO |  |
+| 23  | External Trigger counter. [31:0]: Numero di impulsi di trigger esterni dall'ultimo Reset |  |
+| 24  | Internal Trigger counter. [31:0]: Numero di impulsi di trigger interni dall'ultimo Reset |  |
+| 25  | PRBS_FIFO. [15:0]: Numero di parole presenti nella PRBS_FIFO |  |
 | 31  | [31:0]: Piumone | C1A0C1A0 |
