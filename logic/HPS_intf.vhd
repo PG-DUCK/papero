@@ -17,6 +17,7 @@ entity HPS_intf is
   port(
     iCLK                : in  std_logic;   --!Main clock
     iRST                : in  std_logic;   --!Main reset
+    iRST_REG            : in  std_logic;   --!arrayRegister reset
     --Config RX
     oCR_WARNING         : out std_logic_vector(2 downto 0);  --!Config_Receiver Warnings
     --HK Reader
@@ -58,7 +59,7 @@ begin
   h2f_config_rx : Config_Receiver
     port map(
       CR_CLK_in               => iCLK,
-      CR_RST_in               => iRST,
+      CR_RST_in               => iRST_REG,
       CR_FIFO_WAIT_REQUEST_in => iFIFO_H2F_EMPTY,
       CR_DATA_in              => iFIFO_H2F_DATA,
       CR_FWV_in               => pGW_VER,

@@ -132,6 +132,7 @@ begin
     port map(
       iCLK                => iCLK,
       iRST                => sRst,
+      iRST_REG            => iRST_REG,
       --
       oCR_WARNING         => sCrWarning,
       --

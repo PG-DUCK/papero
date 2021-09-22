@@ -215,6 +215,7 @@ architecture std of top_pgdaq is
   signal sTrgBusiesAnd : std_logic_vector(7 downto 0);
   signal sTrgBusiesOr  : std_logic_vector(7 downto 0);
   signal sRegArray     : tRegArray;
+  signal sKEY_R        : std_logic_vector(1 downto 0);   -- Config_Receiver and registerAray RESET
 
   -- Timestamps
   signal sIntTsEn    : std_logic;
@@ -449,6 +450,14 @@ begin
       pulse_out => hps_debug_reset
       );
 
+  --!@brief Generazione del Reset per Register Array e Config_Receiver a partire da KEY(1)
+  Hard_Reset_proc : Key_Pulse_Gen
+    port map(
+      KPG_CLK_in    => sClk,
+      KPG_DATA_in	  => KEY,
+      KPG_DATA_out  => sKEY_R 
+      );
+      
   --!@brief HPS delivers inverted-logic reset, our modules accept non-inverted reset
   HPS_RST_SYNCH : sync_stage
     generic map (
@@ -552,7 +561,7 @@ begin
     port map (
       iCLK                => sClk,
       --
-      iRST_REG            => hps_fpga_reset,
+      iRST_REG            => sKEY_R(1),
       oREG_ARRAY          => sRegArray,
       iINT_TS             => sIntTsCount,
       iEXT_TS             => sExtTsCount,

@@ -51,7 +51,7 @@ package pgdaqPackage is
   type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
   constant cHPS_REG_NULL : tHpsRegArray := (
-    x"00000000", x"00000023", x"02faf080", x"000000FF",
+    x"00000000", x"00000001", x"02faf080", x"000000FF",
     x"0000028A", x"00040028", x"00040002", x"00070145",
     x"00000000", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000"
@@ -286,6 +286,7 @@ package pgdaqPackage is
       iCLK                : in  std_logic;
       --# {{resets|Reset}}
       iRST                : in  std_logic;
+      iRST_REG            : in  std_logic;
       --# {{ConfigRX | ConfigRX}}
       oCR_WARNING         : out std_logic_vector(2 downto 0);
       --# {{HKReader|HKReader}}
