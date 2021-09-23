@@ -352,7 +352,7 @@ begin
     regaddr_pio_export                    => sRegAddrPio,    --    regaddr_pio.export
     --Fifo Partion
     fast_fifo_fpga_to_hps_clk_clk          => sClk,  -- fast_fifo_fpga_to_hps_clk.clk
-    fast_fifo_fpga_to_hps_rst_reset_n      => '1',  -- fast_fifo_fpga_to_hps_rst.reset_n
+    fast_fifo_fpga_to_hps_rst_reset_n      => not sRegArray(rGOTO_STATE)(0),  -- fast_fifo_fpga_to_hps_rst.reset_n
     fast_fifo_fpga_to_hps_in_writedata     => fast_fifo_f2h_data_in,  --       fifo_fpga_to_hps_in.writedata
     fast_fifo_fpga_to_hps_in_write         => fast_fifo_f2h_wr_en,  --                          .write
     fast_fifo_fpga_to_hps_in_waitrequest   => fast_fifo_f2h_full,  --                          .waitrequest
@@ -363,7 +363,7 @@ begin
     fast_fifo_fpga_to_hps_in_csr_readdata  => fast_fifo_f2h_data_out_csr,  --                          .readdata
 
     fifo_fpga_to_hps_clk_clk          => sClk,  --         fifo_fpga_to_hps_clk.clk
-    fifo_fpga_to_hps_rst_reset_n      => '1',  --         fifo_fpga_to_hps_rst.reset_n
+    fifo_fpga_to_hps_rst_reset_n      => not sRegArray(rGOTO_STATE)(0),  --         fifo_fpga_to_hps_rst.reset_n
     fifo_fpga_to_hps_in_writedata     => fifo_f2h_data_in,  --     fast_fifo_fpga_to_hps_in.writedata
     fifo_fpga_to_hps_in_write         => fifo_f2h_wr_en,  --                             .write
     fifo_fpga_to_hps_in_waitrequest   => fifo_f2h_full,  --                             .waitrequest
@@ -374,7 +374,7 @@ begin
     fifo_fpga_to_hps_in_csr_readdata  => fifo_f2h_data_out_csr,  --                             .readdata
 
     fifo_hps_to_fpga_clk_clk           => sClk,  --    fifo_hps_to_fpga_clk.clk
-    fifo_hps_to_fpga_rst_reset_n       => '1',  --    fifo_hps_to_fpga_rst.reset_n
+    fifo_hps_to_fpga_rst_reset_n       => not sRegArray(rGOTO_STATE)(0),  --    fifo_hps_to_fpga_rst.reset_n
     fifo_hps_to_fpga_out_readdata      => fifo_h2f_data_out,  --     fifo_fpga_to_hps_in.writedata
     fifo_hps_to_fpga_out_read          => fifo_h2f_rd_en,  --                        .write
     fifo_hps_to_fpga_out_waitrequest   => fifo_h2f_empty,  --                        .waitrequest
