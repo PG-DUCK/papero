@@ -27,8 +27,8 @@ end registerArray;
 
 --!@copydoc registerArray.vhd
 architecture std of registerArray is
-  signal sHpsReg  : tHpsRegArray;
-  signal sFpgaReg : tFpgaRegArray;
+  signal sHpsReg  : tHpsRegArray := cHPS_REG_NULL;
+  signal sFpgaReg : tFpgaRegArray := cFPGA_REG_NULL;
 
   signal sRegisters : tRegArray;
 begin

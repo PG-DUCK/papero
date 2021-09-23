@@ -259,7 +259,7 @@ begin
   sFpgaRegIntf.we(rBUSY)         <= '1';
   sFpgaRegIntf.regs(rEXT_TRG_COUNT)  <= sExtTrigCount;
   sFpgaRegIntf.we(rEXT_TRG_COUNT)    <= '1';
-  sFpgaRegIntf.regs(rINT_TRG_COUNT)  <= (others => '0');
+  sFpgaRegIntf.regs(rINT_TRG_COUNT)  <= sIntTrigCount;
   sFpgaRegIntf.we(rINT_TRG_COUNT)    <= '1';
   sFpgaRegIntf.regs(rFDI_FIFO_NUMWORD)
     (sFdiFifoUsedW'left downto 0) <= sFdiFifoUsedW;
