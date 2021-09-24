@@ -20,6 +20,8 @@ entity TdaqModule is
   port (
     iCLK                : in  std_logic;  --!Main clock on the FPGA side
     --Register Array
+    iRST                : in  std_logic;  --!Main reset
+    iRST_COUNT          : in  std_logic;  --!Counters reset
     iRST_REG            : in  std_logic;  --!Reset of the Register array
     oREG_ARRAY          : out tRegArray;  --!Complete Registers array
     iINT_TS             : in  std_logic_vector(63 downto 0);  --!Internal timestamp
@@ -51,10 +53,6 @@ end entity TdaqModule;
 
 --!@copydoc TdaqModule.vhd
 architecture std of TdaqModule is
-  -- Global
-  signal sRst         : std_logic;
-  signal sRstCounters : std_logic;
-
   -- HPS interface
   signal sHkRdrCnt        : tControlIn;
   signal sHkRdrIntstart   : std_logic;
@@ -97,8 +95,6 @@ architecture std of TdaqModule is
 
 begin
   -- Register Array assignments
-  sRst                    <= sRegArray(rGOTO_STATE)(0);
-  sRstCounters            <= sRegArray(rGOTO_STATE)(1);
   sTrigEn                 <= sRegArray(rGOTO_STATE)(4);
   --
   sF2hFastCnt.en          <= sRegArray(rUNITS_EN)(0);
@@ -133,7 +129,7 @@ begin
       )
     port map(
       iCLK                => iCLK,
-      iRST                => sRst,
+      iRST                => iRST,
       iRST_REG            => iRST_REG,
       --
       oCR_WARNING         => sCrWarning,
@@ -181,7 +177,7 @@ begin
   PRBS_generator : Test_Unit
     port map(
       iCLK            => iCLK,
-      iRST            => sRst,
+      iRST            => iRST,
       iEN             => sTestUnitEn and not sTestUnitAfull,
       iSETTING_CONFIG => sTestUnitCfg,
       iSETTING_LENGTH => sRegArray(rPKT_LEN),
@@ -209,7 +205,7 @@ begin
       )
     port map(
       iCLK    => iCLK,
-      iRST    => sRst,
+      iRST    => iRST,
       oUSEDW  => sFdiFifoUsedW,
       -- Write interface
       oAFULL  => sFdiFifoOut.aFull,
@@ -227,8 +223,8 @@ begin
   Trig_Busy : trigBusyLogic
     port map (
       iCLK            => iCLK,
-      iRST            => sRst or not sTrigEn,
-      iRST_COUNTERS   => sRstCounters,
+      iRST            => iRST or not sTrigEn,
+      iRST_COUNTERS   => iRST_COUNT,
       iCFG            => sTrigCfg,
       iEXT_TRIG       => iEXT_TRIG,
       iBUSIES_AND     => iTRG_BUSIES_AND,

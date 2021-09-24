@@ -555,6 +555,8 @@ begin
     port map (
       iCLK                => sClk,
       --
+      iRST                => sDetIntfRst,
+      iRST_COUNT          => sCountersRst,
       iRST_REG            => sRegArrayRst,
       oREG_ARRAY          => sRegArray,
       iINT_TS             => sIntTsCount,

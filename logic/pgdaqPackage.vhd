@@ -429,6 +429,8 @@ package pgdaqPackage is
     port (
       iCLK                : in  std_logic;
       --# {{RegArray|RegArray}}
+      iRST                : in  std_logic;
+      iRST_COUNT          : in  std_logic;
       iRST_REG            : in  std_logic;
       oREG_ARRAY          : out tRegArray;
       iINT_TS             : in  std_logic_vector(63 downto 0);
