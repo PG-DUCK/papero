@@ -40,7 +40,7 @@ L'HPS può configurare l'FPGA accedendo a tali registri sia in lettura che in sc
 
 |  # | Content | Default (hex) |
 | -- | ------- | ------- |
-| 0  | Stato Top-Level. 4: Start/Stop trigger, 1: Reset contatori, 0: Reset(logica FPGA tranne registerArray) | XXXXXX00 |
+| 0  | Stato Top-Level. 4: Start/Stop trigger, 2: Reset regArray, 1: Reset contatori, 0: Reset(logica FPGA tranne registerArray) | XXXXXX00 |
 | 1  | Units Enable. [9:8] Test Unit configuration, 6: hkReader Enable, 5: Ricevi periodicamente (1 s) contenuto registerArray, 4: Ricevi contenuto attuale del registerArray, 1: Test_Unit/Detector_n Enable e data multiplexer, 0: FastData_Transmitter Enable,  | XXXXX001 |
 | 2  | CFG trigBusyLogic. [31:4]: Periodo del trigger interno (a multipli di 320 ns), 1: Calibrazione, 0: Abilitazione trigger interno | 02faf080 |
 | 3  | [7:0] Detector ID | XXXXXXFF |

@@ -168,7 +168,7 @@ architecture std of top_pgdaq is
 
   -- Ausiliari
   signal fpga_debounced_buttons_n : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
-  signal hps_fpga_reset           : std_logic;  -- segnale interno di RESET in logica positiva
+  signal hps_fpga_reset_n_synch   : std_logic;  -- segnale interno di RESET in logica positiva
   signal hps_cold_rst_n           : std_logic;
   signal hps_warm_rst_n           : std_logic;
   signal hps_debug_rst_n          : std_logic;
@@ -215,7 +215,6 @@ architecture std of top_pgdaq is
   signal sTrgBusiesAnd : std_logic_vector(7 downto 0);
   signal sTrgBusiesOr  : std_logic_vector(7 downto 0);
   signal sRegArray     : tRegArray;
-  signal sKEY_R        : std_logic_vector(1 downto 0);   -- Config_Receiver and registerAray RESET
 
   -- Timestamps
   signal sIntTsEn    : std_logic;
@@ -238,6 +237,10 @@ architecture std of top_pgdaq is
   signal sAdcA          : tFpga2AdcIntf;
   signal sAdcB          : tFpga2AdcIntf;
   signal sMultiAdc      : tMultiAdc2FpgaIntf;
+
+  signal sCountersRst   : std_logic;
+  signal sRegArrayRst   : std_logic;
+  signal sRunMode       : std_logic;
 
   signal sMultiAdcSynch : tMultiAdc2FpgaIntf;
   signal sBcoClkSynch   : std_logic;
@@ -352,7 +355,7 @@ begin
     regaddr_pio_export                    => sRegAddrPio,    --    regaddr_pio.export
     --Fifo Partion
     fast_fifo_fpga_to_hps_clk_clk          => sClk,  -- fast_fifo_fpga_to_hps_clk.clk
-    fast_fifo_fpga_to_hps_rst_reset_n      => not sRegArray(rGOTO_STATE)(0),  -- fast_fifo_fpga_to_hps_rst.reset_n
+    fast_fifo_fpga_to_hps_rst_reset_n      => not sDetIntfRst,  -- fast_fifo_fpga_to_hps_rst.reset_n
     fast_fifo_fpga_to_hps_in_writedata     => fast_fifo_f2h_data_in,  --       fifo_fpga_to_hps_in.writedata
     fast_fifo_fpga_to_hps_in_write         => fast_fifo_f2h_wr_en,  --                          .write
     fast_fifo_fpga_to_hps_in_waitrequest   => fast_fifo_f2h_full,  --                          .waitrequest
@@ -363,7 +366,7 @@ begin
     fast_fifo_fpga_to_hps_in_csr_readdata  => fast_fifo_f2h_data_out_csr,  --                          .readdata
 
     fifo_fpga_to_hps_clk_clk          => sClk,  --         fifo_fpga_to_hps_clk.clk
-    fifo_fpga_to_hps_rst_reset_n      => not sRegArray(rGOTO_STATE)(0),  --         fifo_fpga_to_hps_rst.reset_n
+    fifo_fpga_to_hps_rst_reset_n      => not sDetIntfRst,  --         fifo_fpga_to_hps_rst.reset_n
     fifo_fpga_to_hps_in_writedata     => fifo_f2h_data_in,  --     fast_fifo_fpga_to_hps_in.writedata
     fifo_fpga_to_hps_in_write         => fifo_f2h_wr_en,  --                             .write
     fifo_fpga_to_hps_in_waitrequest   => fifo_f2h_full,  --                             .waitrequest
@@ -374,7 +377,7 @@ begin
     fifo_fpga_to_hps_in_csr_readdata  => fifo_f2h_data_out_csr,  --                             .readdata
 
     fifo_hps_to_fpga_clk_clk           => sClk,  --    fifo_hps_to_fpga_clk.clk
-    fifo_hps_to_fpga_rst_reset_n       => not sRegArray(rGOTO_STATE)(0),  --    fifo_hps_to_fpga_rst.reset_n
+    fifo_hps_to_fpga_rst_reset_n       => not sRegArrayRst,  --    fifo_hps_to_fpga_rst.reset_n
     fifo_hps_to_fpga_out_readdata      => fifo_h2f_data_out,  --     fifo_fpga_to_hps_in.writedata
     fifo_hps_to_fpga_out_read          => fifo_h2f_rd_en,  --                        .write
     fifo_hps_to_fpga_out_waitrequest   => fifo_h2f_empty,  --                        .waitrequest
@@ -450,15 +453,7 @@ begin
       pulse_out => hps_debug_reset
       );
 
-  --!@brief Generazione del Reset per Register Array e Config_Receiver a partire da KEY(1)
-  Hard_Reset_proc : Key_Pulse_Gen
-    port map(
-      KPG_CLK_in    => sClk,
-      KPG_DATA_in	  => KEY,
-      KPG_DATA_out  => sKEY_R 
-      );
-      
-  --!@brief HPS delivers inverted-logic reset, our modules accept non-inverted reset
+  --!@brief synchronize the reset to the FPGA-side clock
   HPS_RST_SYNCH : sync_stage
     generic map (
       pSTAGES => 3
@@ -466,8 +461,8 @@ begin
     port map (
       iCLK => sClk,
       iRST => '0',
-      iD   => not hps_fpga_reset_n,
-      oQ   => hps_fpga_reset
+      iD   => hps_fpga_reset_n,
+      oQ   => hps_fpga_reset_n_synch
       );
 
   RegAddrSync_proc : process (sClk)
@@ -513,8 +508,8 @@ begin
   end process;
 
   sIntTsEn  <= '1';
-  sIntTsRst <= sRegArray(rGOTO_STATE)(1) or sRegArray(rGOTO_STATE)(0)
-               or not sRegArray(rGOTO_STATE)(4);
+  sIntTsRst <= sCountersRst or sDetIntfRst
+               or not sRunMode;
   --!@brief Internal timestamp counter
   intTimestampCounter : counter
     generic map (
@@ -531,8 +526,8 @@ begin
       );
 
   sExtTsEn  <= sBcoClkSynch;
-  sExtTsRst <= sBcoRstSynch or sRegArray(rGOTO_STATE)(1)
-               or sRegArray(rGOTO_STATE)(0) or not sRegArray(rGOTO_STATE)(4);
+  sExtTsRst <= sBcoRstSynch or sCountersRst
+               or sDetIntfRst or not sRunMode;
   --!@brief External timestamp counter
   extTimestampCounter : counter
     generic map (
@@ -560,7 +555,7 @@ begin
     port map (
       iCLK                => sClk,
       --
-      iRST_REG            => sKEY_R(1),
+      iRST_REG            => sRegArrayRst,
       oREG_ARRAY          => sRegArray,
       iINT_TS             => sIntTsCount,
       iEXT_TS             => sExtTsCount,
@@ -588,7 +583,46 @@ begin
       oFIFO_F2HFAST_DATA  => fast_fifo_f2h_data_in
       );
 
-  sDetIntfRst              <= sRegArray(rGOTO_STATE)(0);
+  --!@brief Generate reset pulse for register array
+  pulse_detIntf_reset : altera_edge_detector
+    generic map(
+      PULSE_EXT             => 1,
+      EDGE_TYPE             => 1,
+      IGNORE_RST_WHILE_BUSY => 0
+      )
+    port map (
+      clk       => sClk,
+      rst_n     => hps_fpga_reset_n_synch,
+      signal_in => sRegArray(rGOTO_STATE)(0),
+      pulse_out => sDetIntfRst
+      );
+  --!@brief Generate reset pulse for register array
+  pulse_counters_reset : altera_edge_detector
+    generic map(
+      PULSE_EXT             => 1,
+      EDGE_TYPE             => 1,
+      IGNORE_RST_WHILE_BUSY => 0
+      )
+    port map (
+      clk       => sClk,
+      rst_n     => hps_fpga_reset_n_synch,
+      signal_in => sRegArray(rGOTO_STATE)(1),
+      pulse_out => sCountersRst
+      );
+  --!@brief Generate reset pulse for register array
+  pulse_regArray_reset : altera_edge_detector
+    generic map(
+      PULSE_EXT             => 5,
+      EDGE_TYPE             => 1,
+      IGNORE_RST_WHILE_BUSY => 0
+      )
+    port map (
+      clk       => sClk,
+      rst_n     => hps_fpga_reset_n_synch,
+      signal_in => sRegArray(rGOTO_STATE)(2),
+      pulse_out => sRegArrayRst
+      );
+  sRunMode                 <= sRegArray(rGOTO_STATE)(4);
   sDetIntfEn               <= not sRegArray(rUNITS_EN)(1);
   sDetIntfCfg.feClkDuty    <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
   sDetIntfCfg.feClkDiv     <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
