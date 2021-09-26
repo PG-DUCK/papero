@@ -1,3 +1,6 @@
 [submodule "Hog"]
 	path = Hog
 	url = https://gitlab.cern.ch/hog/Hog.git
+[submodule "logic/msdintf"]
+	path = logic/msdintf
+	url = git@github.com:PG-DUCK/msdintf.git
