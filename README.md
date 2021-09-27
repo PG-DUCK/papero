@@ -1,6 +1,6 @@
 # Git submodule workflow
 1. Clone the repository with the `--recursive` option:
-  `git clone --recursive git@bitbucket.org:msfoot/pgdaq.git`
+  `git clone --recursive git@github.com:PerugiaOverNetDAQ/papero.git`
 2. To update the repository run:
   ```
   git pull
