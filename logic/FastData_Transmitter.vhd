@@ -7,6 +7,7 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.NUMERIC_STD.all;
 use work.pgdaqPackage.all;
+use work.basic_package.all;
 
 
 --!@copydoc FastData_Transmitter.vhd
@@ -91,7 +92,8 @@ begin
 
   -- Implementazione della macchina a stati
   StateFSM_proc : process (iCLK)
-  begin
+  variable vLength : std_logic_vector(31 downto 0);
+  begin 
     if (rising_edge(iCLK)) then
       if (iRST = '1') then
         -- Stato di RESET. Si entra in questo stato solo se qualcuno dall'esterno alza il segnale di reset
@@ -138,9 +140,10 @@ begin
                                                -- Stato di LENGTH. Inoltro della parola contenente la lunghezza del pacchetto: Payload 32-bit words + 10
           when LENG =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= iMETADATA.pktLen;  --!@todo Store the packet length at the beginning of the packet
+              sFIFO_DATA <= iMETADATA.pktLen;
               sFIFO_WE   <= '1';
               sPS        <= FWV;
+              vLength    := iMETADATA.pktLen - int2slv(10, vLength'length);
             else
               sPS <= LENG;
             end if;
@@ -224,7 +227,7 @@ begin
 
                                         -- Stato di PAYLOAD. Inoltro delle parole di payload dalla FIFO a monte a quella a valle rispetto al FastData_Transmitter
           when PAYLOAD =>
-            if (DataCounter_WE < DataCounter_RE or DataCounter_WE < iMETADATA.pktLen - 10) then
+            if (DataCounter_WE < DataCounter_RE or DataCounter_WE < vLength) then
               if (sFIFO_RE_d = '1') then
                 sFIFO_WE       <= '1';
                 DataCounter_WE <= DataCounter_WE + 1;
@@ -241,14 +244,14 @@ begin
               sPS            <= TRAILER;
             end if;
 
-            if (sFIFO_RE = '0' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < iMETADATA.pktLen - 10) then
+            if (sFIFO_RE = '0' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < vLength) then
               sFIFO_RE       <= '1';
               sFIFO_DATA     <= sScientificData;
               DataCounter_RE <= DataCounter_RE + 1;
-            elsif (sFIFO_RE = '1' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < iMETADATA.pktLen - 10) then
+            elsif (sFIFO_RE = '1' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < vLength) then
               sFIFO_RE   <= '0';
               sFIFO_DATA <= sScientificData;
-            elsif (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' and DataCounter_RE < iMETADATA.pktLen - 10) then
+            elsif (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' and DataCounter_RE < vLength) then
               sFIFO_RE       <= '1';
               sFIFO_DATA     <= sScientificData;
               DataCounter_RE <= DataCounter_RE + 1;
@@ -295,7 +298,7 @@ begin
                                         -- Stato di PAYLOAD. Inoltro delle parole di payload dalla FIFO a monte a quella a valle rispetto al FastData_Transmitter
           when PAYLOAD =>
             sFIFO_DATA <= sScientificData;
-            if (DataCounter_WE < DataCounter_RE or DataCounter_WE < iMETADATA.pktLen - 10) then
+            if (DataCounter_WE < DataCounter_RE or DataCounter_WE < vLength) then
               if (sFIFO_RE_d = '1') then
                 sFIFO_WE       <= '1';
                 DataCounter_WE <= DataCounter_WE + 1;

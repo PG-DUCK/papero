@@ -5,6 +5,7 @@ logic/top_pgdaq.vhd
 logic/intel_package.vhd
 logic/pgdaqPackage.vhd 08
 logic/msdintf/basic_functions/basic_package.vhd
+logic/msdintf/FOOTpackage.vhd
 
 #Project-specific files
 logic/registerArray.vhd 08
@@ -16,7 +17,8 @@ logic/Test_Unit.vhd
 logic/FastData_Transmitter.vhd
 logic/trigBusyLogic.vhd
 logic/TdaqModule.vhd
-
+logic/DetectorInterface.vhd
+logic/priorityEncoder.vhd
 
 #Basic functions_md
 logic/edge_detector_md.vhd
@@ -27,7 +29,6 @@ logic/FFD.vhd
 logic/PRBS8.vhd
 logic/PRBS32.vhd
 logic/Variable_PWM_FSM.vhd
-
 
 #Qsys IPs: regenerate the IP for each new build
 #Add the qip if you want to generate it only once
@@ -49,3 +50,10 @@ logic/msdintf/basic_functions/edge_detector.vhd
 logic/msdintf/basic_functions/delay_timer.vhd
 logic/msdintf/basic_functions/counter.vhd
 logic/msdintf/basic_functions/clock_divider.vhd
+
+#MSD interface files
+logic/msdintf/FE_interface.vhd
+logic/msdintf/multiADC_interface.vhd
+logic/msdintf/multiAdcPlaneInterface.vhd
+#logic/msdintf/Data_Builder.vhd
+#logic/msdintf/Data_Builder_Top.vhd

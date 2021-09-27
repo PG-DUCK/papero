@@ -9,6 +9,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 use work.basic_package.all;
+use work.FOOTpackage.all;
 
 --!@copydoc pgdaqPackage.vhd
 package pgdaqPackage is
@@ -20,6 +21,10 @@ package pgdaqPackage is
 
   constant cHPS_REG_ADDR  : natural := ceil_log2(cHPS_REGISTERS);  --!Register address width
   constant cFPGA_REG_ADDR : natural := ceil_log2(cFPGA_REGISTERS);  --!Register address width
+
+  constant cFDI_WIDTH     : natural := 32;  --!Width of FDI FIFO
+  constant cFDI_DEPTH     : natural := 4096;  --!Number of words in the FDI FIFO
+  constant cLENCONV_DEPTH : natural := 16;  --!Number of words in the length converter FIFO
 
   --Housekeeping reader
   constant cF2H_HK_SOP    : std_logic_vector(31 downto 0) := x"55AADEAD";  --!Start of Packet for the FPGA-2-HPS FSM
@@ -48,7 +53,7 @@ package pgdaqPackage is
   type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
   constant cHPS_REG_NULL : tHpsRegArray := (
-    x"00000000", x"00000023", x"02faf080", x"000000FF",
+    x"00000000", x"00000001", x"02faf080", x"000000FF",
     x"0000028A", x"00040028", x"00040002", x"00070145",
     x"00000000", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000"
@@ -129,6 +134,22 @@ package pgdaqPackage is
     aFull  : std_logic;                      --!Almost full
     full   : std_logic;                      --!Full
   end record tFifo32Out;
+
+  --!Input signals of a typical FIFO memory of cFDI_WIDTH bit
+  type tFifoFdiIn is record
+    data : std_logic_vector(cFDI_WIDTH-1 downto 0);  --!Input data port
+    rd   : std_logic;                                --!Read request
+    wr   : std_logic;                                --!Write request
+  end record tFifoFdiIn;
+
+  --!Output signals of a typical FIFO memory of cFDI_WIDTH bit
+  type tFifoFdiOut is record
+    q      : std_logic_vector(cFDI_WIDTH-1 downto 0);  --!Output data port
+    aEmpty : std_logic;                                --!Almost empty
+    empty  : std_logic;                                --!Empty
+    aFull  : std_logic;                                --!Almost full
+    full   : std_logic;                                --!Full
+  end record tFifoFdiOut;
 
   --!Metadata for the F2H Fast TX
   type tF2hMetadata is record
@@ -268,6 +289,7 @@ package pgdaqPackage is
       iCLK                : in  std_logic;
       --# {{resets|Reset}}
       iRST                : in  std_logic;
+      iRST_REG            : in  std_logic;
       --# {{ConfigRX | ConfigRX}}
       oCR_WARNING         : out std_logic_vector(2 downto 0);
       --# {{HKReader|HKReader}}
@@ -407,6 +429,8 @@ package pgdaqPackage is
     port (
       iCLK                : in  std_logic;
       --# {{RegArray|RegArray}}
+      iRST                : in  std_logic;
+      iRST_COUNT          : in  std_logic;
       iRST_REG            : in  std_logic;
       oREG_ARRAY          : out tRegArray;
       iINT_TS             : in  std_logic_vector(63 downto 0);
@@ -417,6 +441,10 @@ package pgdaqPackage is
       oBUSY               : out std_logic;
       iTRG_BUSIES_AND     : in  std_logic_vector(7 downto 0);
       iTRG_BUSIES_OR      : in  std_logic_vector(7 downto 0);
+      --# {{FastDATA-Detector interface|FastDATA-Detector interface}}
+      iFASTDATA_DATA      : in  std_logic_vector(cREG_WIDTH-1 downto 0);
+      iFASTDATA_WE        : in  std_logic;
+      oFASTDATA_AFULL     : out std_logic;
       --# {{H2F_FIFO|H2F_FIFO}}
       iFIFO_H2F_EMPTY     : in  std_logic;
       iFIFO_H2F_DATA      : in  std_logic_vector(31 downto 0);
@@ -431,6 +459,26 @@ package pgdaqPackage is
       oFIFO_F2HFAST_DATA  : out std_logic_vector(31 downto 0)
       );
   end component;
+
+  --!@copydoc priorityEncoder.vhd
+  component priorityEncoder is
+    generic (
+      pFIFOWIDTH : natural;
+      pFIFODEPTH : natural
+      );
+    port (
+      iCLK            : in  std_logic;
+      iRST            : in  std_logic;
+      --# {{MULTI_FIFO Interface|MULTI_FIFO Interface}}
+      iMULTI_FIFO     : in  tMultiAdcFifoOut;
+      oMULTI_FIFO     : out tMultiAdcFifoIn;
+      --# {{FastDATA Interface|FastDATA Interface}}
+      oFASTDATA_DATA  : out std_logic_vector(pFIFOWIDTH-1 downto 0);
+      oFASTDATA_WE    : out std_logic;
+      iFASTDATA_AFULL : in  std_logic
+      );
+  end component;
+
 
   --!Generatore di segnale PWM
   component Variable_PWM_FSM is
@@ -451,6 +499,32 @@ package pgdaqPackage is
       RISE_FALL_COUNTER : out std_logic_vector(7 downto 0)  -- Uscita contenente il numero di fronti di salita/discesa rilevati dal detector
       );
   end component;
+
+  --!@copydoc DetectorInterface.vhd
+  component DetectorInterface is
+    port (
+      iCLK            : in  std_logic;
+      iRST            : in  std_logic;
+      --# {{Controls|Controls}}
+      iEN             : in  std_logic;
+      iTRIG           : in  std_logic;
+      oCNT            : out tControlIntfOut;
+      iMSD_CONFIG     : in  msd_config;
+      --# {{Detector 0|Detector 0}}
+      oFE0            : out tFpga2FeIntf;
+      oADC0           : out tFpga2AdcIntf;
+      --# {{Detector 1|Detector 1}}
+      oFE1            : out tFpga2FeIntf;
+      oADC1           : out tFpga2AdcIntf;
+      --# {{ADCs Inputs|ADCs Inputs}}
+      iMULTI_ADC      : in  tMultiAdc2FpgaIntf;
+      --# {{FastDATA Interface|FastDATA Interface}}
+      oFASTDATA_DATA  : out std_logic_vector(cREG_WIDTH-1 downto 0);
+      oFASTDATA_WE    : out std_logic;
+      iFASTDATA_AFULL : in  std_logic
+      );
+  end component;
+
 
 
 

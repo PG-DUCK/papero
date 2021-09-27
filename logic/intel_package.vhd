@@ -94,6 +94,8 @@ package intel_package is
       hps_0_hps_io_hps_io_gpio_inst_GPIO54   : inout std_logic                     := 'X';  -- hps_io_gpio_inst_GPIO54
       hps_0_hps_io_hps_io_gpio_inst_GPIO61   : inout std_logic                     := 'X';  -- hps_io_gpio_inst_GPIO61
       led_pio_external_connection_export     : out   std_logic_vector(6 downto 0);  -- export
+      regaddr_pio_export                     : out   std_logic_vector(31 downto 0);                    -- export
+			regcontent_pio_export                  : in    std_logic_vector(31 downto 0) := (others => 'X'); -- export
       memory_mem_a                           : out   std_logic_vector(14 downto 0);  -- mem_a
       memory_mem_ba                          : out   std_logic_vector(2 downto 0);  -- mem_ba
       memory_mem_ck                          : out   std_logic;  -- mem_ck
@@ -112,6 +114,7 @@ package intel_package is
       memory_oct_rzqin                       : in    std_logic                     := 'X';  -- oct_rzqin
       reset_reset_n                          : in    std_logic                     := 'X';  -- reset_n
       hps_0_h2f_user0_clock_clk              : out   std_logic;  -- clk
+      hps_0_h2f_user1_clock_clk              : out   std_logic;  -- clk
       fifo_hps_to_fpga_clk_clk               : in    std_logic                     := 'X';  -- clk
       fifo_hps_to_fpga_rst_reset_n           : in    std_logic                     := 'X';  -- reset_n
       fifo_fpga_to_hps_clk_clk               : in    std_logic                     := 'X';  -- clk

@@ -228,7 +228,7 @@ begin
           ns <= SEARCH_LEN;
         end if;
       when SEARCH_FWV =>  -- Sei in SEARCH_FWV. Se nella FIFO c'è qualcosa, passa nello stato successivo, altrimenti rimani qui.
-        if (fifo_wait_request_HH = '0') then  --@!todo Andare in warning se fwv è errata
+        if (fifo_wait_request_HH = '0') then
           ns <= SEARCH_HEADER;
         else
           ns <= SEARCH_FWV;
@@ -317,59 +317,55 @@ begin
         CR_DATA_VALID_out   <= '0';
       when SYNCH =>
         CR_FIFO_READ_EN_out <= synch_enable_R;
-        CR_WARNING_out      <= (others => '0');
+        CR_WARNING_out      <= (2 => fwv_missed, others => '0');
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
       when SEARCH_SOP =>
         CR_FIFO_READ_EN_out <= start_packet_enable_R or synch_pulse_HH;
-        CR_WARNING_out      <= (others => '0');
+        CR_WARNING_out      <= (2 => fwv_missed, others => '0');
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
       when SEARCH_LEN =>
         CR_FIFO_READ_EN_out <= length_enable_R or synch_pulse_HH;
-        CR_WARNING_out      <= (others => '0');
+        CR_WARNING_out      <= (2 => fwv_missed, others => '0');
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
       when SEARCH_FWV =>
         CR_FIFO_READ_EN_out <= fwv_enable_R or synch_pulse_HH;
-        CR_WARNING_out(0)   <= '0';
-        CR_WARNING_out(1)   <= '0';
-        CR_WARNING_out(2)   <= fwv_missed_R;
+        CR_WARNING_out      <= (2 => fwv_missed, others => '0');
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
       when SEARCH_HEADER =>
         CR_FIFO_READ_EN_out <= header_enable_R or synch_pulse_HH;
-        CR_WARNING_out(0)   <= '0';
-        CR_WARNING_out(1)   <= '0';
-        CR_WARNING_out(2)   <= fwv_missed_R;
+        CR_WARNING_out      <= (2 => fwv_missed, others => '0');
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
       when ACQUISITION =>
         CR_FIFO_READ_EN_out <= payload_enable_WRT;
-        CR_WARNING_out      <= (others => '0');
+        CR_WARNING_out      <= (2 => fwv_missed, others => '0');
         CR_DATA_out         <= data;
         CR_ADDRESS_out      <= address;
         CR_DATA_VALID_out   <= data_valid;
       when SEARCH_COFEE =>
         CR_FIFO_READ_EN_out <= cofee_enable_R or synch_pulse_HH;
-        CR_WARNING_out      <= (others => '0');
+        CR_WARNING_out      <= (2 => fwv_missed, others => '0');
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
       when SEARCH_CRC =>
         CR_FIFO_READ_EN_out <= '0';
-        CR_WARNING_out      <= (others => '0');
+        CR_WARNING_out      <= (2 => fwv_missed, others => '0');
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
       when REBOUND =>
         CR_FIFO_READ_EN_out <= rebound_enable_R or synch_pulse_HH;
-        CR_WARNING_out      <= (others => '0');
+        CR_WARNING_out      <= (2 => fwv_missed, others => '0');
         CR_DATA_out         <= (others => '0');
         CR_ADDRESS_out      <= (others => '0');
         CR_DATA_VALID_out   <= '0';
