@@ -35,10 +35,10 @@ package pgdaqPackage is
   constant cFastF2H_AFULL : natural                       := 4085;  --!Almost full threshold for the data FIFO
 
   --Trigger types
-  constant cTRG_PHYS_INT  : std_logic_vector(7 downto 0) := "00000000";  --!Physics trigger (from internal counter)
-  constant cTRG_PHYS_EXT  : std_logic_vector(7 downto 0) := "00000001";  --!Physics trigger (from external pin)
-  constant cTRG_CALIB_INT : std_logic_vector(7 downto 0) := "00000010";  --!Calibration trigger (internal)
-  constant cTRG_CALIB_EXT : std_logic_vector(7 downto 0) := "00000100";  --!Calibration trigger (external)
+  constant cTRG_PHYS_INT  : std_logic_vector(15 downto 0) := x"0001";  --!Physics trigger (from internal counter)
+  constant cTRG_PHYS_EXT  : std_logic_vector(15 downto 0) := x"0002";  --!Physics trigger (from external pin)
+  constant cTRG_CALIB_INT : std_logic_vector(15 downto 0) := x"0004";  --!Calibration trigger (internal)
+  constant cTRG_CALIB_EXT : std_logic_vector(15 downto 0) := x"0008";  --!Calibration trigger (external)
 
   -- Types ---------------------------------------------------------------------
   constant rGOTO_STATE     : natural := 0;
@@ -155,8 +155,8 @@ package pgdaqPackage is
   type tF2hMetadata is record
     pktLen  : std_logic_vector(31 downto 0);  --!Packet Length: Number of 32-bit payload words + 10
     trigNum : std_logic_vector(31 downto 0);  --!Trigger Counter
-    detId   : std_logic_vector(7 downto 0);   --!Detector ID
-    trigId  : std_logic_vector(7 downto 0);   --!Trigger ID
+    detId   : std_logic_vector(15 downto 0);  --!Detector ID
+    trigId  : std_logic_vector(15 downto 0);  --!Trigger ID
     intTime : std_logic_vector(63 downto 0);  --!Internal Timestamp
     extTime : std_logic_vector(63 downto 0);  --!External Timestamp
   end record tF2hMetadata;
@@ -410,7 +410,7 @@ package pgdaqPackage is
       iBUSIES_AND     : in  std_logic_vector(7 downto 0);
       iBUSIES_OR      : in  std_logic_vector(7 downto 0);
       oTRIG           : out std_logic;
-      oTRIG_ID        : out std_logic_vector(7 downto 0);
+      oTRIG_ID        : out std_logic_vector(15 downto 0);
       oTRIG_COUNT     : out std_logic_vector(31 downto 0);
       oEXT_TRIG_COUNT : out std_logic_vector(31 downto 0);
       oINT_TRIG_COUNT : out std_logic_vector(31 downto 0);

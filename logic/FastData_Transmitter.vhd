@@ -44,8 +44,8 @@ architecture Behavior of FastData_Transmitter is
   signal sPS : tStatus;
 
 -- Set di costanti utili per la risoluzione del pacchetto ricevuto.
-  constant cStart_of_packet : std_logic_vector(31 downto 0) := x"BABA1AFA";  -- Start of packet
-  constant cTrailer         : std_logic_vector(31 downto 0) := x"0BADFACE";  -- Bad Face
+  constant cStart_of_packet : std_logic_vector(31 downto 0) := x"BABA1A9A";  -- Start of packet
+  constant cTrailer         : std_logic_vector(31 downto 0) := x"0BEDFACE";  -- Bad Face
 
 -- Set di segnali interni per pilotare le uscite del FastData_Transmitter
   signal sFIFO_RE        : std_logic;  -- Segnale di "Read_Enable" della FIFO a monte del FastData_Transmitter
@@ -93,7 +93,7 @@ begin
   -- Implementazione della macchina a stati
   StateFSM_proc : process (iCLK)
   variable vLength : std_logic_vector(31 downto 0);
-  begin 
+  begin
     if (rising_edge(iCLK)) then
       if (iRST = '1') then
         -- Stato di RESET. Si entra in questo stato solo se qualcuno dall'esterno alza il segnale di reset
@@ -127,7 +127,7 @@ begin
               sPS <= IDLE;
             end if;
 
-                                        -- Stato di START-OF-PACKET. Inoltro della parola "BABA1AFA"
+                                        -- Stato di START-OF-PACKET. Inoltro della parola "BABA1A9A"
           when SOP =>
             if (iFIFO_AFULL = '0') then
               sFIFO_DATA <= cStart_of_packet;
@@ -173,7 +173,7 @@ begin
                                         -- Stato di TRIGGER-TYPE. Inoltro della parola contenente il Detector-ID e il Trigger-ID
           when TRIG_TYPE =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= x"0000" & iMETADATA.detId & iMETADATA.trigId;
+              sFIFO_DATA <= iMETADATA.detId & iMETADATA.trigId;
               sFIFO_WE   <= '1';
               sCRC32_en  <= '1';
               sPS        <= INT_TIME_0;
@@ -260,7 +260,7 @@ begin
               sFIFO_DATA <= sScientificData;
             end if;
 
-                                        -- Stato di TRAILER. Inoltro della parola di trailer "0BADFACE"
+                                        -- Stato di TRAILER. Inoltro della parola di trailer "0BEDFACE"
           when TRAILER =>
             if (iFIFO_AFULL = '0') then
               sFIFO_DATA <= cTrailer;

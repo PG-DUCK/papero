@@ -26,7 +26,7 @@ entity trigBusyLogic is
     iBUSIES_AND     : in  std_logic_vector(7 downto 0);  --!Busy signals and'ed
     iBUSIES_OR      : in  std_logic_vector(7 downto 0);  --!Busy signals or'ed
     oTRIG           : out std_logic;    --!Output trigger
-    oTRIG_ID        : out std_logic_vector(7 downto 0);  --!Trigger type
+    oTRIG_ID        : out std_logic_vector(15 downto 0);  --!Trigger type
     oTRIG_COUNT     : out std_logic_vector(31 downto 0);  --!Total Trigger number
     oEXT_TRIG_COUNT : out std_logic_vector(31 downto 0);  --!External Trigger number
     oINT_TRIG_COUNT : out std_logic_vector(31 downto 0);  --!Internal Trigger number
@@ -51,7 +51,7 @@ architecture std of trigBusyLogic is
   signal sTrigWhenBusy : std_logic;
   signal sMainTrigExt : std_logic;
   signal sMainTrigInt : std_logic;
-  signal sTrigId   : std_logic_vector(7 downto 0);
+  signal sTrigId   : std_logic_vector(15 downto 0);
   signal sExtTrigNum : std_logic_vector(oEXT_TRIG_COUNT'length-2 downto 0);
   signal sIntTrigNum : std_logic_vector(oINT_TRIG_COUNT'length-2 downto 0);
   signal sTotTrigNum : std_logic_vector(oTRIG_COUNT'length-1 downto 0);

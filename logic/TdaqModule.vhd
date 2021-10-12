@@ -76,7 +76,7 @@ architecture std of TdaqModule is
 
   -- Trigger and Busy logic
   signal sTrigEn            : std_logic;
-  signal sTrigId            : std_logic_vector(7 downto 0);
+  signal sTrigId            : std_logic_vector(15 downto 0);
   signal sTrigCount         : std_logic_vector(31 downto 0);
   signal sExtTrigCount      : std_logic_vector(31 downto 0);
   signal sIntTrigCount      : std_logic_vector(31 downto 0);
@@ -107,7 +107,7 @@ begin
   --
   sTrigCfg                <= sRegArray(rTRIGBUSY_LOGIC);
   --
-  sF2hFastMetaData.detId  <= sRegArray(rDET_ID)(7 downto 0);
+  sF2hFastMetaData.detId  <= sRegArray(rDET_ID)(15 downto 0);
   --
   sF2hFastMetaData.pktLen <= sRegArray(rPKT_LEN);
 
