@@ -589,7 +589,7 @@ begin
   --!@brief Generate reset pulse for register array
   pulse_detIntf_reset : altera_edge_detector
     generic map(
-      PULSE_EXT             => 1,
+      PULSE_EXT             => 5,
       EDGE_TYPE             => 1,
       IGNORE_RST_WHILE_BUSY => 0
       )
@@ -634,12 +634,12 @@ begin
   sDetIntfCfg.cfgPlane     <= sRegArray(rMSD_PARAM)(31 downto 16);
   sDetIntfCfg.intTrgPeriod <= (others => '0');
   sDetIntfCfg.trg2Hold     <= sRegArray(rMSD_PARAM)(15 downto 0);
-  --!@brief Detector interface
+  --!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
   --!@todo Connect error, compl flags
   MsdInterface : DetectorInterface
     port map (
       iCLK            => sClk,
-      iRST            => sDetIntfRst,
+      iRST            => sDetIntfRst, --See the instance description
       iEN             => sDetIntfEn,
       iTRIG           => sMainTrig,
       oCNT            => sDetIntfCntOut,  --Temporary
