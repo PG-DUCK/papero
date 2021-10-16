@@ -3,7 +3,7 @@
 --!@details
 --!
 --!Read the registers periodically and send the packet formatted as in
---! PGDAQ_formats.xlsx: \n
+--! PAPERO_formats.xlsx: \n
 --!
 --! | Abbr  | Description | Default |
 --! |-------|-------------|---------|
@@ -26,7 +26,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.math_real.all;
 
 use work.basic_package.all;
-use work.pgdaqPackage.all;
+use work.paperoPackage.all;
 
 --!@copydoc hkReader.vhd
 entity hkReader is

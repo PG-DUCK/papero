@@ -1,4 +1,4 @@
---!@file pgdaqPackage.vhd
+--!@file paperoPackage.vhd
 --!@brief Constants, components declarations, and functions
 --!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
@@ -11,8 +11,8 @@ use ieee.std_logic_unsigned.all;
 use work.basic_package.all;
 use work.FOOTpackage.all;
 
---!@copydoc pgdaqPackage.vhd
-package pgdaqPackage is
+--!@copydoc paperoPackage.vhd
+package paperoPackage is
   -- Constants -----------------------------------------------------------------
   constant cREG_WIDTH      : natural := 32;  --!Register width
   constant cHPS_REGISTERS  : natural := 16;  --!Number of HPS-RW, FPGA-R registers
@@ -545,10 +545,10 @@ package pgdaqPackage is
   --!@return  Or of all of the slv elements
   function unary_or(slv : in std_logic_vector) return std_logic;
 
-end pgdaqPackage;
+end paperoPackage;
 
---!@copydoc pgdaqPackage.vhd
-package body pgdaqPackage is
+--!@copydoc paperoPackage.vhd
+package body paperoPackage is
   function parity8bit (p : string; d : std_logic_vector(7 downto 0)) return std_logic is
     variable x : std_logic;
   begin

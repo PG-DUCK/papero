@@ -17,9 +17,9 @@ For more information, read the official [documentation](https://hog.readthedocs.
 
 - Be sure to clone the repository with the `--recursive` option
 - `Top` folder contains all the projects with their configuration files
-- From the git root folder run `./Hog/CreateProject.sh pgdaq` to create the quartus project
+- From the git root folder run `./Hog/CreateProject.sh papero` to create the quartus project
   + The command regenerates the _.qsys_ modules and includes all the other (_qip_, _vhd_, _v_, ...)
-- The Quartus project (_.qpf_) is in the directory `Projects/pgdaq`
+- The Quartus project (_.qpf_) is in the directory `Projects/papero`
 - Once the compiling process is over, Hog copies the output _.sof_ file and the reports in the folder `bin`
   + The files are organized in subfolders, named with the commit SHA and the tag
   + Make sure that all changes are committed (at least locally)

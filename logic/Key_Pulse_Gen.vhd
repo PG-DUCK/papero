@@ -8,7 +8,7 @@ use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.NUMERIC_STD.all;
 
 use work.intel_package.all;
-use work.pgdaqPackage.all;
+use work.paperoPackage.all;
 
 --!@copydoc Key_Pulse_Gen.vhd
 entity Key_Pulse_Gen is

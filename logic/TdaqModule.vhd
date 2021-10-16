@@ -8,7 +8,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 use work.basic_package.all;
-use work.pgdaqPackage.all;
+use work.paperoPackage.all;
 
 --!@copydoc TdaqModule.vhd
 entity TdaqModule is

@@ -11,7 +11,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.math_real.all;
 
 use work.basic_package.all;
-use work.pgdaqPackage.all;
+use work.paperoPackage.all;
 use work.FOOTpackage.all;
 
 --!@copydoc DetectorInterface.vhd

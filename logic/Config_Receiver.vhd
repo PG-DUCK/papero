@@ -3,7 +3,7 @@
 --!@details
 --!
 --!Read the incoming packets containing the instructions and write them to the
---! register array. The format is specified in PGDAQ_formats.xlsx: \n
+--! register array. The format is specified in PAPERO_formats.xlsx: \n
 --!
 --! | Abbr  | Description | Default |
 --! |-------|-------------|---------|
@@ -24,7 +24,7 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.NUMERIC_STD.all;
 
-use work.pgdaqPackage.all;
+use work.paperoPackage.all;
 
 --!@copydoc Config_Receiver.vhd
 entity Config_Receiver is
@@ -111,7 +111,7 @@ architecture Behavior of Config_Receiver is
   signal download_phase    : std_logic_vector(1 downto 0);  -- Fase di scaricamento del payload.
   signal end_count_WRTimer : std_logic;  -- Fine della trasmissione degli impulsi di Read_Enable per acquisire il payload.
   signal data_valid        : std_logic;  -- Consistenza del dato in uscita dal ricevitore.
-  signal data_ready        : std_logic;  -- Dato pronto per essere trasferito in uscita dal ricevitore. 
+  signal data_ready        : std_logic;  -- Dato pronto per essere trasferito in uscita dal ricevitore.
 
 begin
   -- Assegnazione egnali interni al Config_Receiver

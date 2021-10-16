@@ -1,9 +1,9 @@
 #Top file: Hog searches for the top file with name format top_<project>.vhd
-logic/top_pgdaq.vhd
+logic/top_papero.vhd
 
 #Packages
 logic/intel_package.vhd
-logic/pgdaqPackage.vhd 08
+logic/paperoPackage.vhd 08
 logic/msdintf/basic_functions/basic_package.vhd
 logic/msdintf/FOOTpackage.vhd
 

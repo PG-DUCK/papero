@@ -1,5 +1,5 @@
---!@file top_pgdaq.vhd
---!brief Top module of the pgdaq FPGA gateware
+--!@file top_papero.vhd
+--!brief Top module of the papero FPGA gateware
 --!@todo Add reset to the HPS-FPGA fifos
 --!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
@@ -10,13 +10,13 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 use work.intel_package.all;
-use work.pgdaqPackage.all;
+use work.paperoPackage.all;
 use work.basic_package.all;
 use work.FOOTpackage.all;
 
 
---!@copydoc top_pgdaq.vhd
-entity top_pgdaq is
+--!@copydoc top_papero.vhd
+entity top_papero is
   generic (
     --HoG: Global Generic Variables
     GLOBAL_DATE : std_logic_vector(31 downto 0) := (others => '0');
@@ -31,8 +31,8 @@ entity top_pgdaq is
     HOG_SHA     : std_logic_vector(31 downto 0) := (others => '0');
 
     --HoG: Project Specific Lists (One for each .src file in your Top/ folder)
-    PGDAQ_SHA : std_logic_vector(31 downto 0) := (others => '0');
-    PGDAQ_VER : std_logic_vector(31 downto 0) := (others => '0')
+    PAPERO_SHA : std_logic_vector(31 downto 0) := (others => '0');
+    PAPERO_VER : std_logic_vector(31 downto 0) := (others => '0')
     );
   port(
     --- CLOCK ------------------------------------------------------------------
@@ -148,10 +148,10 @@ entity top_pgdaq is
     oHK : out std_logic_vector(30 downto 0)  --All the remainings
 
     );
-end entity top_pgdaq;
+end entity top_papero;
 
---!@copydoc top_pgdaq.vhd
-architecture std of top_pgdaq is
+--!@copydoc top_papero.vhd
+architecture std of top_papero is
   --HPS signals
   signal hps_fpga_reset_n       : std_logic;
   signal fpga_debounced_buttons : std_logic_vector(1 downto 0);
@@ -551,7 +551,7 @@ begin
     generic map (
       pFDI_WIDTH => cFDI_WIDTH,
       pFDI_DEPTH => cFDI_DEPTH,
-      pGW_VER    => PGDAQ_SHA
+      pGW_VER    => PAPERO_SHA
       )
     port map (
       iCLK                => sClk,
