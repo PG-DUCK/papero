@@ -4,3 +4,6 @@
 [submodule "logic/msdintf"]
 	path = logic/msdintf
 	url = git@github.com:PerugiaOverNetDAQ/msdintf.git
+[submodule "logic/ASTRAintf"]
+	path = logic/ASTRAintf
+	url = git@github.com:PerugiaOverNetDAQ/ASTRAintf.git

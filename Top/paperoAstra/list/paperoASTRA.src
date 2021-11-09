@@ -1,0 +1,58 @@
+#Top file: Hog searches for the top file with name format top_<project>.vhd
+logic/top_paperoAstra.vhd
+
+#Packages
+logic/intel_packageAstra.vhd
+logic/paperoPackage.vhd 08
+logic/ASTRAintf/basic_functions/basic_package.vhd
+logic/ASTRAintf/ASTRApackage.vhd
+#logic/msdintf/FOOTpackage.vhd
+
+#Project-specific files
+logic/registerArray.vhd 08
+logic/Config_Receiver.vhd
+logic/hkReader.vhd
+logic/HPS_intf.vhd
+logic/CRC32.vhd
+logic/Test_Unit.vhd
+logic/FastData_Transmitter.vhd
+logic/trigBusyLogic.vhd
+logic/TdaqModule.vhd
+
+#Basic functions_md
+logic/edge_detector_md.vhd
+logic/Key_Pulse_Gen.vhd
+logic/HighHold.vhd
+logic/WR_Timer.vhd
+logic/FFD.vhd
+logic/PRBS8.vhd
+logic/PRBS32.vhd
+logic/Variable_PWM_FSM.vhd
+
+#Qsys IPs: regenerate the IP for each new build
+#Add the qip if you want to generate it only once
+ip/soc_system_standard/soc_system.qsys noadd --synthesis=VHDL
+
+#Other IPs
+ip/edge_detect/altera_edge_detector.v
+ip/debounce/debounce.v
+ip/altsource_probe/hps_reset.qip
+
+#Basic functions in the ASTRA submodule
+logic/ASTRAintf/basic_functions/sync_stage.vhd
+logic/ASTRAintf/basic_functions/sync_edge.vhd
+logic/ASTRAintf/basic_functions/shift_register.vhd
+logic/ASTRAintf/basic_functions/pulse_generator.vhd
+logic/ASTRAintf/basic_functions/parametric_fifo_synch.vhd
+logic/ASTRAintf/basic_functions/parametric_fifo_dp.vhd
+logic/ASTRAintf/basic_functions/edge_detector.vhd
+logic/ASTRAintf/basic_functions/delay_timer.vhd
+logic/ASTRAintf/basic_functions/counter.vhd
+logic/ASTRAintf/basic_functions/clock_divider.vhd
+
+#ASTRA interface files
+logic/ASTRAintf/multiADC_interface.vhd
+
+#
+logic/DetectorInterface.vhd
+logic/priorityEncoder.vhd
