@@ -36,7 +36,7 @@ entity top_paperoAstra is
     );
   port(
     --- CLOCK ------------------------------------------------------------------
-    CLOCK_50 : in std_logic;
+    CLOCK_50  : in std_logic;
     CLOCK2_50 : in std_logic;
     CLOCK3_50 : in std_logic;
     CLOCK4_50 : in std_logic;
@@ -119,24 +119,96 @@ entity top_paperoAstra is
     HEX4 : out std_logic_vector(6 downto 0);
     HEX5 : out std_logic_vector(6 downto 0);
 
+    --- GPIO -------------------------------------------------------------------
+    oHK : out std_logic_vector(22 downto 0);
+    iBCO_RST : in std_logic;
+    iBCO_CLK : in std_logic;
+    iEXT_TRIG : in std_logic;
+    oBUSY : out std_logic;
+    oBCO_CLK : out std_logic;
+    oEXT_TRIG : out std_logic;
+
+    iBCO_RST_RED : in std_logic;
+    iBCO_CLK_RED : in std_logic;
+    iEXT_TRIG_RED : in std_logic;
+    oBUSY_RED : out std_logic;
+    oBCO_CLK_RED : out std_logic;
+    oEXT_TRIG_RED : out std_logic;
+
+    oTRIG : out std_logic;
+
     --- HSMC -------------------------------------------------------------------
-    HSMC_CLKIN0     : in     std_logic;
-    HSMC_CLKIN_N1   : in     std_logic;
-    HSMC_CLKIN_N2   : in     std_logic;
-    HSMC_CLKIN_P1   : in     std_logic;
-    HSMC_CLKIN_P2   : in     std_logic;
-    HSMC_CLKOUT0    : out    std_logic;
-    HSMC_CLKOUT_N1  : out    std_logic;
-    HSMC_CLKOUT_N2  : out    std_logic;
-    HSMC_CLKOUT_P1  : out    std_logic;
-    HSMC_CLKOUT_P2  : out    std_logic;
-    HSMC_D          : inout  std_logic_vector(3 downto 0);
-    HSMC_RX_D_N     : inout  std_logic_vector(16 downto 0);
-    HSMC_RX_D_P     : inout  std_logic_vector(16 downto 0);
     HSMC_SCL        : out    std_logic;
     HSMC_SDA        : inout  std_logic;
-    HSMC_TX_D_N     : inout  std_logic_vector(16 downto 0);
-    HSMC_TX_D_P     : inout  std_logic_vector(16 downto 0)
+    HSMC_CLKIN0     : in     std_logic;
+    HSMC_CLKOUT0    : out    std_logic;
+
+    oHSMC_CLKOUT_N1 :  out std_logic;
+    oHSMC_CLKOUT_P1 :  out std_logic;
+    oHSMC_RX_C_n : out std_logic_vector(1 downto 0);
+    oHSMC_RX_C_p : out std_logic_vector(1 downto 0);
+    oHSMC_RX_B_n : out std_logic_vector(7 downto 0);
+    oHSMC_RX_B_p : out std_logic_vector(7 downto 0);
+    oHSMC_TX_C_n : out std_logic_vector(4 downto 0);
+    oHSMC_TX_C_p : out std_logic_vector(4 downto 0);
+
+    oFASTOR_TX_DISABLE : out std_logic;
+    oDEBUG_EN :  out std_logic;
+    oPT1 : out std_logic;
+    oPT2 : out std_logic;
+    oGAIN : out std_logic;
+    oPOL : out std_logic;
+    oSER_TX_DISABLE : out std_logic;
+    oRESET_DIGITAL : out std_logic;
+
+    oPRG_BIT_A : out std_logic;
+    oPRG_BIT_B : out std_logic;
+    oPRG_RESET : out std_logic;
+    oPRG_CLK : out std_logic;
+
+    oFASTCLK_n : out std_logic;
+    oFASTCLK_p : out std_logic;
+    iFASTCLK_RET_n : in std_logic;
+    iFASTCLK_RET_p : in std_logic;
+
+    iFASTOR_A_n : in std_logic;
+    iFASTOR_A_p : in std_logic;
+    iFASTOR_B_n : in std_logic;
+    iFASTOR_B_p : in std_logic;
+
+    oHOLD_n : out std_logic;
+    oHOLD_p : out std_logic;
+    oTP_n : out std_logic;
+    oTP_p : out std_logic;
+
+    oMUX_SHIFT_CLK : out std_logic;
+    oMUX_READRESET : out std_logic;
+    iMUX_SHIFT_CLK_RET : in  std_logic;
+    iMUX_READRESET_RET :  in  std_logic;
+
+    oADC_CONVERT : out std_logic;
+
+    iSER_A_n  : in std_logic;
+    iSER_A_p : in std_logic;
+    iSER_B_n  : in std_logic;
+    iSER_B_p : in std_logic;
+    oSER_SEND : out std_logic;
+    oSER_LOAD : out std_logic;
+    oSER_SHIFT_CLK : out std_logic;
+    iSER_SHIFT_CLK_RET : in  std_logic;
+    iSER_SEND_RET :  in  std_logic;
+
+    iSDATA_B  : in std_logic;
+    oCS_B : out std_logic;
+    oSCLK_B : out std_logic;
+    iCS_B_RET : in std_logic;
+    iSCLK_B_RET : in std_logic;
+
+    iSDATA_A : in std_logic;
+    oCS_A : out std_logic;
+    oSCLK_A : out std_logic;
+    iCS_A_RET : in std_logic;
+    iSCLK_A_RET : in std_logic
 
     );
 end entity top_paperoAstra;
@@ -145,8 +217,8 @@ end entity top_paperoAstra;
 architecture std of top_paperoAstra is
   --HPS signals
   signal hps_fpga_reset_n       : std_logic;
-  signal fpga_debounced_buttons : std_logic_vector(1 downto 0);
-  signal fpga_led_internal      : std_logic_vector(6 downto 0);
+  signal fpga_debounced_buttons : std_logic_vector(3 downto 0);
+  signal fpga_led_internal      : std_logic_vector(9 downto 0);
   signal hps_reset_req          : std_logic_vector(2 downto 0);
   signal hps_cold_reset         : std_logic;
   signal hps_warm_reset         : std_logic;
@@ -159,7 +231,7 @@ architecture std of top_paperoAstra is
   signal sRegContentInt, sRegContentSyn : std_logic_vector(31 downto 0);
 
   -- Ausiliari
-  signal fpga_debounced_buttons_n : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
+  signal fpga_debounced_buttons_n : std_logic_vector(3 downto 0);  -- debounced_bottons in logica positiva
   signal hps_fpga_reset_n_synch   : std_logic;  -- segnale interno di RESET in logica positiva
   signal hps_cold_rst_n           : std_logic;
   signal hps_warm_rst_n           : std_logic;
@@ -235,10 +307,31 @@ architecture std of top_paperoAstra is
   signal sDebug         : std_logic_vector(7 downto 0);
 
 begin
+
+  HSMC_SCL  <= '0';
+  HSMC_SDA  <= '0';
+  HSMC_CLKOUT0  <= '0';
+  oHSMC_CLKOUT_N1 <= '0';
+  oHSMC_CLKOUT_P1 <= '0';
+  oHSMC_RX_C_n <= (others => '0');
+  oHSMC_RX_C_p <= (others => '0');
+  oHSMC_RX_B_n <= (others => '0');
+  oHSMC_RX_B_p <= (others => '0');
+  oHSMC_TX_C_n <= (others => '0');
+  oHSMC_TX_C_p <= (others => '0');
+
+
+  oBCO_CLK <= '0';
+  oEXT_TRIG <= '0';
+  oBCO_CLK_RED <= '0';
+  oEXT_TRIG_RED <= '0';
+
+  oHK <= (others => '0');
+
   -- connection of internal logics ----------------------------
   fpga_clk_50   <= CLOCK_50;
   sClk          <= h2f_clk_50MHz;
-  stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
+  stm_hw_events <= "0000" & SW & fpga_led_internal & fpga_debounced_buttons;
 
   fpga_debounced_buttons_n <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
 
@@ -323,11 +416,11 @@ begin
     hps_0_hps_io_hps_io_uart0_inst_RX     => HPS_UART_RX,
     hps_0_hps_io_hps_io_uart0_inst_TX     => HPS_UART_TX,
     --HPS I2C1
-    hps_0_hps_io_hps_io_i2c0_inst_SDA     => HPS_I2C0_SDAT,
-    hps_0_hps_io_hps_io_i2c0_inst_SCL     => HPS_I2C0_SCLK,
+    hps_0_hps_io_hps_io_i2c0_inst_SDA     => HPS_I2C1_SDAT,
+    hps_0_hps_io_hps_io_i2c0_inst_SCL     => HPS_I2C1_SCLK,
     --HPS I2C2
-    hps_0_hps_io_hps_io_i2c1_inst_SDA     => HPS_I2C1_SDAT,
-    hps_0_hps_io_hps_io_i2c1_inst_SCL     => HPS_I2C1_SCLK,
+    hps_0_hps_io_hps_io_i2c1_inst_SDA     => HPS_I2C2_SDAT,
+    hps_0_hps_io_hps_io_i2c1_inst_SCL     => HPS_I2C2_SCLK,
     --GPIO
     hps_0_hps_io_hps_io_gpio_inst_GPIO09  => HPS_CONV_USB_N,
     hps_0_hps_io_hps_io_gpio_inst_GPIO35  => HPS_ENET_INT_N,
@@ -391,7 +484,7 @@ begin
   --!@brief Debounce logic to clean out glitches within 1ms
   debounce_inst : debounce
     generic map(
-      WIDTH         => 2,
+      WIDTH         => 4,
       POLARITY      => "LOW",
       TIMEOUT       => 50000,  -- at 50Mhz this is a debounce time of 1ms
       TIMEOUT_WIDTH => 16               -- ceil(log2(TIMEOUT))
@@ -673,6 +766,7 @@ begin
   begin
     if rising_edge(sClk) then
       oBUSY <= sMainBusy;
+      oBUSY_RED <= sMainBusy;
       oTRIG <= sMainTrig;
     end if;
   end process IOFFD;

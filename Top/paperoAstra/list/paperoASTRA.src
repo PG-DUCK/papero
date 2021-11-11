@@ -21,7 +21,6 @@ logic/TdaqModule.vhd
 
 #Basic functions_md
 logic/edge_detector_md.vhd
-logic/Key_Pulse_Gen.vhd
 logic/HighHold.vhd
 logic/WR_Timer.vhd
 logic/FFD.vhd
@@ -54,5 +53,5 @@ logic/ASTRAintf/basic_functions/clock_divider.vhd
 logic/ASTRAintf/multiADC_interface.vhd
 
 #
-logic/DetectorInterface.vhd
-logic/priorityEncoder.vhd
+#logic/DetectorInterface.vhd
+#logic/priorityEncoder.vhd
