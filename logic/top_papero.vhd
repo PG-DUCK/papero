@@ -634,6 +634,8 @@ begin
   sDetIntfCfg.cfgPlane     <= sRegArray(rMSD_PARAM)(31 downto 16);
   sDetIntfCfg.intTrgPeriod <= (others => '0');
   sDetIntfCfg.trg2Hold     <= sRegArray(rMSD_PARAM)(15 downto 0);
+  sDetIntfCfg.extendBusy   <= sRegArray(rBUSYADC_PARAM)(31 downto 16);
+  sDetIntfCfg.adcDelay     <= sRegArray(rBUSYADC_PARAM)(15 downto 0);
   --!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
   --!@todo Connect error, compl flags
   MsdInterface : DetectorInterface

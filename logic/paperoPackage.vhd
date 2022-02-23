@@ -49,13 +49,14 @@ package paperoPackage is
   constant rFE_CLK_PARAM   : natural := 5;
   constant rADC_CLK_PARAM  : natural := 6;
   constant rMSD_PARAM      : natural := 7;
+  constant rBUSYADC_PARAM  : natural := 8;
   --!Register array HPS-RW, FPGA-R
   type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
   constant cHPS_REG_NULL : tHpsRegArray := (
     x"00000000", x"00000001", x"02faf080", x"000000FF",
-    x"0000028A", x"00040028", x"00040002", x"00070145",
-    x"00000000", x"00000000", x"00000000", x"00000000",
+    x"0000028A", cFE_CLK_DUTY & cFE_CLK_DIV, cADC_CLK_DUTY & cADC_CLK_DIV , cCFG_PLANE & cTRG2HOLD,
+    cBUSY_LEN & cADC_DELAY, x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000"
     );                                  --!Null vector for HPS register array
 

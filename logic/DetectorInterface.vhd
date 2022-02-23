@@ -48,12 +48,15 @@ architecture std of DetectorInterface is
   signal sMultiFifoOut : tMultiAdcFifoOut;
   signal sMultiFifoIn  : tMultiAdcFifoIn;
 
-  --Trigger delay
+  --Trigger and busy
   signal sExtTrigDel     : std_logic;
   signal sExtTrigDelBusy : std_logic;
+  signal sTrigDelBusy    : std_logic;
+  signal sExtendBusy     : std_logic;
 
   --MSD Conifigurations
   signal sHpCfg : std_logic_vector (3 downto 0);
+  signal sAdcFast : std_logic;
 
 begin
 
@@ -64,15 +67,19 @@ begin
   sCntIn.slwClk <= '0';
   sCntIn.slwEn  <= '0';
 
-  oCNT.busy  <= sCntOut.busy or sExtTrigDelBusy;
+  oCNT.busy  <= sCntOut.busy or sTrigDelBusy or sExtendBusy;
   oCNT.error <= sCntOut.error;
   oCNT.reset <= sCntOut.reset;
   oCNT.compl <= sCntOut.compl;
 
   sHpCfg <= iMSD_CONFIG.cfgPlane(3 downto 0);
+  sAdcFast <= iMSD_CONFIG.cfgPlane(8);
 
   --!@brief Delay the external trigger before the FE start
   TRIG_DELAY : delay_timer
+    generic map(
+      pWIDTH => 16
+    )
     port map(
       iCLK   => iCLK,
       iRST   => iRST,
@@ -82,33 +89,57 @@ begin
       oOUT   => sExtTrigDel
       );
 
+  --!@brief delay the Trigger-delay busy
+  busy_delay : process (iCLK)
+  begin
+    if (rising_edge(iCLK)) then
+      sTrigDelBusy <= sExtTrigDelBusy;
+    end if;
+  end process;
+
+  --!@brief Extend busy from [320 ns, ~20 ms], in multiples of 320 ns
+  busy_extend : delay_timer
+    generic map(
+      pWIDTH => 20
+    )
+    port map(
+      iCLK   => iCLK,
+      iRST   => iRST,
+      iSTART => sCntOut.compl,
+      iDELAY => iMSD_CONFIG.extendBusy & "0000",
+      oBUSY  => sExtendBusy,
+      oOUT   => open
+      );
+
   --!@brief Low-level multiple ADCs plane interface
   DETECTOR_INTERFACE : multiAdcPlaneInterface
     generic map (
-      pACTIVE_EDGE => "F"               --!"F": falling, "R": rising
+      pACTIVE_EDGE => "F" --"F": falling, "R": rising
       )
     port map (
-      iCLK          => iCLK,            --!Main clock
-      iRST          => iRST,            --!Main reset
+      iCLK          => iCLK,
+      iRST          => iRST,
       -- control interface
       oCNT          => sCntOut,
-      iCNT          => sCntIn,          --!Control signals in output
-      iFE_CLK_DIV   => iMSD_CONFIG.feClkDiv,    --!FE SlowClock divider
-      iFE_CLK_DUTY  => iMSD_CONFIG.feClkDuty,   --!FE SlowClock duty cycle
-      iADC_CLK_DIV  => iMSD_CONFIG.adcClkDiv,   --!ADC SlowClock divider
-      iADC_CLK_DUTY => iMSD_CONFIG.adcClkDuty,  --!ADC SlowClock divider
-      iCFG_FE       => sHpCfg,          --!FE configurations
+      iCNT          => sCntIn,
+      iFE_CLK_DIV   => iMSD_CONFIG.feClkDiv,
+      iFE_CLK_DUTY  => iMSD_CONFIG.feClkDuty,
+      iADC_CLK_DIV  => iMSD_CONFIG.adcClkDiv,
+      iADC_CLK_DUTY => iMSD_CONFIG.adcClkDuty,
+      iADC_DELAY    => iMSD_CONFIG.adcDelay,
+      iCFG_FE       => sHpCfg,
+      iADC_FAST     => sAdcFast,
       -- FE interface
-      oFE0          => oFE0,            --!Output signals to the FE1
-      oFE1          => oFE1,            --!Input signals from the FE1
-      iFE           => sFeIn,           --!Input signals from the FE2
+      oFE0          => oFE0,
+      oFE1          => oFE1,
+      iFE           => sFeIn,
       -- ADC interface
-      oADC0         => oADC0,           --!Output signals to the ADC2
-      oADC1         => oADC1,           --!Output signals to the ADC1
-      iMULTI_ADC    => iMULTI_ADC,      --!Input signals from the ADC1
+      oADC0         => oADC0,
+      oADC1         => oADC1,
+      iMULTI_ADC    => iMULTI_ADC,
       -- FIFO output interface
-      oMULTI_FIFO   => sMultiFifoOut,   --!Output interfaces of MULTI_FIFOs
-      iMULTI_FIFO   => sMultiFifoIn     --!Input interface of MULTI_FIFOs
+      oMULTI_FIFO   => sMultiFifoOut,
+      iMULTI_FIFO   => sMultiFifoIn
       );
 
   --!@brief Collects data from the MSD and assembles them in a single packet

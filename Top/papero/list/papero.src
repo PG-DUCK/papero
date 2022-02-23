@@ -50,6 +50,7 @@ logic/msdintf/basic_functions/edge_detector.vhd
 logic/msdintf/basic_functions/delay_timer.vhd
 logic/msdintf/basic_functions/counter.vhd
 logic/msdintf/basic_functions/clock_divider.vhd
+logic/msdintf/basic_functions/clock_divider_2.vhd
 
 #MSD interface files
 logic/msdintf/FE_interface.vhd
