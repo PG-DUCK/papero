@@ -59,8 +59,13 @@ With these registers, the HPS configures all the modules of the FPGA. HPS have r
 |    | [31:16]: Duty cycle (in system-clock cycles) | 0001 |
 |    | [15:0]: Period (in system-clock cycles) | 0002 |
 | 7  | MSD-specific parameters | 01070145 |
-|    | 8: AD7276 Fast Mode support | 1 |
+|    | 24: AD7276 Fast Mode support | 1 |
+|    | 19: IDE1140 Test port | 0 |
+|    | [18:16]: IDE1140 G ports. Actually unconnected in the ADCBoard. | 7 |
 |    | [15:0]: Trigger-2-Hold Delay (in clock cycles) | 0145 |
+| 8  | Busy extension and delay of ADC start of conversion | 0028001D |
+|    | [31:16]: Extend busy duration at the end of each event (in 320 ns steps) | 0028 |
+|    | [15:0]:  Delay between the front-end negative clock cycle and start of ADC conversion | 001D |
 
 
 ## Status Registers
