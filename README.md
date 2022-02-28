@@ -28,34 +28,75 @@ For more information, read the official [documentation](https://hog.readthedocs.
 
 
 ***
-# Registers Content
+# Register Array Content
 ## Configuration Registers
-L'HPS può configurare l'FPGA accedendo a tali registri sia in lettura che in scrittura. La frequenza del clock è: 20 ns.
-## Convenzioni
-- I bit vanno intesi in logica positiva --> 1 = ON, 0 = OFF.
-- Config_FIFO: fifo a valle del Config_Receiver.
-- HK_FIFO: fifo a valle del hkReader.
-- FastData_FIFO: fifo a valle del FastData_Transmitter.
-- PRBS_FIFO: FIFO a cavallo tra la Test_Unit e il FastData_Transmitter.
+With these registers, the HPS configures all the modules of the FPGA. HPS have read/write access, while FPGA read-only.
 
 |  # | Content | Default (hex) |
-| -- | ------- | ------- |
-| 0  | Stato Top-Level. 4: Start/Stop trigger, 2: Reset regArray, 1: Reset contatori, 0: Reset(logica FPGA tranne registerArray) | XXXXXX00 |
-| 1  | Units Enable. [9:8] Test Unit configuration, 6: hkReader Enable, 5: Ricevi periodicamente (1 s) contenuto registerArray, 4: Ricevi contenuto attuale del registerArray, 1: Test_Unit/Detector_n Enable e data multiplexer, 0: FastData_Transmitter Enable,  | XXXXX001 |
-| 2  | CFG trigBusyLogic. [31:4]: Periodo del trigger interno (a multipli di 320 ns), 1: Calibrazione, 0: Abilitazione trigger interno | 02faf080 |
+| -- | ------- | ------------- |
+| 0  | Reset, Start, Stop: |  XXXXXX00 |
+|    | 4: Start/Stop trigger | 0 |
+|    | 2: Reset regArray | 0 |
+|    | 1: Reset counters | 0 |
+|    | 0: Reset FPGA logic, regArray excluded  | 0 |
+| 1  | Enable and configuration of TdaqModule Units: | XXXXX001 |
+|    | [9:8]: Test Unit configuration | 0 |
+|    | 6: hkReader Enable | 0 |
+|    | 5: Periodically (1s) receive content of regArray | 0 |
+|    | 4: Read content of the regArray, instantaneously | 0 |
+|    | 1: Enable/Disable_n for Test Unit and Detector Interface. If '0', enable Detector Interface and disable Test Unit | 0 |
+|    | 0: FastData_Transmitter Enable | 1 |
+| 2  | Configuration of trigger and busy logic: | 02faf080 |
+|    | [31:4]: Period of internal trigger, in 320 ns units. Default period of 1 second | 02faf080 |
+|    | 1: Calibration flag: if asserted, change the events' header flag to calibration| 0 |
+|    | 0: Enable internal trigger | 0 |
 | 3  | [15:0] Detector ID | XXXXF0CA |
-| 4  | Setting length[31:0]: Lunghezza pacchetto dati scientifici (Payload 32-bit words + 10) | 0000028A |
-| 5  | FE-clock  parameters. [31:16] duty cycle and [15:0] divider | 00040028 |
-| 6  | ADC-clock parameters. [31:16] duty cycle and [15:0] divider | 00040002 |
-| 7  | MSD parameters. [15:0]: Trigger-2-Hold Delay (in clock cycles) | 00070145 |
-| 16  | Versione del Gateware. [31:0]: SHA dell'ultimo commit |  |
-| 17  | Internal Timestamp "high". [31:0]: Numero di clock passati dall'ultimo Reset calcolati internamente (word più significativa) |  |
-| 18  | Internal Timestamp "low". [31:0]: Numero di clock passati dall'ultimo Reset calcolati esternamente (word meno significativa) |  |
-| 19  | External Timestamp "high". [31:0]: Numero di clock passati dall'ultimo Reset calcolati internamente (word più significativa) |  |
-| 20  | External Timestamp "low". [31:0]: Numero di clock passati dall'ultimo Reset calcolati esternamente (word meno significativa) |  |
-| 21  | WARNING del sistema. [11:8]: FastData_Transmitter, [7:4]: hkReader, [3:0]: Config_Receiver |  |
-| 22  | BUSY. 31: Busy flag, 28: TestUnit, [27:20] Busies AND, [19:12] Busies OR, 11: FastData TX, 10: HK FIFO aFull, 9: Fast FIFO aFull, 8: FDI FIFO aFull, [7:0] Triggers occurred when busy is asserted |  |
-| 23  | External Trigger counter. [31:0]: Numero di impulsi di trigger esterni dall'ultimo Reset |  |
-| 24  | Internal Trigger counter. [31:0]: Numero di impulsi di trigger interni dall'ultimo Reset |  |
-| 25  | PRBS_FIFO. [15:0]: Numero di parole presenti nella PRBS_FIFO |  |
-| 31  | [31:0]: Piumone | C1A0C1A0 |
+| 4  | Length of the scientific-data packet in number of 32-bit words (note that the header is 10 words long) | 0000028A |
+| 5  | IDE1140 clock parameters: | 00110022 |
+|    | [31:16]: Duty cycle (in system-clock cycles) | 0011 |
+|    | [15:0]: Period (in system-clock cycles) | 0022 |
+| 6  | AD7276 clock parameters: | 00010002 |
+|    | [31:16]: Duty cycle (in system-clock cycles) | 0001 |
+|    | [15:0]: Period (in system-clock cycles) | 0002 |
+| 7  | MSD-specific parameters | 01070145 |
+|    | 8: AD7276 Fast Mode support | 1 |
+|    | [15:0]: Trigger-2-Hold Delay (in clock cycles) | 0145 |
+
+
+## Status Registers
+The FPGA writes its status in these registers. FPGA has read/write access, while HPS read-only. 
+
+|  #  | Content | Default (hex) |
+| --- | ------- | ------------- |
+| 16 | Gateware version: SHA of the git commit that generate the current system   | |
+| 17 | Internal timestamp MSBs: Number of system-clock's ticks from the last reset | |
+| 18 | Internal timestamp LSBs | |
+| 19 | External timestamp MSBs: Number of external clock's ticks from the last reset | |
+| 20 | External timestamp LSBs | |
+| 21 | Warnings: | 00000000 |
+|    | 11: FDI    | |
+|    | 10: FDI    | |
+|    |  9: FDI    | |
+|    |  8: FDI    | |
+|    |  7: HK TX  | |
+|    |  6: HK TX  | |
+|    |  5: HK TX  | |
+|    |  4: HK TX  | |
+|    |  3: CFG RX | |
+|    |  2: CFG RX | |
+|    |  1: CFG RX | |
+|    |  0: CFG RX | |
+| 22 | Busy and full flags: | 00000000 |
+|    | 31: General flag  | |
+|    | 28: testUnit  | |
+|    | [27:20]: AND inputs of the trigBusy unit | |
+|    | [19:12]: OR  inputs of the trigBusy unit | |
+|    | 11: FastData TX | |
+|    | 10: HK FIFO almost full | |
+|    |  9: Fast FIFO almost full | |
+|    |  8: FDI FIFO almost full | |
+|    | [7:0]: Triggers occurred when busy asserted | |
+| 23 | External trigger counter | |
+| 24 | Internal trigger counter | |
+| 25 | [15:0]: testUnit PRBS FIFO used words | |
+| 31 | Piumone: control word | C1A0C1A0 |
