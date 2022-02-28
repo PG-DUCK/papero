@@ -483,28 +483,28 @@ begin
   end process RegContSync_proc;
 
   -- Continuosly read the level_fifo of FIFO HK
-  fifo_f2h_addr_csr  <= "000";          --> fifo_f2h_data_out_csr = Level_Fifo
-  fifo_f2h_rd_en_csr <= '1';  --> Aggiorna Level_Fifo ogni ciclo di clock
+  fifo_f2h_addr_csr  <= "000"; -- fast_fifo_f2h_data_out_csr = Level_Fifo
+  fifo_f2h_rd_en_csr <= '1';   -- Update usedw at every clock cycle
   --!@brief Generate the Almost Full of the F2H housekeeping FIFO with the csr
   F2H_HK_AFull_proc : process (fifo_f2h_data_out_csr)
   begin
     if (fifo_f2h_data_out_csr > cF2H_AFULL - 1) then
-      fifo_f2h_afull <= '1';  -- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> fifo_f2h_afull = '1'
+      fifo_f2h_afull <= '1';
     else
-      fifo_f2h_afull <= '0';            -- Altrimenti, fifo_f2h_afull = '0'
+      fifo_f2h_afull <= '0';
     end if;
   end process;
 
   -- Continuosly read the level_fifo of FIFO Fast_Data
-  fast_fifo_f2h_addr_csr  <= "000";  --> fast_fifo_f2h_data_out_csr = Level_Fifo
-  fast_fifo_f2h_rd_en_csr <= '1';  --> Aggiorna Level_Fifo ogni ciclo di clock
+  fast_fifo_f2h_addr_csr  <= "000"; -- fast_fifo_f2h_data_out_csr = Level_Fifo
+  fast_fifo_f2h_rd_en_csr <= '1';   -- Update usedw at every clock cycle
   --!@brief Generate the Almost Full of the F2H Fast-Data FIFO with the csr
   F2H_Scientific_AFull_proc : process (fast_fifo_f2h_data_out_csr)
   begin
     if (fast_fifo_f2h_data_out_csr > cFastF2H_AFULL) then
-      fast_fifo_f2h_afull <= '1';  -- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> fast_fifo_f2h_afull = '1'
+      fast_fifo_f2h_afull <= '1';
     else
-      fast_fifo_f2h_afull <= '0';  -- Altrimenti, fast_fifo_f2h_afull = '0'
+      fast_fifo_f2h_afull <= '0';
     end if;
   end process;
 

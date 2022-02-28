@@ -74,24 +74,16 @@ The FPGA writes its status in these registers. FPGA has read/write access, while
 | 19 | External timestamp MSBs: Number of external clock's ticks from the last reset | |
 | 20 | External timestamp LSBs | |
 | 21 | Warnings: | 00000000 |
-|    | 11: FDI    | |
-|    | 10: FDI    | |
-|    |  9: FDI    | |
-|    |  8: FDI    | |
-|    |  7: HK TX  | |
-|    |  6: HK TX  | |
-|    |  5: HK TX  | |
-|    |  4: HK TX  | |
-|    |  3: CFG RX | |
-|    |  2: CFG RX | |
-|    |  1: CFG RX | |
-|    |  0: CFG RX | |
+|    | 8: FD  TX: Generic warning | |
+|    | 2: CFG RX: GW version mismatch | |
+|    | 1: CFG RX: Header or trailer fixed-words missing | |
+|    | 0: CFG RX: CRC or parity-bits mismatch  | |
 | 22 | Busy and full flags: | 00000000 |
-|    | 31: General flag  | |
-|    | 28: testUnit  | |
+|    | 31: General busy flag  | |
+|    | 28: testUnit busy | |
 |    | [27:20]: AND inputs of the trigBusy unit | |
 |    | [19:12]: OR  inputs of the trigBusy unit | |
-|    | 11: FastData TX | |
+|    | 11: FD TX busy | |
 |    | 10: HK FIFO almost full | |
 |    |  9: Fast FIFO almost full | |
 |    |  8: FDI FIFO almost full | |
