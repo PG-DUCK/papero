@@ -60,8 +60,6 @@ architecture std of DetectorInterface is
 
 begin
 
-  sFeIn.ShiftOut <= '1';
-
   sCntIn.en     <= iEN;
   sCntIn.start  <= sExtTrigDel;
   sCntIn.slwClk <= '0';
@@ -93,7 +91,9 @@ begin
   busy_delay : process (iCLK)
   begin
     if (rising_edge(iCLK)) then
-      sTrigDelBusy <= sExtTrigDelBusy;
+      sTrigDelBusy   <= sExtTrigDelBusy;
+      sFeIn.ShiftOut <= '1';
+      sFeIn.initRst  <= iTRIG;
     end if;
   end process;
 
