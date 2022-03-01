@@ -164,22 +164,22 @@ entity top_paperoAstra is
     oPRG_BIT_A : out std_logic;
     oPRG_BIT_B : out std_logic;
     oPRG_RESET : out std_logic;
-    oPRG_CLK : out std_logic;
+    oPRG_CLK   : out std_logic;
 
-    oFASTCLK_n : out std_logic;
-    oFASTCLK_p : out std_logic;
-    iFASTCLK_RET_n : in std_logic;
-    iFASTCLK_RET_p : in std_logic;
+    --oFASTCLK_n : out std_logic;
+    oFASTCLK   : out std_logic;
+    --iFASTCLK_RET_n : in std_logic;
+    iFASTCLK_RET   : in std_logic;
 
-    iFASTOR_A_n : in std_logic;
-    iFASTOR_A_p : in std_logic;
-    iFASTOR_B_n : in std_logic;
-    iFASTOR_B_p : in std_logic;
+    --iFASTOR_A_n : in std_logic;
+    iFASTOR_A   : in std_logic;
+    --iFASTOR_B_n : in std_logic;
+    iFASTOR_B   : in std_logic;
 
-    oHOLD_n : out std_logic;
-    oHOLD_p : out std_logic;
-    oTP_n : out std_logic;
-    oTP_p : out std_logic;
+    --oHOLD_n : out std_logic;
+    oHOLD   : out std_logic;
+    --oTP_n : out std_logic;
+    oTP   : out std_logic;
 
     oMUX_SHIFT_CLK : out std_logic;
     oMUX_READRESET : out std_logic;
@@ -188,10 +188,10 @@ entity top_paperoAstra is
 
     oADC_CONVERT : out std_logic;
 
-    iSER_A_n  : in std_logic;
-    iSER_A_p : in std_logic;
-    iSER_B_n  : in std_logic;
-    iSER_B_p : in std_logic;
+    --iSER_A_n  : in std_logic;
+    iSER_A   : in std_logic;
+    --iSER_B_n  : in std_logic;
+    iSER_B   : in std_logic;
     oSER_SEND : out std_logic;
     oSER_LOAD : out std_logic;
     oSER_SHIFT_CLK : out std_logic;
@@ -306,6 +306,12 @@ architecture std of top_paperoAstra is
   signal sBusy          : std_logic;
   signal sErrors        : std_logic;
   signal sDebug         : std_logic_vector(7 downto 0);
+  signal sPrg           : tPrgIntf;
+
+  signal sFeO           : tFpga2FeIntf;
+  signal sFeI           : tFe2FpgaIntf;
+  signal sExtAdcO       : tFpga2AdcIntf;
+  signal sExtAdcI       : tMultiAdc2FpgaIntf;
 
 begin
 
@@ -321,13 +327,59 @@ begin
   oHSMC_TX_C_n <= (others => '0');
   oHSMC_TX_C_p <= (others => '0');
 
-
-  oBCO_CLK <= '0';
-  oEXT_TRIG <= '0';
-  oBCO_CLK_RED <= '0';
-  oEXT_TRIG_RED <= '0';
-
   oHK <= (others => '0');
+
+  --Local configurations
+  oPRG_BIT_A <= sPrg.bitA;
+  oPRG_BIT_B <= sPrg.bitB;
+  oPRG_RESET <= sPrg.rst;
+  oPRG_CLK   <= sPrg.clk;
+
+  --Fast Clock
+  oFASTCLK            <= '0';
+  --<= iFASTCLK_RET;
+
+  --Discriminator OR output
+  --<= iFASTOR_A;
+  --<= iFASTOR_B;
+
+  --Analog Readout
+  oHOLD               <= sFeO.hold_b;
+  oTP                 <= sFeO.test;
+
+  --Analog Multiplexer
+  oMUX_SHIFT_CLK      <= sFeo.shiftClk;
+  oMUX_READRESET      <= sFeO.readRst;
+  sFeI.shiftClkRet    <= iMUX_SHIFT_CLK_RET;
+  sFeI.readRstRet     <= iMUX_READRESET_RET;
+
+  --Internal ADC
+  oADC_CONVERT        <= '0';
+
+  --Serializer A and B
+  oRESET_DIGITAL      <= '0';
+
+  --<= iSER_A;
+  --<= iSER_B;
+  oSER_SEND           <= '0';
+  oSER_LOAD           <= '0';
+  oSER_SHIFT_CLK      <= '0';
+  --<= iSER_SHIFT_CLK_RET;
+  --<= iSER_SEND_RET;
+
+  --External ADC A
+  sExtAdcI(1).SData   <= iSDATA_B;
+  oCS_B               <= sExtAdcO.Cs;
+  oSCLK_B             <= sExtAdcO.SClk;
+  sExtAdcI(1).clkRet  <= iCS_B_RET;
+  sExtAdcI(1).csRet   <= iSCLK_B_RET;
+
+  --External ADC B
+  sExtAdcI(0).SData   <= iSDATA_A;
+  oCS_A               <= sExtAdcO.Cs;
+  oSCLK_A             <= sExtAdcO.SClk;
+  sExtAdcI(0).clkRet  <= iCS_A_RET;
+  sExtAdcI(0).csRet   <= iSCLK_A_RET;
 
   -- connection of internal logics ----------------------------
   fpga_clk_50   <= CLOCK_50;
@@ -720,16 +772,29 @@ begin
       pulse_out => sRegArrayRst
       );
 
-  sRunMode                 <= sRegArray(rGOTO_STATE)(4);
-  sDetIntfEn               <= not sRegArray(rUNITS_EN)(1);
-  sDetIntfCfg.feClkDuty    <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
-  sDetIntfCfg.feClkDiv     <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.adcClkDuty   <= sRegArray(rADC_CLK_PARAM)(31 downto 16);
-  sDetIntfCfg.adcClkDiv    <= sRegArray(rADC_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.adcFastMode  <= sRegArray(rASTRA_PARAM)(24);
-  sDetIntfCfg.trg2Hold     <= sRegArray(rASTRA_PARAM)(15 downto 0);
-  sDetIntfCfg.extendBusy   <= sRegArray(rBUSYADC_PARAM)(31 downto 16);
-  sDetIntfCfg.adcDelay     <= sRegArray(rBUSYADC_PARAM)(15 downto 0);
+  sRunMode                <= sRegArray(rGOTO_STATE)(4);
+  sDetIntfEn              <= not sRegArray(rUNITS_EN)(1);
+  sDetIntfCfg.prgStart    <= sRegArray(rUNITS_EN)(12);
+  sDetIntfCfg.feClkDuty   <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.feClkDiv    <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.adcClkDuty  <= sRegArray(rADC_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.adcClkDiv   <= sRegArray(rADC_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.adcFastMode <= sRegArray(rASTRA_PARAM)(24);
+  oFASTOR_TX_DISABLE      <= sRegArray(rASTRA_PARAM)(22);
+  oDEBUG_EN               <= sRegArray(rASTRA_PARAM)(21);
+  oPT1                    <= sRegArray(rASTRA_PARAM)(20);
+  oPT2                    <= sRegArray(rASTRA_PARAM)(19);
+  oGAIN                   <= sRegArray(rASTRA_PARAM)(18);
+  oPOL                    <= sRegArray(rASTRA_PARAM)(17);
+  oSER_TX_DISABLE         <= sRegArray(rASTRA_PARAM)(16);
+  sDetIntfCfg.trg2Hold    <= sRegArray(rASTRA_PARAM)(15 downto 0);
+  sDetIntfCfg.extendBusy  <= sRegArray(rBUSYADC_PARAM)(31 downto 16);
+  sDetIntfCfg.adcDelay    <= sRegArray(rBUSYADC_PARAM)(15 downto 0);
+  sDetIntfCfg.prgClkDuty  <= sRegArray(rPRG_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.prgClkDiv   <= sRegArray(rPRG_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.chMask      <= sRegArray(rMASK_A) & sRegArray(rMASK_B);
+  sDetIntfCfg.chTpEn      <= sRegArray(rTPEN_A) & sRegArray(rTPEN_B);
+  sDetIntfCfg.chDisc      <= sRegArray(rDISC_A) & sRegArray(rDISC_B);
   --!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
   AstraInterface : DetectorInterface
     port map (
@@ -739,9 +804,11 @@ begin
       iTRIG           => sMainTrig,
       oCNT            => sDetIntfCntOut,
       iASTRA_CONFIG   => sDetIntfCfg,
-    --  oFE             => ,
-    --  oADC            => ,
-    --  iMULTI_ADC      => ,
+      oPRG            => sPrg,
+      oFE             => sFeO,
+      iFE             => sFeI,
+      oADC            => sExtAdcO,
+      iMULTI_ADC      => sExtAdcI,
       oFASTDATA_DATA  => sDetIntfQ,
       oFASTDATA_WE    => sDetIntfWe,
       iFASTDATA_AFULL => sDetIntfAfull
@@ -774,9 +841,14 @@ begin
   IOFFD : process(sClk)
   begin
     if rising_edge(sClk) then
-      oBUSY <= sMainBusy;
+      oBUSY     <= sMainBusy;
       oBUSY_RED <= sMainBusy;
-      oTRIG <= sMainTrig;
+      oTRIG     <= sMainTrig;
+      
+      oBCO_CLK      <= iBCO_CLK;
+      oBCO_CLK_RED  <= iBCO_CLK_RED;
+      oEXT_TRIG     <= iEXT_TRIG;
+      oEXT_TRIG_RED <= iEXT_TRIG_RED;
     end if;
   end process IOFFD;
 

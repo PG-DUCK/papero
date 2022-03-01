@@ -48,10 +48,14 @@ logic/ASTRAintf/basic_functions/edge_detector.vhd
 logic/ASTRAintf/basic_functions/delay_timer.vhd
 logic/ASTRAintf/basic_functions/counter.vhd
 logic/ASTRAintf/basic_functions/clock_divider.vhd
+logic/ASTRAintf/basic_functions/clock_divider_2.vhd
 
 #ASTRA interface files
+logic/ASTRAintf/astraDriver.vhd
+logic/ASTRAintf/detectorReadout.vhd
 logic/ASTRAintf/multiADC_interface.vhd
+logic/ASTRAintf/PRG_driver.vhd
 
 #
-#logic/DetectorInterface.vhd
-#logic/priorityEncoder.vhd
+logic/DetectorInterface.vhd
+logic/priorityEncoder.vhd

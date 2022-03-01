@@ -12,7 +12,7 @@ use ieee.numeric_std.all;
 use ieee.math_real.all;
 
 use work.basic_package.all;
-use work.FOOTpackage.all;
+use work.ASTRApackage.all;
 use work.paperoPackage.all;
 --use work.DAQ_Package.all;
 

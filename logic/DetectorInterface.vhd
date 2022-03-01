@@ -24,8 +24,9 @@ entity DetectorInterface is
     oCNT            : out tControlIntfOut;     --!Control signals in output
     iASTRA_CONFIG   : in  astraConfig;  --!Configuration from the control registers
     -- ASTRA and AD7276 output ports
+    oPRG            : out tPrgIntf;            --!Output signals to ASTRA PRG
     oFE             : out tFpga2FeIntf;        --!Output signals to ASTRA
-    iFE             : in  tFe2FpgaIntf;
+    iFE             : in  tFe2FpgaIntf;        --!Input signals from ASTRA
     oADC            : out tFpga2AdcIntf;       --!Output signals to AD7276
     -- AD7276 Inputs
     iMULTI_ADC      : in  tMultiAdc2FpgaIntf;  --!Input signals from multiple AD7276s
@@ -96,6 +97,26 @@ begin
     -- FIFO output interface
     oMULTI_FIFO   => sMultiFifoOut,   --!Output interfaces of MULTI_FIFOs
     iMULTI_FIFO   => sMultiFifoIn     --!Input interface of MULTI_FIFOs
+  );
+
+  --!@brief ASTRA configuration interface
+  PRG_driver_i : PRG_driver
+  generic map (
+    pNumBlock   => 2*cFE_DAISY_CHAIN_DEPTH,
+    pChPerBlock => cFE_CHANNELS
+  )
+  port map (
+    iCLK            => iCLK,
+    iRST            => iRST,
+    oFLAG           => open,
+    iEN             => iEN,
+    iWE             => iASTRA_CONFIG.prgStart,
+    iPERIOD_CLK     => x"0000" & iASTRA_CONFIG.prgClkDiv,
+    iDUTY_CYCLE_CLK => x"0000" & iASTRA_CONFIG.prgClkDuty,
+    iCH_Mask        => iASTRA_CONFIG.chMask,
+    iCH_TP_EN       => iASTRA_CONFIG.chTpEn,
+    iCH_Disc        => iASTRA_CONFIG.chDisc,
+    oLOCAL_SETTING  => oPRG
   );
 
 

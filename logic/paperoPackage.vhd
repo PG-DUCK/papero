@@ -50,14 +50,21 @@ package paperoPackage is
   constant rADC_CLK_PARAM  : natural := 6;
   constant rASTRA_PARAM    : natural := 7;
   constant rBUSYADC_PARAM  : natural := 8;
+  constant rPRG_CLK_PARAM  : natural := 9;
+  constant rMASK_A         : natural := 10;
+  constant rMASK_B         : natural := 11;
+  constant rTPEN_A         : natural := 12;
+  constant rTPEN_B         : natural := 13;
+  constant rDISC_A         : natural := 14;
+  constant rDISC_B         : natural := 15;
   --!Register array HPS-RW, FPGA-R
   type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
   constant cHPS_REG_NULL : tHpsRegArray := (
     x"00000000", x"00000001", x"02faf080", x"000000FF",
     x"0000028A", cFE_CLK_DUTY & cFE_CLK_DIV, cADC_CLK_DUTY & cADC_CLK_DIV , x"0100" & cTRG2HOLD,
-    cBUSY_LEN & cADC_DELAY, x"00000000", x"00000000", x"00000000",
-    x"00000000", x"00000000", x"00000000", x"00000000"
+    cBUSY_LEN & cADC_DELAY, cPRG_CLK_DUTY & cPRG_CLK_DIV, x"00000000", x"00000000",
+    x"00000000", x"00000000", x"FFFFFFFF", x"FFFFFFFF"
     );                               --!Null vector for HPS register array
 
   constant rGW_VER           : natural := 0;
@@ -512,7 +519,9 @@ package paperoPackage is
       oCNT            : out tControlIntfOut;
       iASTRA_CONFIG   : in  astraConfig;
       --# {{ASTRA, AD7276 output|ASTRA, AD7276 output}}
+      oPRG            : out tPrgIntf;
       oFE             : out tFpga2FeIntf;
+      iFE             : in  tFe2FpgaIntf;
       oADC            : out tFpga2AdcIntf;
       --# {{AD7276s Inputs|AD7276s Inputs}}
       iMULTI_ADC      : in  tMultiAdc2FpgaIntf;
