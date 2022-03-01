@@ -81,7 +81,7 @@ begin
   sTrigId <= cTRG_PHYS_INT  when (sIntTrigEn = '1' and sPhysCalibn = '1') else
              cTRG_CALIB_INT when (sIntTrigEn = '1' and sPhysCalibn = '0') else
              cTRG_CALIB_EXT when (sIntTrigEn = '0' and sPhysCalibn = '1') else
-             cTRG_PHYS_EXT  when (sIntTrigEn = '0' and sPhysCalibn = '0');
+             cTRG_PHYS_EXT;--  when (sIntTrigEn = '0' and sPhysCalibn = '0');
 
   sBusy <= unary_and(iBUSIES_AND) or unary_or(iBUSIES_OR);
   -----------------------------------------------------------------------------
