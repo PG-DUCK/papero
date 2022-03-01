@@ -291,6 +291,7 @@ architecture std of top_paperoAstra is
   --Detector interface
   signal sDetIntfRst    : std_logic;
   signal sDetIntfEn     : std_logic;
+  signal sDetIntfCfg    : astraConfig;
   signal sDetIntfCntOut : tControlIntfOut;
   signal sDetIntfQ      : std_logic_vector(cREG_WIDTH-1 downto 0);
   signal sDetIntfWe     : std_logic;
@@ -333,7 +334,7 @@ begin
   sClk          <= h2f_clk_50MHz;
   stm_hw_events <= "0000" & SW & fpga_led_internal & fpga_debounced_buttons;
 
-  fpga_debounced_buttons_n <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
+  fpga_debounced_buttons_n <= not fpga_debounced_buttons;  -- FPGA buttons have inverted logic, our modules straight
 
   hps_cold_rst_n  <= not hps_cold_reset;
   hps_warm_rst_n  <= not hps_warm_reset;
@@ -497,6 +498,7 @@ begin
       );
 
   --!@brief Source/Probe megawizard instance
+  --!@todo Remove this component?
   hps_reset_inst : hps_reset
     port map(
       probe      => '0',
@@ -575,28 +577,28 @@ begin
   end process RegContSync_proc;
 
   -- Continuosly read the level_fifo of FIFO HK
-  fifo_f2h_addr_csr  <= "000";          --> fifo_f2h_data_out_csr = Level_Fifo
-  fifo_f2h_rd_en_csr <= '1';  --> Aggiorna Level_Fifo ogni ciclo di clock
+  fifo_f2h_addr_csr  <= "000"; -- 0: address of Level_Fifo
+  fifo_f2h_rd_en_csr <= '1';
   --!@brief Generate the Almost Full of the F2H housekeeping FIFO with the csr
   F2H_HK_AFull_proc : process (fifo_f2h_data_out_csr)
   begin
     if (fifo_f2h_data_out_csr > cF2H_AFULL - 1) then
-      fifo_f2h_afull <= '1';  -- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> fifo_f2h_afull = '1'
+      fifo_f2h_afull <= '1';
     else
-      fifo_f2h_afull <= '0';            -- Altrimenti, fifo_f2h_afull = '0'
+      fifo_f2h_afull <= '0';
     end if;
   end process;
 
   -- Continuosly read the level_fifo of FIFO Fast_Data
-  fast_fifo_f2h_addr_csr  <= "000";  --> fast_fifo_f2h_data_out_csr = Level_Fifo
-  fast_fifo_f2h_rd_en_csr <= '1';  --> Aggiorna Level_Fifo ogni ciclo di clock
+  fast_fifo_f2h_addr_csr  <= "000";  -- 0: address of Level_Fifo
+  fast_fifo_f2h_rd_en_csr <= '1';
   --!@brief Generate the Almost Full of the F2H Fast-Data FIFO with the csr
   F2H_Scientific_AFull_proc : process (fast_fifo_f2h_data_out_csr)
   begin
     if (fast_fifo_f2h_data_out_csr > cFastF2H_AFULL) then
-      fast_fifo_f2h_afull <= '1';  -- Se il livello della FIFO è maggiore o uguale della soglia di almost full  ----> fast_fifo_f2h_afull = '1'
+      fast_fifo_f2h_afull <= '1';
     else
-      fast_fifo_f2h_afull <= '0';  -- Altrimenti, fast_fifo_f2h_afull = '0'
+      fast_fifo_f2h_afull <= '0';
     end if;
   end process;
 
@@ -717,26 +719,33 @@ begin
       signal_in => sRegArray(rGOTO_STATE)(2),
       pulse_out => sRegArrayRst
       );
+
   sRunMode                 <= sRegArray(rGOTO_STATE)(4);
   sDetIntfEn               <= not sRegArray(rUNITS_EN)(1);
-  ----!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
-  --MsdInterface : DetectorInterface
-  --  port map (
-  --    iCLK            => sClk,
-  --    iRST            => sDetIntfRst, --See the instance description
-  --    iEN             => sDetIntfEn,
-  --    iTRIG           => sMainTrig,
-  --    oCNT            => sDetIntfCntOut,  --Temporary
-  --    iMSD_CONFIG     => sDetIntfCfg,
-  --    oFE0            => sFeA,
-  --    oADC0           => sAdcA,
-  --    oFE1            => sFeB,
-  --    oADC1           => sAdcB,
-  --    iMULTI_ADC      => sMultiAdcSynch,
-  --    oFASTDATA_DATA  => sDetIntfQ,
-  --    oFASTDATA_WE    => sDetIntfWe,
-  --    iFASTDATA_AFULL => sDetIntfAfull
-  --    );
+  sDetIntfCfg.feClkDuty    <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.feClkDiv     <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.adcClkDuty   <= sRegArray(rADC_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.adcClkDiv    <= sRegArray(rADC_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.adcFastMode  <= sRegArray(rASTRA_PARAM)(24);
+  sDetIntfCfg.trg2Hold     <= sRegArray(rASTRA_PARAM)(15 downto 0);
+  sDetIntfCfg.extendBusy   <= sRegArray(rBUSYADC_PARAM)(31 downto 16);
+  sDetIntfCfg.adcDelay     <= sRegArray(rBUSYADC_PARAM)(15 downto 0);
+  --!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
+  AstraInterface : DetectorInterface
+    port map (
+      iCLK            => sClk,
+      iRST            => sDetIntfRst, --See the instance description
+      iEN             => sDetIntfEn,
+      iTRIG           => sMainTrig,
+      oCNT            => sDetIntfCntOut,
+      iASTRA_CONFIG   => sDetIntfCfg,
+    --  oFE             => ,
+    --  oADC            => ,
+    --  iMULTI_ADC      => ,
+      oFASTDATA_DATA  => sDetIntfQ,
+      oFASTDATA_WE    => sDetIntfWe,
+      iFASTDATA_AFULL => sDetIntfAfull
+      );
 
 
   --- I/O synchronization and buffering ----------------------------------------

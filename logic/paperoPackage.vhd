@@ -9,7 +9,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 use work.basic_package.all;
-use work.FOOTpackage.all;
+use work.ASTRApackage.all;
 
 --!@copydoc paperoPackage.vhd
 package paperoPackage is
@@ -48,16 +48,17 @@ package paperoPackage is
   constant rPKT_LEN        : natural := 4;
   constant rFE_CLK_PARAM   : natural := 5;
   constant rADC_CLK_PARAM  : natural := 6;
-  constant rMSD_PARAM      : natural := 7;
+  constant rASTRA_PARAM    : natural := 7;
+  constant rBUSYADC_PARAM  : natural := 8;
   --!Register array HPS-RW, FPGA-R
   type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
   constant cHPS_REG_NULL : tHpsRegArray := (
     x"00000000", x"00000001", x"02faf080", x"000000FF",
-    x"0000028A", x"00040028", x"00040002", x"00070145",
-    x"00000000", x"00000000", x"00000000", x"00000000",
+    x"0000028A", cFE_CLK_DUTY & cFE_CLK_DIV, cADC_CLK_DUTY & cADC_CLK_DIV , x"0100" & cTRG2HOLD,
+    cBUSY_LEN & cADC_DELAY, x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000"
-    );                                  --!Null vector for HPS register array
+    );                               --!Null vector for HPS register array
 
   constant rGW_VER           : natural := 0;
   constant rINT_TS_MSB       : natural := 1;
@@ -232,14 +233,14 @@ package paperoPackage is
   --!Banco di registri per i dati di configurazione
   component registerArray is
     port (
-      iCLK       : in  std_logic;       --!Main clock
-      iRST       : in  std_logic;       --!Main reset
-      iCNT       : in  tControlIn;      --!Control input signals
-      oCNT       : out tControlOut;     --!Control output flags
+      iCLK       : in  std_logic;
+      iRST       : in  std_logic;
+      iCNT       : in  tControlIn;
+      oCNT       : out tControlOut;
       --Register array
-      oREG_ARRAY : out tRegArray;       --!Register array
-      iHPS_REG   : in  tRegIntf;        --!HPS interface
-      iFPGA_REG  : in  tFpgaRegIntf     --!FPGA interface
+      oREG_ARRAY : out tRegArray;
+      iHPS_REG   : in  tRegIntf;
+      iFPGA_REG  : in  tFpgaRegIntf
       );
   end component;
 
@@ -271,11 +272,11 @@ package paperoPackage is
       pINITIAL_VAL : std_logic_vector(31 downto 0) := x"FFFFFFFF"
       );
     port (
-      iCLK    : in  std_logic;          --!Main Clock (used at rising edge)
-      iRST    : in  std_logic;          --!Main Reset (synchronous)
-      iCRC_EN : in  std_logic;          --!Enable
-      iDATA   : in  std_logic_vector (31 downto 0);  --!Input to compute the CRC on
-      oCRC    : out std_logic_vector (31 downto 0)   --!CRC32 of the sequence
+      iCLK    : in  std_logic;
+      iRST    : in  std_logic;
+      iCRC_EN : in  std_logic;
+      iDATA   : in  std_logic_vector (31 downto 0);
+      oCRC    : out std_logic_vector (31 downto 0)
       );
   end component;
 
@@ -483,20 +484,20 @@ package paperoPackage is
   --!Generatore di segnale PWM
   component Variable_PWM_FSM is
     generic (
-      period     : integer;  -- Periodo di conteggio del contatore (che di fatto andrà a definire la frequenza del segnale PWM) espresso in "numero di cicli di clock"
-      duty_cycle : integer;  -- Numero di cicli di clock per i quali l'uscita dovrà tenersi "alta"
-      neg        : integer;  -- Logica di funzionamento del dispositivo. Se neg=0-->logica normale, se neg=1-->logica negata
-      R_vs_F     : integer := 0  -- Parametro che seleziona quali fronti d'onda conteggiare. Se R_vs_F=0--> rising edge, se R_vs_F=1--> falling edge
+      period     : integer;
+      duty_cycle : integer;
+      neg        : integer;
+      R_vs_F     : integer := 0
       );
     port (
-      SWITCH            : in  std_logic;  -- Ingresso per abilitare il segnale PWM
-      ENABLE_COUNTER    : in  std_logic;  -- Ingresso per abilitare il contatore per la generazione del segnale PWM
-      RESET_RF_COUNTER  : in  std_logic;  -- Ingresso per il reset del contatore dei fronti d'onda
-      CLK               : in  std_logic;  -- Ingresso del segnale di Clock
-      LED               : out std_logic;  -- Uscita del dispositivo
-      RISING_LED        : out std_logic;  -- Uscita di segnalazione dei fronti di salita
-      FALLING_LED       : out std_logic;  -- Uscita di segnalazione dei fronti di discesa
-      RISE_FALL_COUNTER : out std_logic_vector(7 downto 0)  -- Uscita contenente il numero di fronti di salita/discesa rilevati dal detector
+      SWITCH            : in  std_logic;
+      ENABLE_COUNTER    : in  std_logic;
+      RESET_RF_COUNTER  : in  std_logic;
+      CLK               : in  std_logic;
+      LED               : out std_logic;
+      RISING_LED        : out std_logic;
+      FALLING_LED       : out std_logic;
+      RISE_FALL_COUNTER : out std_logic_vector(7 downto 0)
       );
   end component;
 
@@ -509,14 +510,11 @@ package paperoPackage is
       iEN             : in  std_logic;
       iTRIG           : in  std_logic;
       oCNT            : out tControlIntfOut;
-      iMSD_CONFIG     : in  msd_config;
-      --# {{Detector 0|Detector 0}}
-      oFE0            : out tFpga2FeIntf;
-      oADC0           : out tFpga2AdcIntf;
-      --# {{Detector 1|Detector 1}}
-      oFE1            : out tFpga2FeIntf;
-      oADC1           : out tFpga2AdcIntf;
-      --# {{ADCs Inputs|ADCs Inputs}}
+      iASTRA_CONFIG   : in  astraConfig;
+      --# {{ASTRA, AD7276 output|ASTRA, AD7276 output}}
+      oFE             : out tFpga2FeIntf;
+      oADC            : out tFpga2AdcIntf;
+      --# {{AD7276s Inputs|AD7276s Inputs}}
       iMULTI_ADC      : in  tMultiAdc2FpgaIntf;
       --# {{FastDATA Interface|FastDATA Interface}}
       oFASTDATA_DATA  : out std_logic_vector(cREG_WIDTH-1 downto 0);
