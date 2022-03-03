@@ -138,19 +138,19 @@ entity top_paperoAstra is
     oTRIG : out std_logic;
 
     --- HSMC -------------------------------------------------------------------
-    HSMC_SCL        : out    std_logic;
-    HSMC_SDA        : inout  std_logic;
-    HSMC_CLKIN0     : in     std_logic;
-    HSMC_CLKOUT0    : out    std_logic;
+    --HSMC_SCL        : out    std_logic;
+    --HSMC_SDA        : inout  std_logic;
+    --HSMC_CLKIN0     : in     std_logic;
+    --HSMC_CLKOUT0    : out    std_logic;
 
-    oHSMC_CLKOUT_N1 :  out std_logic;
-    oHSMC_CLKOUT_P1 :  out std_logic;
-    oHSMC_RX_C_n : out std_logic_vector(1 downto 0);
-    oHSMC_RX_C_p : out std_logic_vector(1 downto 0);
-    oHSMC_RX_B_n : out std_logic_vector(7 downto 0);
-    oHSMC_RX_B_p : out std_logic_vector(7 downto 0);
-    oHSMC_TX_C_n : out std_logic_vector(4 downto 0);
-    oHSMC_TX_C_p : out std_logic_vector(4 downto 0);
+    --oHSMC_CLKOUT_N1 :  out std_logic;
+    --oHSMC_CLKOUT_P1 :  out std_logic;
+    --oHSMC_RX_C_n : out std_logic_vector(1 downto 0);
+    --oHSMC_RX_C_p : out std_logic_vector(1 downto 0);
+    --oHSMC_RX_B_n : out std_logic_vector(7 downto 0);
+    --oHSMC_RX_B_p : out std_logic_vector(7 downto 0);
+    --oHSMC_TX_C_n : out std_logic_vector(4 downto 0);
+    --oHSMC_TX_C_p : out std_logic_vector(4 downto 0);
 
     oFASTOR_TX_DISABLE : out std_logic;
     oDEBUG_EN :  out std_logic;
@@ -315,17 +315,17 @@ architecture std of top_paperoAstra is
 
 begin
 
-  HSMC_SCL  <= '0';
-  HSMC_SDA  <= '0';
-  HSMC_CLKOUT0  <= '0';
-  oHSMC_CLKOUT_N1 <= '0';
-  oHSMC_CLKOUT_P1 <= '0';
-  oHSMC_RX_C_n <= (others => '0');
-  oHSMC_RX_C_p <= (others => '0');
-  oHSMC_RX_B_n <= (others => '0');
-  oHSMC_RX_B_p <= (others => '0');
-  oHSMC_TX_C_n <= (others => '0');
-  oHSMC_TX_C_p <= (others => '0');
+  --HSMC_SCL  <= '0';
+  --HSMC_SDA  <= '0';
+  --HSMC_CLKOUT0  <= '0';
+  --oHSMC_CLKOUT_N1 <= '0';
+  --oHSMC_CLKOUT_P1 <= '0';
+  --oHSMC_RX_C_n <= (others => '0');
+  --oHSMC_RX_C_p <= (others => '0');
+  --oHSMC_RX_B_n <= (others => '0');
+  --oHSMC_RX_B_p <= (others => '0');
+  --oHSMC_TX_C_n <= (others => '0');
+  --oHSMC_TX_C_p <= (others => '0');
 
   oHK <= (others => '0');
 

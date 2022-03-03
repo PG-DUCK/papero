@@ -17,31 +17,32 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to CLOCK4_50
 # HSMC, HSMC connect to HSMC Default
 #===============================================================================
 #Connector A
-set_location_assignment PIN_AA28 -to HSMC_SCL
-set_location_assignment PIN_AE29 -to HSMC_SDA
-set_location_assignment PIN_J14 -to  HSMC_CLKIN0
-set_location_assignment PIN_AD29 -to HSMC_CLKOUT0
-
-set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_SCL
-set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_SDA
-set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_CLKIN0
-set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_CLKOUT0
+##set_location_assignment PIN_AA28 -to HSMC_SCL
+##set_location_assignment PIN_AE29 -to HSMC_SDA
+##set_location_assignment PIN_J14 -to  HSMC_CLKIN0
+##set_location_assignment PIN_AD29 -to HSMC_CLKOUT0
+##
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_SCL
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_SDA
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_CLKIN0
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_CLKOUT0
 
 
 #Connector B
 set_location_assignment PIN_AB27 -to iMUX_SHIFT_CLK_RET
 set_location_assignment PIN_AA26 -to iSER_SHIFT_CLK_RET
-set_location_assignment PIN_E6 -to   oHSMC_CLKOUT_N1
-set_location_assignment PIN_E7 -to   oHSMC_CLKOUT_P1
+##set_location_assignment PIN_E6 -to   oHSMC_CLKOUT_N1
+##set_location_assignment PIN_E7 -to   oHSMC_CLKOUT_P1
 set_location_assignment PIN_C10 -to  oFASTOR_TX_DISABLE
+###set_location_assignment PIN_F14 -to  oFASTOR_TX_DISABLE #Alternative placement for LVDS issue
 set_location_assignment PIN_C9 -to   oDEBUG_EN
 set_location_assignment PIN_H13 -to  iSER_SEND_RET
 set_location_assignment PIN_H12 -to  iMUX_READRESET_RET
 
 set_instance_assignment -name IO_STANDARD "2.5 V" -to iMUX_SHIFT_CLK_RET
 set_instance_assignment -name IO_STANDARD "2.5 V" -to iSER_SHIFT_CLK_RET
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_CLKOUT_N1
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_CLKOUT_P1
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_CLKOUT_N1
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_CLKOUT_P1
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oFASTOR_TX_DISABLE
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oDEBUG_EN
 set_instance_assignment -name IO_STANDARD "2.5 V" -to iSER_SEND_RET
@@ -61,63 +62,63 @@ set_instance_assignment -name IO_STANDARD "LVDS" -to oFASTCLK
 
 
 #RX_B_N
-set_location_assignment PIN_G11 -to oHSMC_RX_B_n[0]
-set_location_assignment PIN_J12 -to oHSMC_RX_B_n[1]
-set_location_assignment PIN_F10 -to oHSMC_RX_B_n[2]
-set_location_assignment PIN_J9 -to  oHSMC_RX_B_n[3]
-set_location_assignment PIN_K8 -to  oHSMC_RX_B_n[4]
-set_location_assignment PIN_H7 -to  oHSMC_RX_B_n[5]
-set_location_assignment PIN_G8 -to  oHSMC_RX_B_n[6]
-set_location_assignment PIN_F8 -to  oHSMC_RX_B_n[7]
-
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[0]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[1]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[2]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[3]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[4]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[5]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[6]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[7]
+##set_location_assignment PIN_G11 -to oHSMC_RX_B_n[0]
+##set_location_assignment PIN_J12 -to oHSMC_RX_B_n[1]
+##set_location_assignment PIN_F10 -to oHSMC_RX_B_n[2]
+##set_location_assignment PIN_J9 -to  oHSMC_RX_B_n[3]
+##set_location_assignment PIN_K8 -to  oHSMC_RX_B_n[4]
+##set_location_assignment PIN_H7 -to  oHSMC_RX_B_n[5]
+##set_location_assignment PIN_G8 -to  oHSMC_RX_B_n[6]
+##set_location_assignment PIN_F8 -to  oHSMC_RX_B_n[7]
+##
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[0]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[1]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[2]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[3]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[4]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[5]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[6]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_n[7]
 
 #RX_B_P
-set_location_assignment PIN_G12 -to oHSMC_RX_B_p[0]
-set_location_assignment PIN_K12 -to oHSMC_RX_B_p[1]
-set_location_assignment PIN_G10 -to oHSMC_RX_B_p[2]
-set_location_assignment PIN_J10 -to oHSMC_RX_B_p[3]
-set_location_assignment PIN_K7 -to  oHSMC_RX_B_p[4]
-set_location_assignment PIN_J7 -to  oHSMC_RX_B_p[5]
-set_location_assignment PIN_H8 -to  oHSMC_RX_B_p[6]
-set_location_assignment PIN_F9 -to  oHSMC_RX_B_p[7]
-
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[0]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[1]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[2]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[3]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[4]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[5]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[6]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[7]
+##set_location_assignment PIN_G12 -to oHSMC_RX_B_p[0]
+##set_location_assignment PIN_K12 -to oHSMC_RX_B_p[1]
+##set_location_assignment PIN_G10 -to oHSMC_RX_B_p[2]
+##set_location_assignment PIN_J10 -to oHSMC_RX_B_p[3]
+##set_location_assignment PIN_K7 -to  oHSMC_RX_B_p[4]
+##set_location_assignment PIN_J7 -to  oHSMC_RX_B_p[5]
+##set_location_assignment PIN_H8 -to  oHSMC_RX_B_p[6]
+##set_location_assignment PIN_F9 -to  oHSMC_RX_B_p[7]
+##
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[0]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[1]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[2]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[3]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[4]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[5]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[6]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_B_p[7]
 
 #RX_C_N
 #set_location_assignment PIN_E11 -to iFASTOR_A_n
 #set_location_assignment PIN_B5 -to  iSER_A_n
 #set_location_assignment PIN_D9 -to  iFASTOR_B_n
 #set_location_assignment PIN_D12 -to iSER_B_n
-set_location_assignment PIN_D10 -to oHSMC_RX_C_n[0]
+##set_location_assignment PIN_D10 -to oHSMC_RX_C_n[0]
 set_location_assignment PIN_B12 -to iSDATA_B
 set_location_assignment PIN_E13 -to iCS_B_RET
 set_location_assignment PIN_G13 -to iSCLK_B_RET
-set_location_assignment PIN_F14 -to oHSMC_RX_C_n[1]
+##set_location_assignment PIN_F14 -to oHSMC_RX_C_n[1]
 
 #set_instance_assignment -name IO_STANDARD "2.5 V" -to iFASTOR_A_n
 #set_instance_assignment -name IO_STANDARD "2.5 V" -to iSER_A_n
 #set_instance_assignment -name IO_STANDARD "2.5 V" -to iFASTOR_B_n
 #set_instance_assignment -name IO_STANDARD "2.5 V" -to iSER_B_n
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_C_n[0]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_C_n[0]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to iSDATA_B
 set_instance_assignment -name IO_STANDARD "2.5 V" -to iCS_B_RET
 set_instance_assignment -name IO_STANDARD "2.5 V" -to iSCLK_B_RET
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_C_n[1]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_C_n[1]
 
 
 #RX_C_P
@@ -125,32 +126,37 @@ set_location_assignment PIN_F11 -to iFASTOR_A
 set_location_assignment PIN_B6 -to  iSER_A
 set_location_assignment PIN_E9 -to  iFASTOR_B
 set_location_assignment PIN_E12 -to iSER_B
-set_location_assignment PIN_D11 -to oHSMC_RX_C_p[0]
+##set_location_assignment PIN_D11 -to oHSMC_RX_C_p[0]
 set_location_assignment PIN_C13 -to iSDATA_A
 set_location_assignment PIN_F13 -to iCS_A_RET
 set_location_assignment PIN_H14 -to iSCLK_A_RET
-set_location_assignment PIN_F15 -to oHSMC_RX_C_p[1]
+##set_location_assignment PIN_F15 -to oHSMC_RX_C_p[1]
 
 set_instance_assignment -name IO_STANDARD "LVDS" -to iFASTOR_A
 set_instance_assignment -name IO_STANDARD "LVDS" -to iSER_A
 set_instance_assignment -name IO_STANDARD "LVDS" -to iFASTOR_B
 set_instance_assignment -name IO_STANDARD "LVDS" -to iSER_B
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_C_p[0]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_C_p[0]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to iSDATA_A
 set_instance_assignment -name IO_STANDARD "2.5 V" -to iCS_A_RET
 set_instance_assignment -name IO_STANDARD "2.5 V" -to iSCLK_A_RET
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_C_p[1]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_RX_C_p[1]
 
 
 #TX_B_N
 set_location_assignment PIN_A8 -to oSER_SEND
 set_location_assignment PIN_D7 -to oSER_LOAD
+###set_location_assignment PIN_J12 -to oSER_LOAD #Alternative placement for LVDS issue
 set_location_assignment PIN_F6 -to oSER_SHIFT_CLK
 set_location_assignment PIN_C5 -to oPT1
+###set_location_assignment PIN_D10 -to oPT1 #Alternative placement for LVDS issue
 set_location_assignment PIN_C4 -to oPT2
 set_location_assignment PIN_E2 -to oGAIN
+###set_location_assignment PIN_F10 -to oGAIN #Alternative placement for LVDS issue
 set_location_assignment PIN_D4 -to oPOL
+###set_location_assignment PIN_J9 -to oPOL #Alternative placement for LVDS issue
 set_location_assignment PIN_B3 -to oSER_TX_DISABLE
+###set_location_assignment PIN_B7 -to oSER_TX_DISABLE #Alternative placement for LVDS issue
 
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oSER_SEND
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oSER_LOAD
@@ -165,12 +171,18 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to oSER_TX_DISABLE
 #TX_B_P
 set_location_assignment PIN_A9 -to oRESET_DIGITAL
 set_location_assignment PIN_E8 -to oMUX_SHIFT_CLK
+###set_location_assignment PIN_G11 -to oMUX_SHIFT_CLK #Alternative placement for LVDS issue
 set_location_assignment PIN_G7 -to oMUX_READRESET
 set_location_assignment PIN_D6 -to oADC_CONVERT
+###set_location_assignment PIN_A6 -to oADC_CONVERT #Alternative placement for LVDS issue
 set_location_assignment PIN_D5 -to oPRG_BIT_A
+###set_location_assignment PIN_K7 -to oPRG_BIT_A #Alternative placement for LVDS issue
 set_location_assignment PIN_E3 -to oPRG_BIT_B
+###set_location_assignment PIN_J7 -to oPRG_BIT_B #Alternative placement for LVDS issue
 set_location_assignment PIN_E4 -to oPRG_RESET
+###set_location_assignment PIN_H8 -to oPRG_RESET #Alternative placement for LVDS issue
 set_location_assignment PIN_C3 -to oPRG_CLK
+###set_location_assignment PIN_F9 -to oPRG_CLK #Alternative placement for LVDS issue
 
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oRESET_DIGITAL
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oMUX_SHIFT_CLK
@@ -187,21 +199,21 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to oPRG_CLK
 #set_location_assignment PIN_C2 -to  oTP_n
 set_location_assignment PIN_B1 -to  oCS_B
 set_location_assignment PIN_A3 -to  oSCLK_B
-set_location_assignment PIN_A5 -to  oHSMC_TX_C_n[0]
-set_location_assignment PIN_B7 -to  oHSMC_TX_C_n[1]
-set_location_assignment PIN_B8 -to  oHSMC_TX_C_n[2]
-set_location_assignment PIN_B11 -to oHSMC_TX_C_n[3]
-set_location_assignment PIN_A13 -to oHSMC_TX_C_n[4]
+##set_location_assignment PIN_A5 -to  oHSMC_TX_C_n[0]
+##set_location_assignment PIN_B7 -to  oHSMC_TX_C_n[1]
+##set_location_assignment PIN_B8 -to  oHSMC_TX_C_n[2]
+##set_location_assignment PIN_B11 -to oHSMC_TX_C_n[3]
+##set_location_assignment PIN_A13 -to oHSMC_TX_C_n[4]
 
 #set_instance_assignment -name IO_STANDARD "2.5 V" -to oHOLD_n
 #set_instance_assignment -name IO_STANDARD "2.5 V" -to oTP_n
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oCS_B
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oSCLK_B
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[0]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[1]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[2]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[3]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[4]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[0]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[1]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[2]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[3]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_n[4]
 
 
 #TX_C_P
@@ -209,21 +221,46 @@ set_location_assignment PIN_E1 -to  oHOLD
 set_location_assignment PIN_D2 -to  oTP
 set_location_assignment PIN_B2 -to  oCS_A
 set_location_assignment PIN_A4 -to  oSCLK_A
-set_location_assignment PIN_A6 -to  oHSMC_TX_C_p[0]
-set_location_assignment PIN_C7 -to  oHSMC_TX_C_p[1]
-set_location_assignment PIN_C8 -to  oHSMC_TX_C_p[2]
-set_location_assignment PIN_C12 -to oHSMC_TX_C_p[3]
-set_location_assignment PIN_B13 -to oHSMC_TX_C_p[4]
+##set_location_assignment PIN_A6 -to  oHSMC_TX_C_p[0]
+##set_location_assignment PIN_C7 -to  oHSMC_TX_C_p[1]
+##set_location_assignment PIN_C8 -to  oHSMC_TX_C_p[2]
+##set_location_assignment PIN_C12 -to oHSMC_TX_C_p[3]
+##set_location_assignment PIN_B13 -to oHSMC_TX_C_p[4]
 
 set_instance_assignment -name IO_STANDARD "LVDS" -to oHOLD
 set_instance_assignment -name IO_STANDARD "LVDS" -to oTP
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oCS_A
 set_instance_assignment -name IO_STANDARD "2.5 V" -to oSCLK_A
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[0]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[1]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[2]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[3]
-set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[4]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[0]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[1]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[2]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[3]
+##set_instance_assignment -name IO_STANDARD "2.5 V" -to oHSMC_TX_C_p[4]
+
+
+###
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "50 MHz" -to oSCLK_A
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "4 MHz" -to oCS_A
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "50 MHz" -to oSCLK_B
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "4 MHz" -to oCS_B
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "7 MHz" -to oSER_SHIFT_CLK
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "7 MHz" -to oSER_LOAD
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "7 MHz" -to oSER_SEND
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 MHz" -to oADC_CONVERT
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "2 MHz" -to oMUX_READRESET
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "10 MHz" -to oMUX_SHIFT_CLK
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "5 MHz" -to oPRG_CLK
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 MHz" -to oPRG_RESET
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "5 MHz" -to oPRG_BIT_B
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "5 MHz" -to oPRG_BIT_A
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 MHz" -to oRESET_DIGITAL
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 Hz" -to oSER_TX_DISABLE
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 Hz" -to oPOL
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 Hz" -to oGAIN
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 Hz" -to oPT2
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 Hz" -to oPT1
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 Hz" -to oDEBUG_EN
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "1 Hz" -to oFASTOR_TX_DISABLE
 
 
 #===============================================================================
