@@ -36,6 +36,7 @@ ip/soc_system_standard/soc_system.qsys noadd --synthesis=VHDL
 ip/edge_detect/altera_edge_detector.v
 ip/debounce/debounce.v
 ip/altsource_probe/hps_reset.qip
+ip/pll/pll.qip
 
 #Basic functions in the ASTRA submodule
 logic/ASTRAintf/basic_functions/sync_stage.vhd
@@ -55,6 +56,7 @@ logic/ASTRAintf/astraDriver.vhd
 logic/ASTRAintf/detectorReadout.vhd
 logic/ASTRAintf/multiADC_interface.vhd
 logic/ASTRAintf/PRG_driver.vhd
+logic/ASTRAintf/ADC_INT_driver.vhd
 
 #
 logic/DetectorInterface.vhd
