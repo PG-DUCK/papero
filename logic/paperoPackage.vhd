@@ -511,24 +511,30 @@ package paperoPackage is
   --!@copydoc DetectorInterface.vhd
   component DetectorInterface is
     port (
-      iCLK            : in  std_logic;
-      iRST            : in  std_logic;
+      iCLK              : in  std_logic;
+      iRST              : in  std_logic;
       --# {{Controls|Controls}}
-      iEN             : in  std_logic;
-      iTRIG           : in  std_logic;
-      oCNT            : out tControlIntfOut;
-      iASTRA_CONFIG   : in  astraConfig;
+      iEN               : in  std_logic;
+      iTRIG             : in  std_logic;
+      oCNT              : out tControlIntfOut;
+      iASTRA_CONFIG     : in  astraConfig;
+      iADC_INT_EXT_b    : in  std_logic;
       --# {{ASTRA, AD7276 output|ASTRA, AD7276 output}}
-      oPRG            : out tPrgIntf;
-      oFE             : out tFpga2FeIntf;
-      iFE             : in  tFe2FpgaIntf;
-      oADC            : out tFpga2AdcIntf;
+      oPRG              : out tPrgIntf;
+      oFE               : out tFpga2FeIntf;
+      iFE               : in  tFe2FpgaIntf;
+      oADC              : out tFpga2AdcIntf;      
       --# {{AD7276s Inputs|AD7276s Inputs}}
-      iMULTI_ADC      : in  tMultiAdc2FpgaIntf;
+      iMULTI_ADC        : in  tMultiAdc2FpgaIntf;
+      --# {{ASTRA, Internal ADC output|ASTRA, Internal ADC output}}
+      oADC_INT_FAST_CLK : out std_logic;
+      oMULTI_ADC_INT    : out tFpga2AstraAdc;
+      --# {{Internal ADC Inputs|Internal ADC Inputs}}
+      iMULTI_ADC_INT    : in  tMultiAstraAdc2Fpga;
       --# {{FastDATA Interface|FastDATA Interface}}
-      oFASTDATA_DATA  : out std_logic_vector(cREG_WIDTH-1 downto 0);
-      oFASTDATA_WE    : out std_logic;
-      iFASTDATA_AFULL : in  std_logic
+      oFASTDATA_DATA    : out std_logic_vector(cREG_WIDTH-1 downto 0);
+      oFASTDATA_WE      : out std_logic;
+      iFASTDATA_AFULL   : in  std_logic
       );
   end component;
 
