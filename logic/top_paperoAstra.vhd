@@ -312,6 +312,12 @@ architecture std of top_paperoAstra is
   signal sFeI           : tFe2FpgaIntf;
   signal sExtAdcO       : tFpga2AdcIntf;
   signal sExtAdcI       : tMultiAdc2FpgaIntf;
+  
+  --Detector interface (ASTRA Internal ADCs)
+  signal sAdcIntExt_b   : std_logic;
+  signal sAdcIntFastClk : std_logic;
+  signal sMultiAdcIntO  : tFpga2AstraAdc;
+  signal sMultiAdcIntI  : tMultiAstraAdc2Fpga;
 
 begin
 
@@ -336,7 +342,7 @@ begin
   oPRG_CLK   <= sPrg.clk;
 
   --Fast Clock
-  oFASTCLK            <= '0';
+  --oFASTCLK            <= '0';
   --<= iFASTCLK_RET;
 
   --Discriminator OR output
@@ -354,16 +360,16 @@ begin
   sFeI.readRstRet     <= iMUX_READRESET_RET;
 
   --Internal ADC
-  oADC_CONVERT        <= '0';
+  --oADC_CONVERT        <= '0';
 
   --Serializer A and B
-  oRESET_DIGITAL      <= '0';
+  --oRESET_DIGITAL      <= '0';
 
   --<= iSER_A;
   --<= iSER_B;
-  oSER_SEND           <= '0';
-  oSER_LOAD           <= '0';
-  oSER_SHIFT_CLK      <= '0';
+  --oSER_SEND           <= '0';
+  --oSER_LOAD           <= '0';
+  --oSER_SHIFT_CLK      <= '0';
   --<= iSER_SHIFT_CLK_RET;
   --<= iSER_SEND_RET;
 
@@ -772,46 +778,73 @@ begin
       pulse_out => sRegArrayRst
       );
 
-  sRunMode                <= sRegArray(rGOTO_STATE)(4);
-  sDetIntfEn              <= not sRegArray(rUNITS_EN)(1);
-  sDetIntfCfg.prgStart    <= sRegArray(rUNITS_EN)(12);
-  sDetIntfCfg.feClkDuty   <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
-  sDetIntfCfg.feClkDiv    <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.adcClkDuty  <= sRegArray(rADC_CLK_PARAM)(31 downto 16);
-  sDetIntfCfg.adcClkDiv   <= sRegArray(rADC_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.adcFastMode <= sRegArray(rASTRA_PARAM)(24);
-  oFASTOR_TX_DISABLE      <= sRegArray(rASTRA_PARAM)(22);
-  oDEBUG_EN               <= sRegArray(rASTRA_PARAM)(21);
-  oPT1                    <= sRegArray(rASTRA_PARAM)(20);
-  oPT2                    <= sRegArray(rASTRA_PARAM)(19);
-  oGAIN                   <= sRegArray(rASTRA_PARAM)(18);
-  oPOL                    <= sRegArray(rASTRA_PARAM)(17);
-  oSER_TX_DISABLE         <= sRegArray(rASTRA_PARAM)(16);
-  sDetIntfCfg.trg2Hold    <= sRegArray(rASTRA_PARAM)(15 downto 0);
-  sDetIntfCfg.extendBusy  <= sRegArray(rBUSYADC_PARAM)(31 downto 16);
-  sDetIntfCfg.adcDelay    <= sRegArray(rBUSYADC_PARAM)(15 downto 0);
-  sDetIntfCfg.prgClkDuty  <= sRegArray(rPRG_CLK_PARAM)(31 downto 16);
-  sDetIntfCfg.prgClkDiv   <= sRegArray(rPRG_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.chMask      <= sRegArray(rMASK_A) & sRegArray(rMASK_B);
-  sDetIntfCfg.chTpEn      <= sRegArray(rTPEN_A) & sRegArray(rTPEN_B);
-  sDetIntfCfg.chDisc      <= sRegArray(rDISC_A) & sRegArray(rDISC_B);
+  sRunMode                    <= sRegArray(rGOTO_STATE)(4);
+  sDetIntfEn                  <= not sRegArray(rUNITS_EN)(1);
+  sDetIntfCfg.prgStart        <= sRegArray(rUNITS_EN)(12);
+  sDetIntfCfg.feClkDuty       <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.feClkDiv        <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.adcClkDuty      <= sRegArray(rADC_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.adcClkDiv       <= sRegArray(rADC_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.adcIntClkDiv    <= x"0002";
+  sDetIntfCfg.adcIntClkDuty   <= x"0001";
+  sDetIntfCfg.adcIntConvTime  <= x"203A";
+  sAdcIntExt_b                <= '0';                 --!External/Internal ADC select --> 0=EXT, 1=INT
+  oFASTCLK                    <= sAdcIntFastClk;
+                              -- <= sAdcIntFastClk; (side B?)                              
+  oRESET_DIGITAL              <= sMultiAdcIntO.RstDig;
+  oADC_CONVERT                <= sMultiAdcIntO.AdcConv;
+  oSER_SHIFT_CLK              <= sMultiAdcIntO.SerShClk;
+  oSER_LOAD                   <= sMultiAdcIntO.SerLoad;
+  oSER_SEND                   <= sMultiAdcIntO.SerSend;
+  sMultiAdcIntI(0).SerData    <= iSER_A;
+  sMultiAdcIntI(0).ClkRet     <= iFASTCLK_RET;
+  sMultiAdcIntI(0).SerSendRet <= iSER_SEND_RET;
+  sMultiAdcIntI(1).SerData    <= iSER_B;
+  sMultiAdcIntI(1).ClkRet     <= iFASTCLK_RET;
+  sMultiAdcIntI(1).SerSendRet <= iSER_SEND_RET;
+  -- sMultiAdcIntI(0).SerData    <= iSER_A; (side B?)
+  -- sMultiAdcIntI(0).ClkRet     <= iFASTCLK_RET;
+  -- sMultiAdcIntI(0).SerSendRet <= iSER_SEND_RET;
+  -- sMultiAdcIntI(1).SerData    <= iSER_B;
+  -- sMultiAdcIntI(1).ClkRet     <= iFASTCLK_RET;
+  -- sMultiAdcIntI(1).SerSendRet <= iSER_SEND_RET;
+  sDetIntfCfg.adcFastMode     <= sRegArray(rASTRA_PARAM)(24);
+  oFASTOR_TX_DISABLE          <= sRegArray(rASTRA_PARAM)(22);
+  oDEBUG_EN                   <= sRegArray(rASTRA_PARAM)(21);
+  oPT1                        <= sRegArray(rASTRA_PARAM)(20);
+  oPT2                        <= sRegArray(rASTRA_PARAM)(19);
+  oGAIN                       <= sRegArray(rASTRA_PARAM)(18);
+  oPOL                        <= sRegArray(rASTRA_PARAM)(17);
+  oSER_TX_DISABLE             <= sRegArray(rASTRA_PARAM)(16);
+  sDetIntfCfg.trg2Hold        <= sRegArray(rASTRA_PARAM)(15 downto 0);
+  sDetIntfCfg.extendBusy      <= sRegArray(rBUSYADC_PARAM)(31 downto 16);
+  sDetIntfCfg.adcDelay        <= sRegArray(rBUSYADC_PARAM)(15 downto 0);
+  sDetIntfCfg.prgClkDuty      <= sRegArray(rPRG_CLK_PARAM)(31 downto 16);
+  sDetIntfCfg.prgClkDiv       <= sRegArray(rPRG_CLK_PARAM)(15 downto 0);
+  sDetIntfCfg.chMask          <= sRegArray(rMASK_A) & sRegArray(rMASK_B);
+  sDetIntfCfg.chTpEn          <= sRegArray(rTPEN_A) & sRegArray(rTPEN_B);
+  sDetIntfCfg.chDisc          <= sRegArray(rDISC_A) & sRegArray(rDISC_B);
   --!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
   AstraInterface : DetectorInterface
     port map (
-      iCLK            => sClk,
-      iRST            => sDetIntfRst, --See the instance description
-      iEN             => sDetIntfEn,
-      iTRIG           => sMainTrig,
-      oCNT            => sDetIntfCntOut,
-      iASTRA_CONFIG   => sDetIntfCfg,
-      oPRG            => sPrg,
-      oFE             => sFeO,
-      iFE             => sFeI,
-      oADC            => sExtAdcO,
-      iMULTI_ADC      => sExtAdcI,
-      oFASTDATA_DATA  => sDetIntfQ,
-      oFASTDATA_WE    => sDetIntfWe,
-      iFASTDATA_AFULL => sDetIntfAfull
+      iCLK              => sClk,
+      iRST              => sDetIntfRst, --See the instance description
+      iEN               => sDetIntfEn,
+      iTRIG             => sMainTrig,
+      oCNT              => sDetIntfCntOut,
+      iASTRA_CONFIG     => sDetIntfCfg,
+      iADC_INT_EXT_b    => sAdcIntExt_b,
+      oPRG              => sPrg,
+      oFE               => sFeO,
+      iFE               => sFeI,
+      oADC              => sExtAdcO,
+      iMULTI_ADC        => sExtAdcI,
+      oADC_INT_FAST_CLK => sAdcIntFastClk,
+      oMULTI_ADC_INT    => sMultiAdcIntO,
+      iMULTI_ADC_INT    => sMultiAdcIntI,
+      oFASTDATA_DATA    => sDetIntfQ,
+      oFASTDATA_WE      => sDetIntfWe,
+      iFASTDATA_AFULL   => sDetIntfAfull
       );
 
 

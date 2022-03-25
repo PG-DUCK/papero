@@ -16,24 +16,30 @@ use work.ASTRApackage.all;
 --!@copydoc DetectorInterface.vhd
 entity DetectorInterface is
   port (
-    iCLK            : in  std_logic;    --!Main clock
-    iRST            : in  std_logic;    --!Main reset
+    iCLK              : in  std_logic;    --!Main clock
+    iRST              : in  std_logic;    --!Main reset
     -- Controls
-    iEN             : in  std_logic;    --!Enable
-    iTRIG           : in  std_logic;    --!Trigger
-    oCNT            : out tControlIntfOut;     --!Control signals in output
-    iASTRA_CONFIG   : in  astraConfig;  --!Configuration from the control registers
+    iEN               : in  std_logic;    --!Enable
+    iTRIG             : in  std_logic;    --!Trigger
+    oCNT              : out tControlIntfOut;     --!Control signals in output
+    iASTRA_CONFIG     : in  astraConfig;         --!Configuration from the control registers
+    iADC_INT_EXT_b    : in  std_logic;           --!External/Internal ADC select --> 0=EXT, 1=INT
     -- ASTRA and AD7276 output ports
-    oPRG            : out tPrgIntf;            --!Output signals to ASTRA PRG
-    oFE             : out tFpga2FeIntf;        --!Output signals to ASTRA
-    iFE             : in  tFe2FpgaIntf;        --!Input signals from ASTRA
-    oADC            : out tFpga2AdcIntf;       --!Output signals to AD7276
+    oPRG              : out tPrgIntf;            --!Output signals to ASTRA PRG
+    oFE               : out tFpga2FeIntf;        --!Output signals to ASTRA
+    iFE               : in  tFe2FpgaIntf;        --!Input signals from ASTRA
+    oADC              : out tFpga2AdcIntf;       --!Output signals to AD7276
     -- AD7276 Inputs
-    iMULTI_ADC      : in  tMultiAdc2FpgaIntf;  --!Input signals from multiple AD7276s
+    iMULTI_ADC        : in  tMultiAdc2FpgaIntf;  --!Input signals from multiple AD7276s
+    -- ASTRA Internal ADCs output ports
+    oADC_INT_FAST_CLK : out std_logic;            --!Input of ADC fast clock (25-100 MHz)
+    oMULTI_ADC_INT    : out tFpga2AstraAdc;       --!Signals from the FPGA to the ADCs
+    -- ASTRA Internal ADCs Inputs
+    iMULTI_ADC_INT    : in  tMultiAstraAdc2Fpga;  --!Signals from the ADCs to the FPGA
     -- FastDATA Interface
-    oFASTDATA_DATA  : out std_logic_vector(cREG_WIDTH-1 downto 0);
-    oFASTDATA_WE    : out std_logic;
-    iFASTDATA_AFULL : in  std_logic
+    oFASTDATA_DATA    : out std_logic_vector(cREG_WIDTH-1 downto 0);
+    oFASTDATA_WE      : out std_logic;
+    iFASTDATA_AFULL   : in  std_logic
     );
 end DetectorInterface;
 
@@ -78,25 +84,34 @@ begin
     pACTIVE_EDGE => "R"    --!"F": falling, "R": rising
   )
   port map (
-    iCLK          => iCLK,            --!Main clock
-    iRST          => iRST,            --!Main reset
-    -- Controls
-    oCNT          => sCntOut,         --!Control signals in output
-    iCNT          => sCntIn,          --!Control signals in input
-    iFE_CLK_DIV   => iASTRA_CONFIG.feClkDiv,    --!FE SlowClock divider
-    iFE_CLK_DUTY  => iASTRA_CONFIG.feClkDuty,   --!FE SlowClock duty cycle
-    iADC_CLK_DIV  => iASTRA_CONFIG.adcClkDiv,   --!ADC SlowClock divider
-    iADC_CLK_DUTY => iASTRA_CONFIG.adcClkDuty,  --!ADC SlowClock divider
-    iADC_DELAY    => iASTRA_CONFIG.adcDelay,
+    iCLK                => iCLK,            --!Main clock
+    iRST                => iRST,            --!Main reset
+    -- controls
+    oCNT                => sCntOut,         --!Control signals in output
+    iCNT                => sCntIn,          --!Control signals in input
+    iADC_INT_EXT_b      => iADC_INT_EXT_b,            --!External/Internal ADC select --> 0=EXT, 1=INT
+    -- parameters
+    iFE_CLK_DIV         => iASTRA_CONFIG.feClkDiv,    --!FE SlowClock divider
+    iFE_CLK_DUTY        => iASTRA_CONFIG.feClkDuty,   --!FE SlowClock duty cycle
+    iADC_CLK_DIV        => iASTRA_CONFIG.adcClkDiv,   --!ADC SlowClock divider
+    iADC_CLK_DUTY       => iASTRA_CONFIG.adcClkDuty,  --!ADC SlowClock divider
+    iADC_DELAY          => iASTRA_CONFIG.adcDelay,    --!Delay from FEclk to ADC start
+    iADC_INT_CLK_DIV 	  => iASTRA_CONFIG.adcIntClkDiv,    --!Fast clock duration (in number of iCLK cycles) to drive ADC counter and serializer
+    iADC_INT_CLK_DUTY   => iASTRA_CONFIG.adcIntClkDuty,   --!Duty cycle fast clock duration (in number of iCLK cycles)
+    iADC_INT_CONV_TIME  => iASTRA_CONFIG.adcIntConvTime,  --!Conversion time (in number of iCLK cycles)
     -- FE interface
-    oFE           => oFE,            --!Output signals to ASTRA
-    iFE           => iFE,            --!Return signals from ASTRA
+    oFE                 => oFE,            --!Output signals to ASTRA
+    iFE                 => iFE,            --!Return signals from ASTRA
     -- ADC interface
-    oADC          => oADC,
-    iMULTI_ADC    => iMULTI_ADC,      --!Input signals from multiple AD7276
+    oADC                => oADC,            --!Signals from FPGA to ext-ADCs
+    iMULTI_ADC          => iMULTI_ADC,      --!Input signals from multiple AD7276
+    -- Internal ADCs interface
+    oADC_INT_FAST_CLK   => oADC_INT_FAST_CLK, --!Input of ADC fast clock (25-100 MHz)
+    oMULTI_ADC_INT      => oMULTI_ADC_INT,    --!Signals from the FPGA to the ADCs
+    iMULTI_ADC_INT      => iMULTI_ADC_INT,    --!Signals from the ADCs to the FPGA
     -- FIFO output interface
-    oMULTI_FIFO   => sMultiFifoOut,   --!Output interfaces of MULTI_FIFOs
-    iMULTI_FIFO   => sMultiFifoIn     --!Input interface of MULTI_FIFOs
+    oMULTI_FIFO         => sMultiFifoOut,   --!Output interfaces of MULTI_FIFOs
+    iMULTI_FIFO         => sMultiFifoIn     --!Input interface of MULTI_FIFOs
   );
 
   --!@brief ASTRA configuration interface
