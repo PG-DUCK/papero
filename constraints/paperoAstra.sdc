@@ -10,6 +10,7 @@ create_clock -period "50.000000 MHz" [get_ports CLOCK2_50]
 create_clock -period "50.000000 MHz" [get_ports CLOCK3_50]
 create_clock -period "50.000000 MHz" [get_ports CLOCK4_50]
 create_clock -period "50.000000 MHz" [get_ports CLOCK_50]
+create_clock -period "100.000000 MHz" [get_pins SoC_inst|hps_0|fpga_interfaces|clocks_resets|h2f_user1_clk]
 
 # for enhancing USB BlasterII to be reliable, 25MHz
 create_clock -name {altera_reserved_tck} -period 40 {altera_reserved_tck}
@@ -52,6 +53,7 @@ derive_clock_uncertainty
 #**************************************************************
 # Set Clock Groups
 #**************************************************************
+#####set_clock_groups -asynchronous -group {CLOCK_50} -group {CLOCK2_50} -group {CLOCK3_50} -group {CLOCK4_50} -group {h2f_user0_clk} -group {h2f_user1_clk}
 
 
 
@@ -62,6 +64,11 @@ derive_clock_uncertainty
 set_false_path -from [get_ports {KEY*}] -to *
 set_false_path -from [get_ports {SW*} ] -to *
 set_false_path -from * -to [get_ports {LEDR*}]
+set_false_path -from [get_keepers {sRegAddrSyn*}] -to [get_keepers {sRegContentInt*}]
+set_false_path -from [get_keepers {*sFpgaReg*}] -to [get_keepers {sRegContentInt*}]
+set_false_path -from [get_keepers {*sHpsReg*}] -to [get_keepers {sRegContentInt*}]
+set_false_path -from [get_keepers {*data_out*}] -to [get_keepers {sRegAddrInt*}]
+
 
 
 #**************************************************************
