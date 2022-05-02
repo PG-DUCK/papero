@@ -318,7 +318,13 @@ architecture std of top_paperoAstra is
   signal sAdcIntFastClk : std_logic;
   signal sMultiAdcIntO  : tFpga2AstraAdc;
   signal sMultiAdcIntI  : tMultiAstraAdc2Fpga;
-
+  
+  --others
+  signal sCounterA                : std_logic_vector(25 downto 0) := (others => '0');
+  signal sCounterB                : std_logic_vector(25 downto 0) := (others => '0');
+  signal sLed                     : std_logic_vector(9 downto 0);
+  
+  
 begin
 
   --HSMC_SCL  <= '0';
@@ -884,5 +890,42 @@ begin
       oEXT_TRIG_RED <= iEXT_TRIG_RED;
     end if;
   end process IOFFD;
+  
+  
+  --!Check clock
+  --!Blinking LED '7' <--> sClk <--> 
+  LEDR(7) <= sLed(7);
+  blink_proc_7 : process (sClk)
+  begin
+    if (rising_edge(sClk)) then
+      if (sDetIntfRst = '1') then
+        sCounterB   <= (others => '0');
+        sLed(7)     <= '0';
+      elsif (sCounterB = 25000000) then  --! 2Hz
+        sCounterB   <= (others => '0');
+        sLed(7)     <= not sLed(7);
+      else
+        sCounterB   <= sCounterB + '1';
+      end if;
+    end if;
+  end process;
+  
+  --!Blinking LED '9' <--> fpga_clk_50
+  LEDR(9) <= sLed(9);
+  blink_proc_9 : process (fpga_clk_50)
+  begin
+    if (rising_edge(fpga_clk_50)) then
+      if (sDetIntfRst = '1') then
+        sCounterA   <= (others => '0');
+        sLed(9)     <= '0';
+      elsif (sCounterA = 25000000) then  --! 2Hz
+        sCounterA   <= (others => '0');
+        sLed(9)     <= not sLed(9);
+      else
+        sCounterA   <= sCounterA + '1';
+      end if;
+    end if;
+  end process;
+
 
 end architecture;
