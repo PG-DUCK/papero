@@ -901,7 +901,7 @@ begin
       if (sDetIntfRst = '1') then
         sCounterB   <= (others => '0');
         sLed(7)     <= '0';
-      elsif (sCounterB = 25000000) then  --! 2Hz
+      elsif (sCounterB = 25000000) then  --! 1 Hz
         sCounterB   <= (others => '0');
         sLed(7)     <= not sLed(7);
       else
@@ -918,7 +918,7 @@ begin
       if (sDetIntfRst = '1') then
         sCounterA   <= (others => '0');
         sLed(9)     <= '0';
-      elsif (sCounterA = 25000000) then  --! 2Hz
+      elsif (sCounterA = 25000000) then  --! 1 Hz
         sCounterA   <= (others => '0');
         sLed(9)     <= not sLed(9);
       else
