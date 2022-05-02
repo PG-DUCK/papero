@@ -506,8 +506,8 @@ begin
     hps_0_f2h_debug_reset_req_reset_n     => hps_debug_rst_n,
     hps_0_f2h_stm_hw_events_stm_hwevents  => stm_hw_events,
     hps_0_f2h_warm_reset_req_reset_n      => hps_warm_rst_n,
-    hps_0_h2f_user0_clock_clk             => h2f_clk_96MHz,
-    hps_0_h2f_user1_clock_clk             => h2f_clk_50MHz,
+    hps_0_h2f_user0_clock_clk             => h2f_clk_50MHz,
+    hps_0_h2f_user1_clock_clk             => h2f_clk_96MHz,
     --
     regcontent_pio_export                 => sRegContentPio,
     regaddr_pio_export                    => sRegAddrPio,
