@@ -59,9 +59,10 @@ With these registers, the HPS configures all the modules of the FPGA. HPS have r
 |    | [31:16]: Duty cycle (in system-clock cycles) | 0001 |
 |    | [15:0]: Period (in system-clock cycles) | 0002 |
 | 7  | MSD-specific parameters | 01070145 |
-|    | 24: AD7276 Fast Mode support | 1 |
-|    | 19: IDE1140 Test port | 0 |
-|    | [18:16]: IDE1140 G ports. Actually unconnected in the ADCBoard. | 7 |
+|    | 31: AD7276 Fast Mode support | 1 |
+|    | 30: Internal calibration trigger (only in FOOT) | 0 |
+|    | 24: IDE1140 Test port | 0 |
+|    | [23:16]: IDE1140 channel that receives Cal pulse | [0-7F] |
 |    | [15:0]: Trigger-2-Hold Delay (in clock cycles) | 0145 |
 | 8  | Busy extension and delay of ADC start of conversion | 0028001D |
 |    | [31:16]: Extend busy duration at the end of each event (in 320 ns steps) | 0028 |
@@ -69,7 +70,7 @@ With these registers, the HPS configures all the modules of the FPGA. HPS have r
 
 
 ## Status Registers
-The FPGA writes its status in these registers. FPGA has read/write access, while HPS read-only. 
+The FPGA writes its status in these registers. FPGA has read/write access, while HPS read-only.
 
 |  #  | Content | Default (hex) |
 | --- | ------- | ------------- |

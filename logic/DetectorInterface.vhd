@@ -55,7 +55,7 @@ architecture std of DetectorInterface is
   signal sExtendBusy     : std_logic;
 
   --MSD Conifigurations
-  signal sHpCfg : std_logic_vector (3 downto 0);
+  signal sHpCfg : std_logic_vector (11 downto 0);
   signal sAdcFast : std_logic;
 
 begin
@@ -70,8 +70,9 @@ begin
   oCNT.reset <= sCntOut.reset;
   oCNT.compl <= sCntOut.compl;
 
-  sHpCfg <= iMSD_CONFIG.cfgPlane(3 downto 0);
-  sAdcFast <= iMSD_CONFIG.cfgPlane(8);
+  sAdcFast   <= iMSD_CONFIG.cfgPlane(15);
+  --sCalTrigEn <= iMSD_CONFIG.cfgPlane(14); --Used only in FOOT
+  sHpCfg     <= iMSD_CONFIG.cfgPlane(11 downto 0);
 
   --!@brief Delay the external trigger before the FE start
   TRIG_DELAY : delay_timer
