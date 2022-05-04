@@ -893,6 +893,23 @@ begin
   
   
   --!Check clock
+  --!Blinking LED '9' <--> fpga_clk_50
+  LEDR(9) <= sLed(9);
+  blink_proc_9 : process (fpga_clk_50)
+  begin
+    if (rising_edge(fpga_clk_50)) then
+      if (sDetIntfRst = '1') then
+        sCounterA   <= (others => '0');
+        sLed(9)     <= '0';
+      elsif (sCounterA = 25000000) then  --! 1 Hz
+        sCounterA   <= (others => '0');
+        sLed(9)     <= not sLed(9);
+      else
+        sCounterA   <= sCounterA + '1';
+      end if;
+    end if;
+  end process;
+  
   --!Blinking LED '7' <--> sClk <--> 
   LEDR(7) <= sLed(7);
   blink_proc_7 : process (sClk)
@@ -910,19 +927,15 @@ begin
     end if;
   end process;
   
-  --!Blinking LED '9' <--> fpga_clk_50
-  LEDR(9) <= sLed(9);
-  blink_proc_9 : process (fpga_clk_50)
+  --!Blinking LED '5' <--> oBUSY
+  LEDR(5) <= sLed(5);
+  blink_proc_5 : process (sClk)
   begin
-    if (rising_edge(fpga_clk_50)) then
+    if (rising_edge(sClk)) then
       if (sDetIntfRst = '1') then
-        sCounterA   <= (others => '0');
-        sLed(9)     <= '0';
-      elsif (sCounterA = 25000000) then  --! 1 Hz
-        sCounterA   <= (others => '0');
-        sLed(9)     <= not sLed(9);
-      else
-        sCounterA   <= sCounterA + '1';
+        sLed(5)     <= '0';
+      elsif (sMainTrig = '1') then  --! 500 mHz
+        sLed(5)     <= not sLed(5);
       end if;
     end if;
   end process;
