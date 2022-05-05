@@ -795,25 +795,18 @@ begin
   sDetIntfCfg.adcIntClkDuty   <= x"0001";
   sDetIntfCfg.adcIntConvTime  <= x"203A";
   sAdcIntExt_b                <= '0';                 --!External/Internal ADC select --> 0=EXT, 1=INT
-  oFASTCLK                    <= sAdcIntFastClk;
-                              -- <= sAdcIntFastClk; (side B?)                              
+  oFASTCLK                    <= sAdcIntFastClk;                           
   oRESET_DIGITAL              <= sMultiAdcIntO.RstDig;
   oADC_CONVERT                <= sMultiAdcIntO.AdcConv;
   oSER_SHIFT_CLK              <= sMultiAdcIntO.SerShClk;
   oSER_LOAD                   <= sMultiAdcIntO.SerLoad;
   oSER_SEND                   <= sMultiAdcIntO.SerSend;
-  sMultiAdcIntI(0).SerData    <= iSER_A;
-  sMultiAdcIntI(0).ClkRet     <= iFASTCLK_RET;
-  sMultiAdcIntI(0).SerSendRet <= iSER_SEND_RET;
-  sMultiAdcIntI(1).SerData    <= iSER_B;
-  sMultiAdcIntI(1).ClkRet     <= iFASTCLK_RET;
-  sMultiAdcIntI(1).SerSendRet <= iSER_SEND_RET;
-  -- sMultiAdcIntI(0).SerData    <= iSER_A; (side B?)
-  -- sMultiAdcIntI(0).ClkRet     <= iFASTCLK_RET;
-  -- sMultiAdcIntI(0).SerSendRet <= iSER_SEND_RET;
-  -- sMultiAdcIntI(1).SerData    <= iSER_B;
-  -- sMultiAdcIntI(1).ClkRet     <= iFASTCLK_RET;
-  -- sMultiAdcIntI(1).SerSendRet <= iSER_SEND_RET;
+  sMultiAdcIntI(0).SerData    <= '1';   --iSER_A;
+    --sMultiAdcIntI(0).ClkRet     <= iFASTCLK_RET;
+    --sMultiAdcIntI(0).SerSendRet <= iSER_SEND_RET;
+  sMultiAdcIntI(1).SerData    <= '1';   --iSER_B;
+    --sMultiAdcIntI(1).ClkRet     <= iFASTCLK_RET;
+    --sMultiAdcIntI(1).SerSendRet <= iSER_SEND_RET;
   sDetIntfCfg.adcFastMode     <= sRegArray(rASTRA_PARAM)(24);
   oFASTOR_TX_DISABLE          <= sRegArray(rASTRA_PARAM)(22);
   oDEBUG_EN                   <= sRegArray(rASTRA_PARAM)(21);
@@ -891,8 +884,52 @@ begin
     end if;
   end process IOFFD;
   
+  iFASTCLK_RET_A : sync_stage
+    generic map (
+      pSTAGES => 2
+      )
+    port map (
+      iCLK => sClk,
+      iRST => '0',
+      iD   => sAdcIntFastClk,
+      oQ   => sMultiAdcIntI(0).ClkRet
+      );
   
-  --!Check clock
+  iFASTCLK_RET_B : sync_stage
+    generic map (
+      pSTAGES => 2
+      )
+    port map (
+      iCLK => sClk,
+      iRST => '0',
+      iD   => sAdcIntFastClk,
+      oQ   => sMultiAdcIntI(1).ClkRet
+      );
+      
+  iSER_SEND_RET_A : sync_stage
+    generic map (
+      pSTAGES => 2
+      )
+    port map (
+      iCLK => sClk,
+      iRST => '0',
+      iD   => sMultiAdcIntO.SerSend,
+      oQ   => sMultiAdcIntI(0).SerSendRet
+      );
+      
+  iSER_SEND_RET_B : sync_stage
+    generic map (
+      pSTAGES => 2
+      )
+    port map (
+      iCLK => sClk,
+      iRST => '0',
+      iD   => sMultiAdcIntO.SerSend,
+      oQ   => sMultiAdcIntI(1).SerSendRet
+      );
+  
+  
+  ------------------Signal Check------------------
   --!Blinking LED '9' <--> fpga_clk_50
   LEDR(9) <= sLed(9);
   blink_proc_9 : process (fpga_clk_50)
