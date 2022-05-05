@@ -794,7 +794,7 @@ begin
   sDetIntfCfg.adcIntClkDiv    <= x"0002";
   sDetIntfCfg.adcIntClkDuty   <= x"0001";
   sDetIntfCfg.adcIntConvTime  <= x"203A";
-  sAdcIntExt_b                <= '0';                 --!External/Internal ADC select --> 0=EXT, 1=INT
+  sAdcIntExt_b                <= '1';                 --!External/Internal ADC select --> 0=EXT, 1=INT
   oFASTCLK                    <= sAdcIntFastClk;                           
   oRESET_DIGITAL              <= sMultiAdcIntO.RstDig;
   oADC_CONVERT                <= sMultiAdcIntO.AdcConv;
