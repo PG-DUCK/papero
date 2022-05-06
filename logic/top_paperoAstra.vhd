@@ -338,8 +338,30 @@ begin
   --oHSMC_RX_B_p <= (others => '0');
   --oHSMC_TX_C_n <= (others => '0');
   --oHSMC_TX_C_p <= (others => '0');
-
-  oHK <= (others => '0');
+  
+  --!PIN test
+  --!Main Signals
+  oHK(0) <= sMainTrig;  --General Trigger <--> PIN_AH2
+  oHK(1) <= sMainBusy;  --General Busy    <--> PIN_AH3
+  --!PRG
+  oHK(2) <= sPrg.clk;   --PRG Clock           <--> PIN_AH4
+  oHK(3) <= sPrg.rst;   --PRG Reset           <--> PIN_AG1
+  oHK(4) <= sPrg.bitA;  --Local config side A <--> PIN_AG2
+  oHK(5) <= sPrg.bitB;  --Local config side B <--> PIN_AG3
+  --!Analog Readout
+  oHK(6) <= sFeO.hold_b;    --Hold            <--> PIN_AG5
+  oHK(7) <= sFeO.shiftClk;  --MUX shift clock <--> PIN_AG6
+  oHK(8) <= sFeO.readRst;   --MUX read reset  <--> PIN_AG7
+  oHK(9) <= sExtAdcO.SClk;  --Sampling        <--> PIN_AG8
+  oHK(10) <= sExtAdcO.Cs;    --Chip Select    <--> PIN_AF4
+  --!Digital Readout
+  oHK(11) <= sAdcIntFastClk;         --Fast clock                    <--> PIN_AF5
+  oHK(12) <= sMultiAdcIntO.RstDig;   --Internal ADC Reset            <--> PIN_AF6
+  oHK(13) <= sMultiAdcIntO.AdcConv;  --Internal ADC StartConversion  <--> PIN_AF8
+  oHK(14) <= sMultiAdcIntO.SerShClk; --Digital channel Shift Clock   <--> PIN_AF9
+  oHK(15) <= sMultiAdcIntO.SerLoad;  --Serializer Load               <--> PIN_AF10
+  oHK(16) <= sMultiAdcIntO.SerSend;  --Serializer Send               <--> PIN_AE7
+  oHK(22 downto 17) <= (others => '0'); --PIN_AD10, PIN_AD9, PIN_AD7, PIN_AE12, PIN_AE11, PIN_AE9
 
   --Local configurations
   oPRG_BIT_A <= sPrg.bitA;
@@ -884,6 +906,7 @@ begin
     end if;
   end process IOFFD;
   
+  --!Return from ASTRA
   iFASTCLK_RET_A : sync_stage
     generic map (
       pSTAGES => 2
