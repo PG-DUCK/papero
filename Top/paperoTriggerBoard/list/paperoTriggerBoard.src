@@ -1,0 +1,53 @@
+#Top file: Hog searches for the top file with name format top_<project>.vhd
+logic/top_paperoTriggerBoard.vhd
+
+#Packages
+logic/intel_package.vhd
+logic/paperoPackage.vhd 08
+logic/msdintf/basic_functions/basic_package.vhd
+logic/msdintf/FOOTpackage.vhd
+
+#Project-specific files
+logic/registerArray.vhd 08
+logic/Config_Receiver.vhd
+logic/hkReader.vhd
+logic/HPS_intf.vhd
+logic/CRC32.vhd
+logic/Test_Unit.vhd
+logic/FastData_Transmitter.vhd
+logic/trigBusyLogic.vhd
+logic/TdaqModule.vhd
+logic/priorityEncoder.vhd
+
+#Basic functions_md
+logic/edge_detector_md.vhd
+logic/Key_Pulse_Gen.vhd
+logic/HighHold.vhd
+logic/WR_Timer.vhd
+logic/FFD.vhd
+logic/PRBS8.vhd
+logic/PRBS32.vhd
+logic/Variable_PWM_FSM.vhd
+
+#Qsys IPs: regenerate the IP for each new build
+#Add the qip if you want to generate it only once
+ip/soc_system/soc_system.qsys noadd --synthesis=VHDL
+
+#Other IPs
+ip/edge_detect/altera_edge_detector.v
+ip/debounce/debounce.v
+ip/altsource_probe/hps_reset.qip
+
+#Basic functions in the msdintf submodule
+logic/msdintf/basic_functions/sync_stage.vhd
+logic/msdintf/basic_functions/sync_edge.vhd
+logic/msdintf/basic_functions/shift_register.vhd
+logic/msdintf/basic_functions/pulse_generator.vhd
+logic/msdintf/basic_functions/parametric_fifo_synch.vhd
+logic/msdintf/basic_functions/parametric_fifo_dp.vhd
+logic/msdintf/basic_functions/edge_detector.vhd
+logic/msdintf/basic_functions/delay_timer.vhd
+logic/msdintf/basic_functions/counter.vhd
+logic/msdintf/basic_functions/clock_divider.vhd
+logic/msdintf/basic_functions/clock_divider_2.vhd
+
