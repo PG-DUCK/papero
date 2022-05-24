@@ -21,6 +21,7 @@ entity FastData_Transmitter is
     -- Enable
     iEN          : in  std_logic;  -- Abilitazione del modulo FastData_Transmitter
     -- Settings Packet
+    oMETADATA_RD : out std_logic; -- Read for the metadata fifos
     iMETADATA    : in  tF2hMetadata;    --Packet header information
     -- Fifo Management
     iFIFO_DATA   : in  std_logic_vector(31 downto 0);  -- "Data_Output" della FIFO a monte del FastData_Transmitter
@@ -106,23 +107,26 @@ begin
         sFsmError      <= '0';
         sCRC32_rst     <= '1';
         sCRC32_en      <= '0';
+        oMETADATA_RD   <= '0';
         sPS            <= IDLE;
 
       elsif (iEN = '1') then
         -- Valori di default che verranno sovrascritti, se necessario
-        sFIFO_RE   <= '0';
-        sFIFO_DATA <= (others => '0');
-        sFIFO_WE   <= '0';
-        sBusy      <= '1';
-        sCRC32_rst <= '0';
-        sCRC32_en  <= '0';
+        sFIFO_RE      <= '0';
+        sFIFO_DATA    <= (others => '0');
+        sFIFO_WE      <= '0';
+        sBusy         <= '1';
+        sCRC32_rst    <= '0';
+        sCRC32_en     <= '0';
+        oMETADATA_RD  <= '0';
         case (sPS) is
                                 -- Stato di IDLE. Il Trasmettitore si mette in attesa che la FIFO a monte abbia almeno una word da inviare e quella a valle disponga di almeno 4 posizioni libere
           when IDLE =>
             sBusy      <= '0';  -- Questo è l'unico stato in cui il trasmettitore si può considerare non impegnato in un trasferimento
             sCRC32_rst <= '1';
             if (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0') then
-              sPS <= SOP;
+              sPS            <= SOP;
+              oMETADATA_RD   <= '1';
             else
               sPS <= IDLE;
             end if;
@@ -290,11 +294,12 @@ begin
         end case;
       else
         -- Valori di default nel caso in cui il FastData_Transmitter venisse disabilitato
-        sBusy      <= '1';
-        sFIFO_RE   <= '0';
-        sFIFO_WE   <= '0';
-        sCRC32_rst <= '0';
-        sCRC32_en  <= '0';
+        sBusy         <= '1';
+        sFIFO_RE      <= '0';
+        sFIFO_WE      <= '0';
+        sCRC32_rst    <= '0';
+        sCRC32_en     <= '0';
+        oMETADATA_RD  <= '0';
         case (sPS) is
                                         -- Stato di PAYLOAD. Inoltro delle parole di payload dalla FIFO a monte a quella a valle rispetto al FastData_Transmitter
           when PAYLOAD =>

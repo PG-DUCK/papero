@@ -25,6 +25,7 @@ entity HPS_intf is
     iHK_RDR_INT_START   : in  std_logic;   --!Internal start of Config_Receiver
     --F2H Fast
     iF2HFAST_CNT        : in  tControlIn;  --!FastTX Control
+    oF2HFAST_MD_RD      : out std_logic;   --!Read for METADATA FIFO
     iF2HFAST_METADATA   : in  tF2hMetadata;  --!Packet header information
     oF2HFAST_BUSY       : out std_logic;   --!FastTX Busy
     oF2HFAST_WARNING    : out std_logic;   --!FastTX Errors
@@ -101,6 +102,7 @@ begin
       -- Enable
       iEN          => iF2HFAST_CNT.en,
       -- Settings Packet
+      oMETADATA_RD => oF2HFAST_MD_RD,
       iMETADATA    => iF2HFAST_METADATA,
       -- Fifo Management
       iFIFO_DATA   => iFDI_FIFO.q,
