@@ -290,6 +290,7 @@ begin
         end case;
       else
         -- Valori di default nel caso in cui il FastData_Transmitter venisse disabilitato
+        sBusy      <= '1';
         sFIFO_RE   <= '0';
         sFIFO_WE   <= '0';
         sCRC32_rst <= '0';

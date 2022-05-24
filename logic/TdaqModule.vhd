@@ -200,7 +200,7 @@ begin
       pDEPTH       => pFDI_DEPTH,
       pUSEDW_WIDTH => ceil_log2(pFDI_DEPTH),
       pAEMPTY_VAL  => 2,
-      pAFULL_VAL   => pFDI_DEPTH-10,
+      pAFULL_VAL   => pFDI_DEPTH-640-3,
       pSHOW_AHEAD  => "OFF"
       )
     port map(

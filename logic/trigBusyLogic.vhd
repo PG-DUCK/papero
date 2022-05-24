@@ -83,7 +83,7 @@ begin
              cTRG_CALIB_EXT when (sIntTrigEn = '0' and sPhysCalibn = '1') else
              cTRG_PHYS_EXT;--  when (sIntTrigEn = '0' and sPhysCalibn = '0');
 
-  sBusy <= unary_and(iBUSIES_AND) or unary_or(iBUSIES_OR);
+  sBusy <= unary_and(iBUSIES_AND) or unary_or(iBUSIES_OR) or iRST;
   -----------------------------------------------------------------------------
 
   --!@brief Synch the trigger to the local clock domain and take the rising edge
