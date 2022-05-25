@@ -555,7 +555,7 @@ begin
   
   -- GPIO connections ----------------------------------------------------------
   oHK           <= (others => '0');
-  oMUX_SEL      <= '0'; --clock, reset and trigger from ctx
+  oMUX_SEL      <= sRegArray(rTRGBRD_CFG)(2);
   oI2C_SDA      <= '0';
   oI2C_SCL      <= '0';
   oGPIO_1       <= (others => '0');
