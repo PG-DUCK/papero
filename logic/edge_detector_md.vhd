@@ -30,7 +30,7 @@ architecture Behavior of edge_detector_md is  -- Dichiarazione del funzionamento
 begin
 
   s_input <= iD;
-
+  zero <= (others => '0');
 
   ffd_proc : process(iCLK)  -- Processo per la descrizione del FLip-Flop 2.
   begin

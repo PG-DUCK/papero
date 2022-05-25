@@ -1,4 +1,4 @@
---!@file top_papero.vhd
+--!@file top_paperoTriggerBoard.vhd
 --!brief Top module of the papero FPGA gateware
 --!@todo Add reset to the HPS-FPGA fifos
 --!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
@@ -15,8 +15,8 @@ use work.basic_package.all;
 use work.FOOTpackage.all;
 
 
---!@copydoc top_papero.vhd
-entity top_papero is
+--!@copydoc top_paperoTriggerBoard.vhd
+entity top_paperoTriggerBoard is
   generic (
     --HoG: Global Generic Variables
     GLOBAL_DATE : std_logic_vector(31 downto 0) := (others => '0');
@@ -99,59 +99,40 @@ entity top_papero is
     --- SW ---------------------------------------------------------------------
     SW : in std_logic_vector(3 downto 0);
 
-    --- GPIO -------------------------------------------------------------------
-    --Detector side A
-    oNC_A          : out std_logic;     --GPIO1-16
-    oFE_A_TEST     : out std_logic;     --GPIO1-0
-    oFE_A_RESET    : out std_logic;     --GPIO1-2
-    oFE_A0_HOLD    : out std_logic;     --GPIO1-4
-    oFE_A0_SHIFT   : out std_logic;     --GPIO1-8
-    oFE_A0_CLK     : out std_logic;     --GPIO1-12
-    oFE_A1_HOLD    : out std_logic;     --GPIO1-6
-    oFE_A1_SHIFT   : out std_logic;     --GPIO1-10
-    oFE_A1_CLK     : out std_logic;     --GPIO1-14
-    oADC_A_CS      : out std_logic;     --GPIO1-22
-    oADC_A_SCLK    : out std_logic;     --GPIO1-24
-    iADC_A_CS_RET  : in  std_logic;     --GPIO1-18
-    iADC_A_SCK_RET : in  std_logic;     --GPIO1-20
-    iADC_A_SDATA0  : in  std_logic;     --GPIO1-26
-    iADC_A_SDATA1  : in  std_logic;     --GPIO1-28
-    iADC_A_SDATA2  : in  std_logic;     --GPIO1-30
-    iADC_A_SDATA3  : in  std_logic;     --GPIO1-32
-    iADC_A_SDATA4  : in  std_logic;     --GPIO1-34
-    --Detector side B
-    oNC_B          : out std_logic;     --GPIO1-17
-    oFE_B_TEST     : out std_logic;     --GPIO1-3
-    oFE_B_RESET    : out std_logic;     --GPIO1-1
-    oFE_B0_HOLD    : out std_logic;     --GPIO1-5
-    oFE_B0_SHIFT   : out std_logic;     --GPIO1-9
-    oFE_B0_CLK     : out std_logic;     --GPIO1-13
-    oFE_B1_HOLD    : out std_logic;     --GPIO1-7
-    oFE_B1_SHIFT   : out std_logic;     --GPIO1-11
-    oFE_B1_CLK     : out std_logic;     --GPIO1-15
-    oADC_B_CS      : out std_logic;     --GPIO1-23
-    oADC_B_SCLK    : out std_logic;     --GPIO1-25
-    iADC_B_CS_RET  : in  std_logic;     --GPIO1-19
-    iADC_B_SCK_RET : in  std_logic;     --GPIO1-21
-    iADC_B_SDATA0  : in  std_logic;     --GPIO1-27
-    iADC_B_SDATA1  : in  std_logic;     --GPIO1-29
-    iADC_B_SDATA2  : in  std_logic;     --GPIO1-31
-    iADC_B_SDATA3  : in  std_logic;     --GPIO1-33
-    iADC_B_SDATA4  : in  std_logic;     --GPIO1-35
-    --Central Acquisition side
-    iBCO_CLK       : in  std_logic;     --GPIO0-16
-    iBCO_RST       : in  std_logic;     --GPIO0-0
-    iEXT_TRIG      : in  std_logic;     --GPIO0-32
-    oBUSY          : out std_logic;     --GPIO0-1
-    oTRIG          : out std_logic;     --GPIO0-27
-
-    oHK : out std_logic_vector(30 downto 0)  --All the remainings
-
+    --- GPIO0 ------------------------------------------------------------------
+    oHK  : out std_logic_vector(35 downto 0);
+    
+    --- GPIO1 ------------------------------------------------------------------
+    --Timestamps
+    oTS_CLK     : out std_logic;
+    oTS_RST     : out std_logic;
+    --CTX
+    oMUX_SEL    : out std_logic;
+    iRST_CTX    : in std_logic; --not used
+    iTRIG_CTX   : in std_logic; --not used
+    iTS_CLK_CTX : in std_logic; --not used
+    --Triggers
+    iTRIG_LEMO  : in std_logic;
+    oTRIG_FPGA  : out std_logic;
+    --Busy from papero boards
+    iBUSY0      : in std_logic;
+    iBUSY1      : in std_logic;
+    iBUSY2      : in std_logic;
+    iBUSY3      : in std_logic;
+    iBUSY4      : in std_logic;
+    iBUSY5      : in std_logic;
+    --HV module
+    oI2C_SDA    : out std_logic;
+    oI2C_SCL    : out std_logic;
+    --All the remainings
+    oGPIO_1     : out    std_logic_vector(9 downto 0);
+    iGPIO_1     : in     std_logic_vector(6 downto 0);  --not used
+    ioGPIO_1    : inout  std_logic_vector(2 downto 0)   --not used
     );
-end entity top_papero;
+end entity top_paperoTriggerBoard;
 
---!@copydoc top_papero.vhd
-architecture std of top_papero is
+--!@copydoc top_paperoTriggerBoard.vhd
+architecture std of top_paperoTriggerBoard is
   --HPS signals
   signal hps_fpga_reset_n       : std_logic;
   signal fpga_debounced_buttons : std_logic_vector(1 downto 0);
@@ -209,46 +190,35 @@ architecture std of top_papero is
   signal fifo_h2f_wr_en_csr    : std_logic;
   signal fifo_h2f_data_out_csr : std_logic_vector(31 downto 0);
 
-  -- TDAQ Module
+  -- Trigger
+  signal sIntTrig      : std_logic;
   signal sExtTrig      : std_logic;
   signal sMainTrig     : std_logic;
-  signal sMainBusy     : std_logic;
-  signal sTrgBusiesAnd : std_logic_vector(7 downto 0);
-  signal sTrgBusiesOr  : std_logic_vector(7 downto 0);
-  signal sRegArray     : tRegArray;
+  
+  -- Register
+  signal sRegArray    : tRegArray;
+  signal sDetIntfRst  : std_logic;
+  signal sCountersRst : std_logic;
+  signal sRegArrayRst : std_logic;
+  signal sRunMode     : std_logic;
+  signal sBusyFlag    : std_logic;
+  signal sRunFlag     : std_logic;
 
-  -- Timestamps
-  signal sIntTsEn    : std_logic;
-  signal sIntTsRst   : std_logic;
-  signal sIntTsCount : std_logic_vector(63 downto 0);
-  signal sExtTsEn    : std_logic;
-  signal sExtTsRst   : std_logic;
-  signal sExtTsCount : std_logic_vector(63 downto 0);
+  -- Timestamp
+  signal sTsClk       : std_logic;
+  signal sTsRst       : std_logic;
+  signal sTsFreqDiv   : std_logic_vector(31 downto 0);
+  signal sTsDutyCycle : std_logic_vector(31 downto 0);
+  
+  -- Busy
+  signal sBusy0   : std_logic;
+  signal sBusy1   : std_logic;
+  signal sBusy2   : std_logic;
+  signal sBusy3   : std_logic;
+  signal sBusy4   : std_logic;
+  signal sBusy5   : std_logic;
+  signal sBusyOr  : std_logic;
 
-  --Detector interface
-  signal sDetIntfRst    : std_logic;
-  signal sDetIntfEn     : std_logic;
-  signal sDetIntfCntOut : tControlIntfOut;
-  signal sDetIntfCfg    : msd_config;
-  signal sDetIntfQ      : std_logic_vector(cREG_WIDTH-1 downto 0);
-  signal sDetIntfWe     : std_logic;
-  signal sDetIntfAfull  : std_logic;
-  signal sFeA           : tFpga2FeIntf;
-  signal sFeB           : tFpga2FeIntf;
-  signal sAdcA          : tFpga2AdcIntf;
-  signal sAdcB          : tFpga2AdcIntf;
-  signal sMultiAdc      : tMultiAdc2FpgaIntf;
-
-  signal sCountersRst   : std_logic;
-  signal sRegArrayRst   : std_logic;
-  signal sRunMode       : std_logic;
-
-  signal sMultiAdcSynch : tMultiAdc2FpgaIntf;
-  signal sBcoClkSynch   : std_logic;
-  signal sBcoRstSynch   : std_logic;
-  signal sBusy          : std_logic;
-  signal sErrors        : std_logic;
-  signal sDebug         : std_logic_vector(7 downto 0);
 
 begin
   -- connection of internal logics ----------------------------
@@ -357,14 +327,14 @@ begin
     --Fifo Partion
     fast_fifo_fpga_to_hps_clk_clk          => sClk,  -- fast_fifo_fpga_to_hps_clk.clk
     fast_fifo_fpga_to_hps_rst_reset_n      => '1',  -- fast_fifo_fpga_to_hps_rst.reset_n
-    fast_fifo_fpga_to_hps_in_writedata     => fast_fifo_f2h_data_in,  --       fifo_fpga_to_hps_in.writedata
-    fast_fifo_fpga_to_hps_in_write         => fast_fifo_f2h_wr_en,  --                          .write
-    fast_fifo_fpga_to_hps_in_waitrequest   => fast_fifo_f2h_full,  --                          .waitrequest
-    fast_fifo_fpga_to_hps_in_csr_address   => fast_fifo_f2h_addr_csr,  --   fifo_fpga_to_hps_in_csr.address
-    fast_fifo_fpga_to_hps_in_csr_read      => fast_fifo_f2h_rd_en_csr,  --                          .read
-    fast_fifo_fpga_to_hps_in_csr_writedata => fast_fifo_f2h_data_in_csr,  --                          .writedata
-    fast_fifo_fpga_to_hps_in_csr_write     => fast_fifo_f2h_wr_en_csr,  --                          .write
-    fast_fifo_fpga_to_hps_in_csr_readdata  => fast_fifo_f2h_data_out_csr,  --                          .readdata
+    fast_fifo_fpga_to_hps_in_writedata     => (others => '0'),  --       fifo_fpga_to_hps_in.writedata
+    fast_fifo_fpga_to_hps_in_write         => '0',  --                          .write
+    fast_fifo_fpga_to_hps_in_waitrequest   => open,  --                          .waitrequest
+    fast_fifo_fpga_to_hps_in_csr_address   => (others => '0'),  --   fifo_fpga_to_hps_in_csr.address
+    fast_fifo_fpga_to_hps_in_csr_read      => '0',  --                          .read
+    fast_fifo_fpga_to_hps_in_csr_writedata => (others => '0'),  --                          .writedata
+    fast_fifo_fpga_to_hps_in_csr_write     => '0',  --                          .write
+    fast_fifo_fpga_to_hps_in_csr_readdata  => open,  --                          .readdata
 
     fifo_fpga_to_hps_clk_clk          => sClk,  --         fifo_fpga_to_hps_clk.clk
     fifo_fpga_to_hps_rst_reset_n      => '1',  --         fifo_fpga_to_hps_rst.reset_n
@@ -495,58 +465,7 @@ begin
     end if;
   end process;
 
-  -- Continuosly read the level_fifo of FIFO Fast_Data
-  fast_fifo_f2h_addr_csr  <= "000"; -- fast_fifo_f2h_data_out_csr = Level_Fifo
-  fast_fifo_f2h_rd_en_csr <= '1';   -- Update usedw at every clock cycle
-  --!@brief Generate the Almost Full of the F2H Fast-Data FIFO with the csr
-  F2H_Scientific_AFull_proc : process (fast_fifo_f2h_data_out_csr)
-  begin
-    if (fast_fifo_f2h_data_out_csr > cFastF2H_AFULL) then
-      fast_fifo_f2h_afull <= '1';
-    else
-      fast_fifo_f2h_afull <= '0';
-    end if;
-  end process;
-
-  sIntTsEn  <= '1';
-  sIntTsRst <= sCountersRst or sDetIntfRst
-               or not sRunMode;
-  --!@brief Internal timestamp counter
-  intTimestampCounter : counter
-    generic map (
-      pOVERLAP  => "Y",
-      pBUSWIDTH => 64
-      )
-    port map (
-      iCLK   => sClk,
-      iEN    => sIntTsEn,
-      iRST   => sIntTsRst,
-      iLOAD  => '0',
-      iDATA  => (others => '0'),
-      oCOUNT => sIntTsCount
-      );
-
-  sExtTsEn  <= sBcoClkSynch;
-  sExtTsRst <= sBcoRstSynch or sCountersRst
-               or sDetIntfRst or not sRunMode;
-  --!@brief External timestamp counter
-  extTimestampCounter : counter
-    generic map (
-      pOVERLAP  => "Y",
-      pBUSWIDTH => 64
-      )
-    port map (
-      iCLK   => sClk,
-      iEN    => sExtTsEn,
-      iRST   => sExtTsRst,
-      iLOAD  => '0',
-      iDATA  => (others => '0'),
-      oCOUNT => sExtTsCount
-      );
-
   --!@brief Wrapper for all of the Trigger and Data Acquisition modules
-  sTrgBusiesAnd   <= (others => '0');
-  sTrgBusiesOr    <= (0 => sDetIntfCntOut.busy, 1 => sDetIntfAfull, others => '0');
   TdaqModule_i : TdaqModule
     generic map (
       pFDI_WIDTH => cFDI_WIDTH,
@@ -560,18 +479,18 @@ begin
       iRST_COUNT          => sCountersRst,
       iRST_REG            => sRegArrayRst,
       oREG_ARRAY          => sRegArray,
-      iINT_TS             => sIntTsCount,
-      iEXT_TS             => sExtTsCount,
+      iINT_TS             => (others => '0'),
+      iEXT_TS             => (others => '0'),
       --
-      iEXT_TRIG           => iEXT_TRIG,
-      oTRIG               => sMainTrig,
-      oBUSY               => sMainBusy,
-      iTRG_BUSIES_AND     => sTrgBusiesAnd,
-      iTRG_BUSIES_OR      => sTrgBusiesOr,
+      iEXT_TRIG           => '0',
+      oTRIG               => open,
+      oBUSY               => open,
+      iTRG_BUSIES_AND     => (others => '0'),
+      iTRG_BUSIES_OR      => (others => '0'),
       --
-      iFASTDATA_DATA      => sDetIntfQ,
-      iFASTDATA_WE        => sDetIntfWe,
-      oFASTDATA_AFULL     => sDetIntfAfull,
+      iFASTDATA_DATA      => (others => '0'),
+      iFASTDATA_WE        => '0',
+      oFASTDATA_AFULL     => open,
       --
       iFIFO_H2F_EMPTY     => fifo_h2f_empty,
       iFIFO_H2F_DATA      => fifo_h2f_data_out,
@@ -581,9 +500,9 @@ begin
       oFIFO_F2H_WE        => fifo_f2h_wr_en,
       oFIFO_F2H_DATA      => fifo_f2h_data_in,
       --
-      iFIFO_F2HFAST_AFULL => fast_fifo_f2h_afull,
-      oFIFO_F2HFAST_WE    => fast_fifo_f2h_wr_en,
-      oFIFO_F2HFAST_DATA  => fast_fifo_f2h_data_in
+      iFIFO_F2HFAST_AFULL => '0',
+      oFIFO_F2HFAST_WE    => open,
+      oFIFO_F2HFAST_DATA  => open
       );
 
   --!@brief Generate reset pulse for register array
@@ -625,105 +544,151 @@ begin
       signal_in => sRegArray(rGOTO_STATE)(2),
       pulse_out => sRegArrayRst
       );
-  sRunMode                 <= sRegArray(rGOTO_STATE)(4);
-  sDetIntfEn               <= not sRegArray(rUNITS_EN)(1);
-  sDetIntfCfg.feClkDuty    <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
-  sDetIntfCfg.feClkDiv     <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.adcClkDuty   <= sRegArray(rADC_CLK_PARAM)(31 downto 16);
-  sDetIntfCfg.adcClkDiv    <= sRegArray(rADC_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.cfgPlane     <= sRegArray(rMSD_PARAM)(31 downto 16);
-  sDetIntfCfg.intTrgPeriod <= (others => '0');
-  sDetIntfCfg.trg2Hold     <= sRegArray(rMSD_PARAM)(15 downto 0);
-  sDetIntfCfg.extendBusy   <= sRegArray(rBUSYADC_PARAM)(31 downto 16);
-  sDetIntfCfg.adcDelay     <= sRegArray(rBUSYADC_PARAM)(15 downto 0);
-  --!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
-  --!@todo Connect error, compl flags
-  MsdInterface : DetectorInterface
-    port map (
-      iCLK            => sClk,
-      iRST            => sDetIntfRst, --See the instance description
-      iEN             => sDetIntfEn,
-      iTRIG           => sMainTrig,
-      oCNT            => sDetIntfCntOut,  --Temporary
-      iMSD_CONFIG     => sDetIntfCfg,
-      oFE0            => sFeA,
-      oADC0           => sAdcA,
-      oFE1            => sFeB,
-      oADC1           => sAdcB,
-      iMULTI_ADC      => sMultiAdcSynch,
-      oFASTDATA_DATA  => sDetIntfQ,
-      oFASTDATA_WE    => sDetIntfWe,
-      iFASTDATA_AFULL => sDetIntfAfull
-      );
-
+     
+     
+  -- Combinatorial assignment --------------------------------------------------
+  sRunMode      <= sRegArray(rGOTO_STATE)(4);
+  sBusyFlag     <= sRegArray(rTRGBRD_CFG)(0);
+  sRunFlag      <= sRegArray(rTRGBRD_CFG)(1);
+  sTsFreqDiv    <= sRegArray(rTRGBRD_FREQDIV);
+  sTsDutyCycle  <= sRegArray(rTRGBRD_DUTY);
+  
   -- GPIO connections ----------------------------------------------------------
-  oNC_A              <= '0';
-  oFE_A_TEST         <= sFeA.TestOn;
-  oFE_A_RESET        <= sFeA.DRst;
-  oFE_A0_HOLD        <= not sFeA.Hold;
-  oFE_A0_SHIFT       <= sFeA.ShiftIn;
-  oFE_A0_CLK         <= not sFeA.Clk;
-  oFE_A1_HOLD        <= sFeA.Hold;
-  oFE_A1_SHIFT       <= sFeA.ShiftIn;
-  oFE_A1_CLK         <= sFeA.Clk;
-  oADC_A_CS          <= sAdcA.Cs;
-  oADC_A_SCLK        <= sAdcA.Sclk;
-  sMultiAdc(0).SData <= iADC_A_SDATA0;
-  sMultiAdc(1).SData <= iADC_A_SDATA1;
-  sMultiAdc(2).SData <= iADC_A_SDATA2;
-  sMultiAdc(3).SData <= iADC_A_SDATA3;
-  sMultiAdc(4).SData <= iADC_A_SDATA4;
-  --Detector side B
-  oNC_B              <= '0';
-  oFE_B_TEST         <= sFeB.TestOn;
-  oFE_B_RESET        <= sFeB.DRst;
-  oFE_B0_HOLD        <= not sFeB.Hold;
-  oFE_B0_SHIFT       <= sFeB.ShiftIn;
-  oFE_B0_CLK         <= not sFeB.Clk;
-  oFE_B1_HOLD        <= sFeB.Hold;
-  oFE_B1_SHIFT       <= sFeB.ShiftIn;
-  oFE_B1_CLK         <= sFeB.Clk;
-  oADC_B_CS          <= sAdcB.Cs;
-  oADC_B_SCLK        <= sAdcB.Sclk;
-  sMultiAdc(5).SData <= iADC_B_SDATA0;
-  sMultiAdc(6).SData <= iADC_B_SDATA1;
-  sMultiAdc(7).SData <= iADC_B_SDATA2;
-  sMultiAdc(8).SData <= iADC_B_SDATA3;
-  sMultiAdc(9).SData <= iADC_B_SDATA4;
-
-  oHK <= (others => '0'); --!@todo Add actual signals for debug
-
-  --- I/O synchronization and buffering ----------------------------------------
+  oHK           <= (others => '0');
+  oMUX_SEL      <= '0'; --clock, reset and trigger from ctx
+  oI2C_SDA      <= '0';
+  oI2C_SCL      <= '0';
+  oGPIO_1       <= (others => '0');
+  
+  -- Timestamp clock -----------------------------------------------------------
+  ts_clk : clock_divider_2
+	generic map(
+		pPOLARITY => '1',
+    pWIDTH    => 32
+		)
+	port map(
+		iCLK 					    => sClk,
+		iRST 					    => sDetIntfRst,
+		iEN 					    => sRunMode,
+		oCLK_OUT 			    => sTsClk,
+		oCLK_OUT_RISING 	=> open,
+		oCLK_OUT_FALLING 	=> open,
+    iFREQ_DIV         => sTsFreqDiv,
+    iDUTY_CYCLE       => sTsDutyCycle
+		);
+  
+  --- I/O synchronization ------------------------------------------------------
   BCO_CLK_SYNCH : sync_edge
     generic map (
-      pSTAGES => 2
+      pSTAGES => 3
       )
     port map (
-      iCLK => sClk,
-      iRST => '0',
-      iD   => iBCO_CLK,
-      oQ   => sBcoClkSynch
+      iCLK    => sClk,
+      iRST    => '0',
+      iD      => iTRIG_LEMO,
+      oQ      => open,
+      oEDGE_R => sExtTrig,
+      oEDGE_F => open
       );
-
-  BCO_RST_SYNCH : sync_edge
-    generic map (
-      pSTAGES => 2
-      )
-    port map (
-      iCLK => sClk,
-      iRST => '0',
-      iD   => iBCO_RST,
-      oQ   => sBcoRstSynch
-      );
-
-  sMultiAdcSynch <= sMultiAdc;
-  IOFFD : process(sClk)
+  
+  BUSY0_SYNCH : sync_stage
+  generic map (
+    pSTAGES => 2
+    )
+  port map (
+    iCLK  => sClk,
+    iRST  => '0',
+    iD    => iBUSY0,
+    oQ    => sBusy0
+    );
+    
+  BUSY1_SYNCH : sync_stage
+  generic map (
+    pSTAGES => 2
+    )
+  port map (
+    iCLK  => sClk,
+    iRST  => '0',
+    iD    => iBUSY1,
+    oQ    => sBusy1
+    );
+    
+  BUSY2_SYNCH : sync_stage
+  generic map (
+    pSTAGES => 2
+    )
+  port map (
+    iCLK  => sClk,
+    iRST  => '0',
+    iD    => iBUSY2,
+    oQ    => sBusy2
+    );
+  
+  BUSY3_SYNCH : sync_stage
+  generic map (
+    pSTAGES => 2
+    )
+  port map (
+    iCLK  => sClk,
+    iRST  => '0',
+    iD    => iBUSY3,
+    oQ    => sBusy3
+    );
+  
+  BUSY4_SYNCH : sync_stage
+  generic map (
+    pSTAGES => 2
+    )
+  port map (
+    iCLK  => sClk,
+    iRST  => '0',
+    iD    => iBUSY4,
+    oQ    => sBusy4
+    );
+  
+  BUSY5_SYNCH : sync_stage
+  generic map (
+    pSTAGES => 2
+    )
+  port map (
+    iCLK  => sClk,
+    iRST  => '0',
+    iD    => iBUSY5,
+    oQ    => sBusy5
+    );
+    
+  --- I/O buffering ------------------------------------------------------------
+  TS_CLK_FFD : process(sClk)
   begin
     if rising_edge(sClk) then
-      oBUSY <= sMainBusy;
-      oTRIG <= sMainTrig;
-    --!@todo synchronize also the ADC incoming data and the CD and SCLK ret
+      oTS_CLK  <= sTsClk;
     end if;
-  end process IOFFD;
+  end process TS_CLK_FFD;
+  
+  TS_RST_FFD : process(sClk)
+  begin
+    if rising_edge(sClk) then
+      oTS_RST  <= sCountersRst or sDetIntfRst or not sRunMode;
+    end if;
+  end process TS_RST_FFD;
+  
+  
+  TRIG_FFD : process(sClk)
+  begin
+    if rising_edge(sClk) then
+      sBusyOr <= sBusy0 or sBusy1 or sBusy2 or sBusy3 or sBusy4 or sBusy5;
+      if (sBusyFlag = '0' and sRunFlag = '0') then
+        oTRIG_FPGA  <= sExtTrig;
+      elsif (sBusyFlag = '0' and sRunFlag = '1') then
+        oTRIG_FPGA  <= sExtTrig and sRunMode;
+      elsif (sBusyFlag = '1' and sRunFlag = '0') then
+        oTRIG_FPGA  <= sExtTrig and (not sBusyOr);
+      elsif (sBusyFlag = '1' and sRunFlag = '1') then
+        oTRIG_FPGA  <= sExtTrig and (not sBusyOr) and sRunMode;
+      else
+        oTRIG_FPGA  <= sExtTrig;
+      end if;
+    end if;
+  end process TRIG_FFD;
 
 end architecture;
