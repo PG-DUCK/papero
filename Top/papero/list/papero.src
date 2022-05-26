@@ -20,6 +20,8 @@ logic/TdaqModule.vhd
 logic/DetectorInterface.vhd
 logic/priorityEncoder.vhd
 logic/metaDataFifo.vhd
+logic/testPlane.vhd
+logic/testPlaneChecker.vhd
 
 #Basic functions_md
 logic/edge_detector_md.vhd

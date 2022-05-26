@@ -58,6 +58,10 @@ architecture std of DetectorInterface is
   signal sHpCfg : std_logic_vector (11 downto 0);
   signal sAdcFast : std_logic;
 
+  --Output fifo
+  signal sFastDataData  : std_logic_vector(cREG_WIDTH-1 downto 0);
+  signal sFastDataWe    : std_logic;
+
   --Parasitic testPlane signals
   signal sTpErr : std_logic;
 
@@ -72,6 +76,9 @@ begin
   oCNT.error <= sCntOut.error or sTpErr;
   oCNT.reset <= sCntOut.reset;
   oCNT.compl <= sCntOut.compl;
+
+  oFASTDATA_DATA <= sFastDataData;
+  oFASTDATA_WE   <= sFastDataWe;
 
   sAdcFast   <= iMSD_CONFIG.cfgPlane(15);
   --sCalTrigEn <= iMSD_CONFIG.cfgPlane(14); --Used only in FOOT
@@ -157,8 +164,8 @@ begin
       iRST            => iRST,
       iMULTI_FIFO     => sMultiFifoOut,
       oMULTI_FIFO     => sMultiFifoIn,
-      oFASTDATA_DATA  => oFASTDATA_DATA,
-      oFASTDATA_WE    => oFASTDATA_WE,
+      oFASTDATA_DATA  => sFastDataData,
+      oFASTDATA_WE    => sFastDataWe,
       iFASTDATA_AFULL => iFASTDATA_AFULL
       );
 
@@ -170,8 +177,8 @@ begin
     port map (
       iCLK  => iCLK,
       iRST  => iRST,
-      iDATA => oFASTDATA_DATA,
-      iWR   => oFASTDATA_WE,
+      iDATA => sFastDataData,
+      iWR   => sFastDataWe,
       oERR  => sTpErr
     );
 
