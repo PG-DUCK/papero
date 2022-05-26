@@ -296,7 +296,7 @@ begin
   sFpgaRegIntf.regs(rPIUMONE)        <= x"c1a0c1a0";
   sFpgaRegIntf.we(rPIUMONE)          <= '1';
 
-  sRegWarning <= x"00000" & "000" & sF2hFastWarning & x"0" & "0" & sCrWarning;
+  sRegWarning <= x"00000" & "00" & sMetaDataErr & sF2hFastWarning & x"0" & "0" & sCrWarning;
   sRegBusy    <= sBusy & "00" & sTestUnitBusy & iTRG_BUSIES_AND & iTRG_BUSIES_OR & sF2hFastBusy
               & iFIFO_F2H_AFULL & iFIFO_F2HFAST_AFULL
               & sFdiFifoOut.aFull & sTrigWhenBusyCount;
