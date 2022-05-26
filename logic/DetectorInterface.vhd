@@ -58,6 +58,9 @@ architecture std of DetectorInterface is
   signal sHpCfg : std_logic_vector (11 downto 0);
   signal sAdcFast : std_logic;
 
+  --Parasitic testPlane signals
+  signal sTpErr : std_logic;
+
 begin
 
   sCntIn.en     <= iEN;
@@ -66,7 +69,7 @@ begin
   sCntIn.slwEn  <= '0';
 
   oCNT.busy  <= sCntOut.busy or sTrigDelBusy or sExtendBusy;
-  oCNT.error <= sCntOut.error;
+  oCNT.error <= sCntOut.error or sTpErr;
   oCNT.reset <= sCntOut.reset;
   oCNT.compl <= sCntOut.compl;
 
@@ -158,5 +161,19 @@ begin
       oFASTDATA_WE    => oFASTDATA_WE,
       iFASTDATA_AFULL => iFASTDATA_AFULL
       );
+
+  tpChecker_priorityEnc : testPlaneChecker
+    generic map (
+      pWIDTH    => 32,
+      pCHANNELS => cFE_CLOCK_CYCLES*cTOTAL_ADCS
+    )
+    port map (
+      iCLK  => iCLK,
+      iRST  => iRST,
+      iDATA => oFASTDATA_DATA,
+      iWR   => oFASTDATA_WE,
+      oERR  => sTpErr
+    );
+
 
 end architecture std;

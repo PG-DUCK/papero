@@ -561,6 +561,21 @@ package paperoPackage is
       );
   end component testPlane;
 
+  component testPlaneChecker is
+  generic (
+    pWIDTH    : natural := 32;
+    pCHANNELS : natural := 1280
+    );
+  port (
+    iCLK  : in  std_logic;
+    iRST  : in  std_logic;
+    iDATA : in  std_logic_vector(pWIDTH-1 downto 0);
+    iWR   : in  std_logic;
+    oERR  : out std_logic
+    );
+  end component;
+
+
   component metaDataFifo is
     generic (
       pFIFOs : natural;

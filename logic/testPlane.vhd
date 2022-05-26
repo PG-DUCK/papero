@@ -49,6 +49,7 @@ end testPlane;
 
 --!@copydoc testPlane.vhd
 architecture std of testPlane is
+  constant cMAX : std_logic_vector(cADC_DATA_WIDTH-1 downto 0) := (others => '1');
   signal sCntOut      : tControlIntfOut;
   signal sCntIn       : tControlIntfIn;
   signal sFifoOut     : tMultiAdcFifoOut;
@@ -73,7 +74,7 @@ architecture std of testPlane is
   type tHpState is (RESET, IDLE, READOUT, END_READOUT);
   signal sHpState, sNextHpState : tHpState;
   signal sFsmSynchEn            : std_logic;
-  signal sChCount               : std_logic_vector(ceil_log2(cFE_CLOCK_CYCLES)-1 downto 0);
+  signal sChCount               : std_logic_vector(ceil_log2(cFE_CLOCK_CYCLES) downto 0);
 
 begin
   -- Combinatorial assignments -------------------------------------------------
@@ -132,11 +133,13 @@ begin
       if (rising_edge(iCLK)) then
         if (iRST = '1') then
           sFifoIn(i).wr <= '0';
-          sDataGen(i)   <= int2slv(i, sDataGen(i)'length);
+          sDataGen(i)   <= int2slv(0, sDataGen(i)'length) - cTOTAL_ADCS
+                           + int2slv(i, sDataGen(i)'length);
         else
           sFifoIn(i).wr <= sFsmSynchEn;
           if (sHpState = IDLE) then
-            sDataGen(i)   <= int2slv(i, sDataGen(i)'length);
+            sDataGen(i)   <= int2slv(0, sDataGen(i)'length) - cTOTAL_ADCS
+                             + int2slv(i, sDataGen(i)'length);
           else
             if (sFsmSynchEn = '1') then
               sDataGen(i) <= sDataGen(i) + int2slv(10, sDataGen(i)'length);
@@ -273,7 +276,7 @@ begin
 
       --Go to the last state or continue reading synchronized to the FE clock
       when READOUT =>
-        if (sChCount < int2slv(cFE_CLOCK_CYCLES-1, sChCount'length)) then
+        if (sChCount < int2slv(cFE_CLOCK_CYCLES, sChCount'length)) then
           sNextHpState <= READOUT;
         else
           sNextHpState <= END_READOUT;
