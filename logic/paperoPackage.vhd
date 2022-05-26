@@ -528,6 +528,39 @@ package paperoPackage is
       );
   end component;
 
+  --!@copydoc testPlane.vhd
+  component testPlane is
+    generic (
+      pACTIVE_EDGE : string := "F"      --!"F": falling, "R": rising
+      );
+    port (
+      --# {{clocks|Clock}}
+      iCLK          : in  std_logic;
+      --# {{control|Control}}
+      iRST          : in  std_logic;
+      oCNT          : out tControlIntfOut;
+      iCNT          : in  tControlIntfIn;
+      iFE_CLK_DIV   : in  std_logic_vector(15 downto 0);
+      iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);
+      iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);
+      iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);
+      iADC_DELAY    : in  std_logic_vector(15 downto 0);
+      iCFG_FE       : in  std_logic_vector(11 downto 0);
+      iADC_FAST     : in  std_logic;
+      --# {{FE Interface}}
+      oFE0          : out tFpga2FeIntf;
+      oFE1          : out tFpga2FeIntf;
+      iFE           : in  tFe2FpgaIntf;
+      --# {{ADC Interface}}
+      oADC0         : out tFpga2AdcIntf;
+      oADC1         : out tFpga2AdcIntf;
+      iMULTI_ADC    : in  tMultiAdc2FpgaIntf;
+      --# {{Output FIFO Interface}}
+      oMULTI_FIFO   : out tMultiAdcFifoOut;
+      iMULTI_FIFO   : in  tMultiAdcFifoIn
+      );
+  end component testPlane;
+
   component metaDataFifo is
     generic (
       pFIFOs : natural;

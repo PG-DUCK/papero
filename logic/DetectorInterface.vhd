@@ -113,7 +113,7 @@ begin
       );
 
   --!@brief Low-level multiple ADCs plane interface
-  DETECTOR_INTERFACE : multiAdcPlaneInterface
+  DETECTOR_INTERFACE : testPlane
     generic map (
       pACTIVE_EDGE => "F" --"F": falling, "R": rising
       )
