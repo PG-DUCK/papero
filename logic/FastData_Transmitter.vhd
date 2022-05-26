@@ -48,32 +48,38 @@ architecture Behavior of FastData_Transmitter is
   constant cTrailer         : std_logic_vector(31 downto 0) := x"0BEDFACE";  -- Bad Face
 
 -- Set di segnali interni per pilotare le uscite del FastData_Transmitter
-  signal sFIFO_RE        : std_logic;  -- Segnale di "Read_Enable" della FIFO a monte del FastData_Transmitter
-  signal sFIFO_DATA      : std_logic_vector(31 downto 0);  -- Segnale di "Data_Inutput" della FIFO a valle del FastData_Transmitter
-  signal sFIFO_WE        : std_logic;  -- Segnale di "Write_Enable" della FIFO a valle del FastData_Transmitter
-  signal sScientificData : std_logic_vector(31 downto 0);  -- Segnale di "Data_Output" della FIFO a monte del FastData_Transmitter
-  signal sBusy           : std_logic;  -- Bit per segnalare se il trasmettitore è impegnato in un trasferimento dati. '0'-->ok, '1'--> busy
-  signal sFsmError       : std_logic;  -- Segnale di errore della macchina a stati finiti. '0'-->ok, '1'--> errore: la macchina è finita in uno stato non precisato
-
+  signal sFIFO_RE         : std_logic;  -- Segnale di "Read_Enable" della FIFO a monte del FastData_Transmitter
+  signal sFIFO_DATA       : std_logic_vector(31 downto 0);  -- Segnale di "Data_Inutput" della FIFO a valle del FastData_Transmitter
+  signal sFIFO_WE         : std_logic;  -- Segnale di "Write_Enable" della FIFO a valle del FastData_Transmitter
+  signal sScientificData  : std_logic_vector(31 downto 0);  -- Segnale di "Data_Output" della FIFO a monte del FastData_Transmitter
+  signal sBusy            : std_logic;  -- Bit per segnalare se il trasmettitore è impegnato in un trasferimento dati. '0'-->ok, '1'--> busy
+  signal sFsmError        : std_logic;  -- Segnale di errore della macchina a stati finiti. '0'-->ok, '1'--> errore: la macchina è finita in uno stato non precisato
+  signal sDataStillAvail  : std_logic;  -- Ci sono ancora parole nella FIFO a monte quando iEN = 0
+  
 -- Set di segnali utili per il Signal Processing.
+  signal sLength          : std_logic_vector(31 downto 0);  --Lunghezza pacchetto
   signal sFIFO_RE_d       : std_logic;  -- Segnale di "Read_Enable" della FIFO a monte del FastData_Transmitter ritardato di un ciclo di clock
-  signal DataCounter_RE   : std_logic_vector(11 downto 0);  -- Contatore del numero di parole di payload lette dalla FIFO a monte del FastData_Transmitter
   signal DataCounter_WE   : std_logic_vector(11 downto 0);  -- Contatore del numero di parole di payload scritte nella FIFO a valle del FastData_Transmitter
-  signal sLastOne         : std_logic;  -- Indicatore della presenza di un solo elemento nella FIFO a monte del FastData_Transmitter
   signal sCRC32_rst       : std_logic;  -- Reset del modulo per il calcolo del CRC
   signal sCRC32_en        : std_logic;  -- Abilitazione del modulo per il calcolo del CRC
+  signal sCRC32Data       : std_logic_vector(31 downto 0);
   signal sEstimated_CRC32 : std_logic_vector(31 downto 0);  -- Valutazione del codice a ridondanza ciclica CRC-32/MPEG-2: Header (except length) + Payload
-
-
+  signal sPayloadWe       : std_logic; --
+  signal sPayloadEn       : std_logic;
+  
+  
+  
 begin
   -- Assegnazione segnali interni del FastData_Transmitter alle porte di I/O
   oFIFO_RE        <= sFIFO_RE;
-  oFIFO_DATA      <= sFIFO_DATA;
-  oFIFO_WE        <= sFIFO_WE;
+  oFIFO_DATA      <= sScientificData when (sPayloadEn  = '1') else 
+                     sFIFO_DATA;
+  sCRC32Data      <= sScientificData when (sPayloadEn  = '1') else 
+                     sFIFO_DATA;                   
+  oFIFO_WE        <= sFIFO_WE or sPayloadWe;
   sScientificData <= iFIFO_DATA;
-  sLastOne        <= iFIFO_EMPTY xor iFIFO_AEMPTY;
   oBUSY           <= sBusy;
-  oWARNING        <= sFsmError;
+  oWARNING        <= sFsmError or sDataStillAvail;
 
 
   -- Calcola il CRC32 per il contenuto del pacchetto (eccetto per SoP, Len, and EoP)
@@ -85,46 +91,55 @@ begin
       iCLK    => iCLK,
       iRST    => sCRC32_rst,
       iCRC_EN => sCRC32_en,
-      iDATA   => sFIFO_DATA,
+      iDATA   => sCRC32Data,
       oCRC    => sEstimated_CRC32
       );
-
+  
+  sFIFO_RE   <= '1' when (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' and sPS = PAYLOAD and (DataCounter_WE < sLength)) else
+                '0';
+  sPayloadWe <= sFIFO_RE_d;
+  
 
   -- Implementazione della macchina a stati
   StateFSM_proc : process (iCLK)
-  variable vLength : std_logic_vector(31 downto 0);
   begin
     if (rising_edge(iCLK)) then
       if (iRST = '1') then
         -- Stato di RESET. Si entra in questo stato solo se qualcuno dall'esterno alza il segnale di reset
-        sFIFO_RE       <= '0';
         sFIFO_DATA     <= (others => '0');
         sFIFO_WE       <= '0';
-        DataCounter_RE <= (others => '0');
-        DataCounter_WE <= (others => '0');
+        DataCounter_WE <= (others => '0'); --(0=>'1', others => '0');
         sBusy          <= '1';
         sFsmError      <= '0';
+        sDataStillAvail <= '0';
         sCRC32_rst     <= '1';
         sCRC32_en      <= '0';
+        sPayloadEn     <= '0';
         sPS            <= IDLE;
+        sLength        <= (others => '0');
 
-      elsif (iEN = '1') then
+      else
         -- Valori di default che verranno sovrascritti, se necessario
-        sFIFO_RE   <= '0';
-        sFIFO_DATA <= (others => '0');
-        sFIFO_WE   <= '0';
-        sBusy      <= '1';
-        sCRC32_rst <= '0';
-        sCRC32_en  <= '0';
+        sFIFO_DATA      <= (others => '0');
+        sFIFO_WE        <= '0';
+        DataCounter_WE  <= (others => '0'); --(0=>'1', others => '0');
+        sBusy           <= '1';
+        sCRC32_rst      <= '0';
+        sCRC32_en       <= '0';
+        sPayloadEn      <= '0';
         case (sPS) is
                                 -- Stato di IDLE. Il Trasmettitore si mette in attesa che la FIFO a monte abbia almeno una word da inviare e quella a valle disponga di almeno 4 posizioni libere
           when IDLE =>
             sBusy      <= '0';  -- Questo è l'unico stato in cui il trasmettitore si può considerare non impegnato in un trasferimento
             sCRC32_rst <= '1';
-            if (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0') then
-              sPS <= SOP;
+            if (iEN = '1') then
+              if (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' ) then
+                sPS <= SOP;
+              else
+                sPS <= IDLE;
+              end if;
             else
-              sPS <= IDLE;
+              sDataStillAvail  <= not iFIFO_EMPTY;           
             end if;
 
                                         -- Stato di START-OF-PACKET. Inoltro della parola "BABA1A9A"
@@ -143,7 +158,7 @@ begin
               sFIFO_DATA <= iMETADATA.pktLen;
               sFIFO_WE   <= '1';
               sPS        <= FWV;
-              vLength    := iMETADATA.pktLen - int2slv(10, vLength'length);
+              sLength    <= iMETADATA.pktLen - int2slv(10, sLength'length);
             else
               sPS <= LENG;
             end if;
@@ -227,38 +242,20 @@ begin
 
                                         -- Stato di PAYLOAD. Inoltro delle parole di payload dalla FIFO a monte a quella a valle rispetto al FastData_Transmitter
           when PAYLOAD =>
-            if (DataCounter_WE < DataCounter_RE or DataCounter_WE < vLength) then
-              if (sFIFO_RE_d = '1') then
-                sFIFO_WE       <= '1';
-                DataCounter_WE <= DataCounter_WE + 1;
-                sCRC32_en      <= '1';
-                sPS            <= PAYLOAD;
-              else
-                sPS <= PAYLOAD;
-              end if;
-            elsif (DataCounter_RE = 0) then
+            sPayloadEn  <= '1';
+            sCRC32_en   <= sFIFO_RE;
+            
+            if (sFIFO_RE = '1') then
+              DataCounter_WE <= DataCounter_WE + 1;
+            else
+              DataCounter_WE <= DataCounter_WE;
+            end if;
+            
+            if (DataCounter_WE < sLength)then
               sPS <= PAYLOAD;
             else
-              DataCounter_RE <= (others => '0');
-              DataCounter_WE <= (others => '0');
-              sPS            <= TRAILER;
-            end if;
-
-            if (sFIFO_RE = '0' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < vLength) then
-              sFIFO_RE       <= '1';
-              sFIFO_DATA     <= sScientificData;
-              DataCounter_RE <= DataCounter_RE + 1;
-            elsif (sFIFO_RE = '1' and sLastOne = '1' and iFIFO_AFULL = '0' and DataCounter_RE < vLength) then
-              sFIFO_RE   <= '0';
-              sFIFO_DATA <= sScientificData;
-            elsif (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' and DataCounter_RE < vLength) then
-              sFIFO_RE       <= '1';
-              sFIFO_DATA     <= sScientificData;
-              DataCounter_RE <= DataCounter_RE + 1;
-            else
-              sFIFO_RE   <= '0';
-              sFIFO_DATA <= sScientificData;
-            end if;
+              sPS <= TRAILER;
+            end if;          
 
                                         -- Stato di TRAILER. Inoltro della parola di trailer "0BEDFACE"
           when TRAILER =>
@@ -282,45 +279,11 @@ begin
 
                                         -- Stato non previsto.
           when others =>
-            sFIFO_RE   <= '0';
             sFIFO_DATA <= (others => '0');
             sFIFO_WE   <= '0';
             sFsmError  <= '1';
             sPS        <= IDLE;
-        end case;
-      else
-        -- Valori di default nel caso in cui il FastData_Transmitter venisse disabilitato
-        sFIFO_RE   <= '0';
-        sFIFO_WE   <= '0';
-        sCRC32_rst <= '0';
-        sCRC32_en  <= '0';
-        case (sPS) is
-                                        -- Stato di PAYLOAD. Inoltro delle parole di payload dalla FIFO a monte a quella a valle rispetto al FastData_Transmitter
-          when PAYLOAD =>
-            sFIFO_DATA <= sScientificData;
-            if (DataCounter_WE < DataCounter_RE or DataCounter_WE < vLength) then
-              if (sFIFO_RE_d = '1') then
-                sFIFO_WE       <= '1';
-                DataCounter_WE <= DataCounter_WE + 1;
-                sCRC32_en      <= '1';
-                sPS            <= PAYLOAD;
-              else
-                sPS <= PAYLOAD;
-              end if;
-            elsif (DataCounter_RE = 0) then
-              sPS <= PAYLOAD;
-            else
-              DataCounter_RE <= (others => '0');
-              DataCounter_WE <= (others => '0');
-              sPS            <= TRAILER;
-            end if;
-
-                                        -- Stato non previsto.
-          when others =>
-            sFIFO_RE   <= '0';
-            sFIFO_WE   <= '0';
-            sCRC32_rst <= '0';
-            sCRC32_en  <= '0';
+            
         end case;
       end if;
     end if;
