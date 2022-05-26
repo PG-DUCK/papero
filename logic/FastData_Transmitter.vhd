@@ -48,35 +48,32 @@ architecture Behavior of FastData_Transmitter is
   constant cTrailer         : std_logic_vector(31 downto 0) := x"0BEDFACE";  -- Bad Face
 
 -- Set di segnali interni per pilotare le uscite del FastData_Transmitter
-  signal sFIFO_RE         : std_logic;  -- Segnale di "Read_Enable" della FIFO a monte del FastData_Transmitter
-  signal sFIFO_DATA       : std_logic_vector(31 downto 0);  -- Segnale di "Data_Inutput" della FIFO a valle del FastData_Transmitter
-  signal sFIFO_WE         : std_logic;  -- Segnale di "Write_Enable" della FIFO a valle del FastData_Transmitter
-  signal sScientificData  : std_logic_vector(31 downto 0);  -- Segnale di "Data_Output" della FIFO a monte del FastData_Transmitter
-  signal sBusy            : std_logic;  -- Bit per segnalare se il trasmettitore è impegnato in un trasferimento dati. '0'-->ok, '1'--> busy
-  signal sFsmError        : std_logic;  -- Segnale di errore della macchina a stati finiti. '0'-->ok, '1'--> errore: la macchina è finita in uno stato non precisato
-  signal sDataStillAvail  : std_logic;  -- Ci sono ancora parole nella FIFO a monte quando iEN = 0
-  
+  signal sFifoRe         : std_logic;  -- Segnale di "Read_Enable" della FIFO a monte del FastData_Transmitter
+  signal sFifoData       : std_logic_vector(31 downto 0);  -- Segnale di "Data_Inutput" della FIFO a valle del FastData_Transmitter
+  signal sFifoWe         : std_logic;  -- Segnale di "Write_Enable" della FIFO a valle del FastData_Transmitter
+  signal sScientificData : std_logic_vector(31 downto 0);  -- Segnale di "Data_Output" della FIFO a monte del FastData_Transmitter
+  signal sBusy           : std_logic;  -- Bit per segnalare se il trasmettitore è impegnato in un trasferimento dati. '0'-->ok, '1'--> busy
+  signal sFsmError       : std_logic;  -- Segnale di errore della macchina a stati finiti. '0'-->ok, '1'--> errore: la macchina è finita in uno stato non precisato
+  signal sDataStillAvail : std_logic;  -- Ci sono ancora parole nella FIFO a monte quando iEN = 0
+
 -- Set di segnali utili per il Signal Processing.
   signal sLength          : std_logic_vector(31 downto 0);  --Lunghezza pacchetto
-  signal sFIFO_RE_d       : std_logic;  -- Segnale di "Read_Enable" della FIFO a monte del FastData_Transmitter ritardato di un ciclo di clock
-  signal DataCounter_WE   : std_logic_vector(11 downto 0);  -- Contatore del numero di parole di payload scritte nella FIFO a valle del FastData_Transmitter
+  signal sFifoReDel       : std_logic;  -- Segnale di "Read_Enable" della FIFO a monte del FastData_Transmitter ritardato di un ciclo di clock
+  signal sDataCounter     : std_logic_vector(11 downto 0);  -- Contatore del numero di parole di payload scritte nella FIFO a valle del FastData_Transmitter
   signal sCRC32_rst       : std_logic;  -- Reset del modulo per il calcolo del CRC
   signal sCRC32_en        : std_logic;  -- Abilitazione del modulo per il calcolo del CRC
   signal sCRC32Data       : std_logic_vector(31 downto 0);
   signal sEstimated_CRC32 : std_logic_vector(31 downto 0);  -- Valutazione del codice a ridondanza ciclica CRC-32/MPEG-2: Header (except length) + Payload
-  signal sPayloadWe       : std_logic; --
-  signal sPayloadEn       : std_logic;
-  
-  
-  
+  signal sPayloadEn       : std_logic;  -- Siamo su Payload
+
 begin
   -- Assegnazione segnali interni del FastData_Transmitter alle porte di I/O
-  oFIFO_RE        <= sFIFO_RE;
-  oFIFO_DATA      <= sScientificData when (sPayloadEn  = '1') else 
-                     sFIFO_DATA;
-  sCRC32Data      <= sScientificData when (sPayloadEn  = '1') else 
-                     sFIFO_DATA;                   
-  oFIFO_WE        <= sFIFO_WE or sPayloadWe;
+  oFIFO_RE   <= sFifoRe;
+  oFIFO_DATA <= sScientificData when (sPayloadEn = '1') else
+                sFifoData;
+  sCRC32Data <= sScientificData when (sPayloadEn = '1') else
+                sFifoData;
+  oFIFO_WE        <= sFifoWe or sFifoReDel;
   sScientificData <= iFIFO_DATA;
   oBUSY           <= sBusy;
   oWARNING        <= sFsmError or sDataStillAvail;
@@ -94,196 +91,194 @@ begin
       iDATA   => sCRC32Data,
       oCRC    => sEstimated_CRC32
       );
-  
-  sFIFO_RE   <= '1' when (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' and sPS = PAYLOAD and (DataCounter_WE < sLength)) else
-                '0';
-  sPayloadWe <= sFIFO_RE_d;
-  
 
+  
+  sFifoRe <= '1' when (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' and sPS = PAYLOAD and (sDataCounter < sLength)) else
+             '0';
   -- Implementazione della macchina a stati
   StateFSM_proc : process (iCLK)
   begin
     if (rising_edge(iCLK)) then
       if (iRST = '1') then
         -- Stato di RESET. Si entra in questo stato solo se qualcuno dall'esterno alza il segnale di reset
-        sFIFO_DATA     <= (others => '0');
-        sFIFO_WE       <= '0';
-        DataCounter_WE <= (others => '0'); --(0=>'1', others => '0');
-        sBusy          <= '1';
-        sFsmError      <= '0';
+        sFifoData       <= (others => '0');
+        sFifoWe         <= '0';
+        sDataCounter    <= (others => '0');  --(0=>'1', others => '0');
+        sBusy           <= '1';
+        sFsmError       <= '0';
         sDataStillAvail <= '0';
-        sCRC32_rst     <= '1';
-        sCRC32_en      <= '0';
-        sPayloadEn     <= '0';
-        sPS            <= IDLE;
-        sLength        <= (others => '0');
+        sCRC32_rst      <= '1';
+        sCRC32_en       <= '0';
+        sPayloadEn      <= '0';
+        sPS             <= IDLE;
+        sLength         <= (others => '0');
 
       else
         -- Valori di default che verranno sovrascritti, se necessario
-        sFIFO_DATA      <= (others => '0');
-        sFIFO_WE        <= '0';
-        DataCounter_WE  <= (others => '0'); --(0=>'1', others => '0');
-        sBusy           <= '1';
-        sCRC32_rst      <= '0';
-        sCRC32_en       <= '0';
-        sPayloadEn      <= '0';
+        sFifoData    <= (others => '0');
+        sFifoWe      <= '0';
+        sDataCounter <= (others => '0');  --(0=>'1', others => '0');
+        sBusy        <= '1';
+        sCRC32_rst   <= '0';
+        sCRC32_en    <= '0';
+        sPayloadEn   <= '0';
         case (sPS) is
-                                -- Stato di IDLE. Il Trasmettitore si mette in attesa che la FIFO a monte abbia almeno una word da inviare e quella a valle disponga di almeno 4 posizioni libere
+          -- Stato di IDLE. Il Trasmettitore si mette in attesa che la FIFO a monte abbia almeno una word da inviare e quella a valle disponga di almeno 4 posizioni libere
           when IDLE =>
             sBusy      <= '0';  -- Questo è l'unico stato in cui il trasmettitore si può considerare non impegnato in un trasferimento
             sCRC32_rst <= '1';
             if (iEN = '1') then
-              if (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0' ) then
+              if (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0') then
                 sPS <= SOP;
               else
                 sPS <= IDLE;
               end if;
             else
-              sDataStillAvail  <= not iFIFO_EMPTY;           
+              sDataStillAvail <= not iFIFO_EMPTY;
             end if;
 
-                                        -- Stato di START-OF-PACKET. Inoltro della parola "BABA1A9A"
+          -- Stato di START-OF-PACKET. Inoltro della parola "BABA1A9A"
           when SOP =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= cStart_of_packet;
-              sFIFO_WE   <= '1';
-              sPS        <= LENG;
+              sFifoData <= cStart_of_packet;
+              sFifoWe   <= '1';
+              sPS       <= LENG;
             else
               sPS <= SOP;
             end if;
 
-                                               -- Stato di LENGTH. Inoltro della parola contenente la lunghezza del pacchetto: Payload 32-bit words + 10
+          -- Stato di LENGTH. Inoltro della parola contenente la lunghezza del pacchetto: Payload 32-bit words + 10
           when LENG =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= iMETADATA.pktLen;
-              sFIFO_WE   <= '1';
-              sPS        <= FWV;
-              sLength    <= iMETADATA.pktLen - int2slv(10, sLength'length);
+              sFifoData <= iMETADATA.pktLen;
+              sFifoWe   <= '1';
+              sPS       <= FWV;
+              sLength   <= iMETADATA.pktLen - int2slv(10, sLength'length);
             else
               sPS <= LENG;
             end if;
 
-                                        -- Stato di FIRMWARE-VERSION. Inoltro della parola contenente la Versione del Firmware in uso (SHA dell'ultimo commit)
+          -- Stato di FIRMWARE-VERSION. Inoltro della parola contenente la Versione del Firmware in uso (SHA dell'ultimo commit)
           when FWV =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= pGW_VER;
-              sFIFO_WE   <= '1';
-              sCRC32_en  <= '1';
-              sPS        <= TRIG_NUM;
+              sFifoData <= pGW_VER;
+              sFifoWe   <= '1';
+              sCRC32_en <= '1';
+              sPS       <= TRIG_NUM;
             else
               sPS <= FWV;
             end if;
 
-                                        -- Stato di TRIGGER-NUMBER. Inoltro della parola contenente il numero di trigger
+          -- Stato di TRIGGER-NUMBER. Inoltro della parola contenente il numero di trigger
           when TRIG_NUM =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= iMETADATA.trigNum;
-              sFIFO_WE   <= '1';
-              sCRC32_en  <= '1';
-              sPS        <= TRIG_TYPE;
+              sFifoData <= iMETADATA.trigNum;
+              sFifoWe   <= '1';
+              sCRC32_en <= '1';
+              sPS       <= TRIG_TYPE;
             else
               sPS <= TRIG_NUM;
             end if;
 
-                                        -- Stato di TRIGGER-TYPE. Inoltro della parola contenente il Detector-ID e il Trigger-ID
+          -- Stato di TRIGGER-TYPE. Inoltro della parola contenente il Detector-ID e il Trigger-ID
           when TRIG_TYPE =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= iMETADATA.detId & iMETADATA.trigId;
-              sFIFO_WE   <= '1';
-              sCRC32_en  <= '1';
-              sPS        <= INT_TIME_0;
+              sFifoData <= iMETADATA.detId & iMETADATA.trigId;
+              sFifoWe   <= '1';
+              sCRC32_en <= '1';
+              sPS       <= INT_TIME_0;
             else
               sPS <= TRIG_TYPE;
             end if;
 
-                                        -- Stato di INTERNAL-TIMESTAMP-MSW. Inoltro della "Most_Significant_Word" contenente il Timestamp calcolato all'interno dell'FPGA
+          -- Stato di INTERNAL-TIMESTAMP-MSW. Inoltro della "Most_Significant_Word" contenente il Timestamp calcolato all'interno dell'FPGA
           when INT_TIME_0 =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= iMETADATA.intTime(63 downto 32);
-              sFIFO_WE   <= '1';
-              sCRC32_en  <= '1';
-              sPS        <= INT_TIME_1;
+              sFifoData <= iMETADATA.intTime(63 downto 32);
+              sFifoWe   <= '1';
+              sCRC32_en <= '1';
+              sPS       <= INT_TIME_1;
             else
               sPS <= INT_TIME_0;
             end if;
 
-                                        -- Stato di INTERNAL-TIMESTAMP-LSW. Inoltro della "Least_Significant_Word" contenente il Timestamp calcolato all'interno dell'FPGA
+          -- Stato di INTERNAL-TIMESTAMP-LSW. Inoltro della "Least_Significant_Word" contenente il Timestamp calcolato all'interno dell'FPGA
           when INT_TIME_1 =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= iMETADATA.intTime(31 downto 0);
-              sFIFO_WE   <= '1';
-              sCRC32_en  <= '1';
-              sPS        <= EXT_TIME_0;
+              sFifoData <= iMETADATA.intTime(31 downto 0);
+              sFifoWe   <= '1';
+              sCRC32_en <= '1';
+              sPS       <= EXT_TIME_0;
             else
               sPS <= INT_TIME_1;
             end if;
 
-                                        -- Stato di EXTERNAL-TIMESTAMP-MSW. Inoltro della "Most_Significant_Word" contenente il Timestamp calcolato all'esterno dell'FPGA
+          -- Stato di EXTERNAL-TIMESTAMP-MSW. Inoltro della "Most_Significant_Word" contenente il Timestamp calcolato all'esterno dell'FPGA
           when EXT_TIME_0 =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= iMETADATA.extTime(63 downto 32);
-              sFIFO_WE   <= '1';
-              sCRC32_en  <= '1';
-              sPS        <= EXT_TIME_1;
+              sFifoData <= iMETADATA.extTime(63 downto 32);
+              sFifoWe   <= '1';
+              sCRC32_en <= '1';
+              sPS       <= EXT_TIME_1;
             else
               sPS <= EXT_TIME_0;
             end if;
 
-                                        -- Stato di EXTERNAL-TIMESTAMP-LSW. Inoltro della "Least_Significant_Word" contenente il Timestamp calcolato all'esterno dell'FPGA
+          -- Stato di EXTERNAL-TIMESTAMP-LSW. Inoltro della "Least_Significant_Word" contenente il Timestamp calcolato all'esterno dell'FPGA
           when EXT_TIME_1 =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= iMETADATA.extTime(31 downto 0);
-              sFIFO_WE   <= '1';
-              sCRC32_en  <= '1';
-              sPS        <= PAYLOAD;
+              sFifoData <= iMETADATA.extTime(31 downto 0);
+              sFifoWe   <= '1';
+              sCRC32_en <= '1';
+              sPS       <= PAYLOAD;
             else
               sPS <= EXT_TIME_1;
             end if;
 
-                                        -- Stato di PAYLOAD. Inoltro delle parole di payload dalla FIFO a monte a quella a valle rispetto al FastData_Transmitter
+          -- Stato di PAYLOAD. Inoltro delle parole di payload dalla FIFO a monte a quella a valle rispetto al FastData_Transmitter
           when PAYLOAD =>
-            sPayloadEn  <= '1';
-            sCRC32_en   <= sFIFO_RE;
-            
-            if (sFIFO_RE = '1') then
-              DataCounter_WE <= DataCounter_WE + 1;
+            sPayloadEn <= '1';
+            sCRC32_en  <= sFifoRe;
+
+            if (sFifoRe = '1') then
+              sDataCounter <= sDataCounter + 1;
             else
-              DataCounter_WE <= DataCounter_WE;
+              sDataCounter <= sDataCounter;
             end if;
-            
-            if (DataCounter_WE < sLength)then
+
+            if (sDataCounter < sLength)then
               sPS <= PAYLOAD;
             else
               sPS <= TRAILER;
-            end if;          
+            end if;
 
-                                        -- Stato di TRAILER. Inoltro della parola di trailer "0BEDFACE"
+          -- Stato di TRAILER. Inoltro della parola di trailer "0BEDFACE"
           when TRAILER =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= cTrailer;
-              sFIFO_WE   <= '1';
-              sPS        <= CRC;
+              sFifoData <= cTrailer;
+              sFifoWe   <= '1';
+              sPS       <= CRC;
             else
               sPS <= TRAILER;
             end if;
 
-                                        -- Stato di CRC. Inoltro del CRC-32/MPEG-2 calcolato su tutto il pacchetto (tranne per Sop, Length e Trailer)
+          -- Stato di CRC. Inoltro del CRC-32/MPEG-2 calcolato su tutto il pacchetto (tranne per Sop, Length e Trailer)
           when CRC =>
             if (iFIFO_AFULL = '0') then
-              sFIFO_DATA <= sEstimated_CRC32;
-              sFIFO_WE   <= '1';
-              sPS        <= IDLE;
+              sFifoData <= sEstimated_CRC32;
+              sFifoWe   <= '1';
+              sPS       <= IDLE;
             else
               sPS <= CRC;
             end if;
 
-                                        -- Stato non previsto.
+          -- Stato non previsto.
           when others =>
-            sFIFO_DATA <= (others => '0');
-            sFIFO_WE   <= '0';
-            sFsmError  <= '1';
-            sPS        <= IDLE;
-            
+            sFifoData <= (others => '0');
+            sFifoWe   <= '0';
+            sFsmError <= '1';
+            sPS       <= IDLE;
+
         end case;
       end if;
     end if;
@@ -295,9 +290,9 @@ begin
   begin
     if rising_edge(iCLK) then
       if (iRST = '1') then
-        sFIFO_RE_d <= '0';
+        sFifoReDel <= '0';
       else
-        sFIFO_RE_d <= sFIFO_RE;
+        sFifoReDel <= sFifoRe;
       end if;
     end if;
   end process;
