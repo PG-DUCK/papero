@@ -696,18 +696,18 @@ begin
   --- I/O synchronization and buffering ----------------------------------------
   BCO_CLK_SYNCH : sync_edge
     generic map (
-      pSTAGES => 2
+      pSTAGES => 3
       )
     port map (
-      iCLK => sClk,
-      iRST => '0',
-      iD   => iBCO_CLK,
-      oQ   => sBcoClkSynch
+      iCLK    => sClk,
+      iRST    => '0',
+      iD      => iBCO_CLK,
+      oEDGE_R => sBcoClkSynch
       );
 
   BCO_RST_SYNCH : sync_edge
     generic map (
-      pSTAGES => 2
+      pSTAGES => 3
       )
     port map (
       iCLK => sClk,
