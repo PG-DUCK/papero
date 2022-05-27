@@ -137,14 +137,14 @@ begin
                            + int2slv(i, sDataGen(i)'length);
         else
           sFifoIn(i).wr <= sFsmSynchEn;
-          if (sHpState = IDLE) then
-            sDataGen(i)   <= int2slv(0, sDataGen(i)'length) - cTOTAL_ADCS
-                             + int2slv(i, sDataGen(i)'length);
-          else
+          --if (sHpState = IDLE) then
+          --  sDataGen(i)   <= int2slv(0, sDataGen(i)'length) - cTOTAL_ADCS
+          --                   + int2slv(i, sDataGen(i)'length);
+          --else
             if (sFsmSynchEn = '1') then
               sDataGen(i) <= sDataGen(i) + int2slv(10, sDataGen(i)'length);
             end if;
-          end if;
+          --end if;
         end if;
       end if;
     end process DATAGEN_proc;

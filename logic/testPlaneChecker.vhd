@@ -51,14 +51,14 @@ begin
         sErr   <= '0';
         sRef   <= (others => '0');
       elsif (iWR = '1') then
-        if ((sRef < pCHANNELS-2)) then
+        --if ((sRef < pCHANNELS-2)) then
           if ((sHDHig /= sRef+'1') or (sHDLow /= sRef)) then
             sErr <= '1';
           end if;
           sRef <= sRef + int2slv(2, sRef'length);
-        else
-          sRef <= (others => '0');
-        end if;
+        --else
+        --  sRef <= (others => '0');
+        --end if;
 
       end if;
     end if;

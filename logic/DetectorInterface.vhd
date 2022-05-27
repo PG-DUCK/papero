@@ -172,7 +172,7 @@ begin
   tpChecker_priorityEnc : testPlaneChecker
     generic map (
       pWIDTH    => 32,
-      pCHANNELS => cFE_CLOCK_CYCLES*cTOTAL_ADCS
+      pCHANNELS => 2**cADC_DATA_WIDTH--cFE_CLOCK_CYCLES*cTOTAL_ADCS
     )
     port map (
       iCLK  => iCLK,
