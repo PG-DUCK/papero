@@ -31,8 +31,8 @@ entity top_paperoTriggerBoard is
     HOG_SHA     : std_logic_vector(31 downto 0) := (others => '0');
 
     --HoG: Project Specific Lists (One for each .src file in your Top/ folder)
-    PAPERO_SHA : std_logic_vector(31 downto 0) := (others => '0');
-    PAPERO_VER : std_logic_vector(31 downto 0) := (others => '0')
+    PAPEROTRIGGERBOARD_SHA : std_logic_vector(31 downto 0) := (others => '0');
+    PAPEROTRIGGERBOARD_VER : std_logic_vector(31 downto 0) := (others => '0')
     );
   port(
     --- CLOCK ------------------------------------------------------------------
@@ -101,7 +101,7 @@ entity top_paperoTriggerBoard is
 
     --- GPIO0 ------------------------------------------------------------------
     oHK  : out std_logic_vector(35 downto 0);
-    
+
     --- GPIO1 ------------------------------------------------------------------
     --Timestamps
     oTS_CLK     : out std_logic;
@@ -127,7 +127,7 @@ entity top_paperoTriggerBoard is
     --All the remainings
     oGPIO_1     : out    std_logic_vector(9 downto 0);
     iGPIO_1     : in     std_logic_vector(6 downto 0);  --not used
-    ioGPIO_1    : inout  std_logic_vector(2 downto 0)   --not used
+    ioGPIO_1    : inout  std_logic_vector(2 downto 0)
     );
 end entity top_paperoTriggerBoard;
 
@@ -193,8 +193,10 @@ architecture std of top_paperoTriggerBoard is
   -- Trigger
   signal sIntTrig      : std_logic;
   signal sExtTrig      : std_logic;
+  signal sGateTrig     : std_logic;
   signal sMainTrig     : std_logic;
-  
+  signal sInSpill      : std_logic;
+
   -- Register
   signal sRegArray    : tRegArray;
   signal sDetIntfRst  : std_logic;
@@ -203,13 +205,14 @@ architecture std of top_paperoTriggerBoard is
   signal sRunMode     : std_logic;
   signal sBusyFlag    : std_logic;
   signal sRunFlag     : std_logic;
+  signal sInSpillFlag : std_logic;
 
   -- Timestamp
   signal sTsClk       : std_logic;
   signal sTsRst       : std_logic;
   signal sTsFreqDiv   : std_logic_vector(31 downto 0);
   signal sTsDutyCycle : std_logic_vector(31 downto 0);
-  
+
   -- Busy
   signal sBusy0   : std_logic;
   signal sBusy1   : std_logic;
@@ -470,7 +473,7 @@ begin
     generic map (
       pFDI_WIDTH => cFDI_WIDTH,
       pFDI_DEPTH => cFDI_DEPTH,
-      pGW_VER    => PAPERO_SHA
+      pGW_VER    => PAPEROTRIGGERBOARD_SHA
       )
     port map (
       iCLK                => sClk,
@@ -544,22 +547,23 @@ begin
       signal_in => sRegArray(rGOTO_STATE)(2),
       pulse_out => sRegArrayRst
       );
-     
-     
+
+
   -- Combinatorial assignment --------------------------------------------------
   sRunMode      <= sRegArray(rGOTO_STATE)(4);
   sBusyFlag     <= sRegArray(rTRGBRD_CFG)(0);
   sRunFlag      <= sRegArray(rTRGBRD_CFG)(1);
+  sInSpillFlag  <= sRegArray(rTRGBRD_CFG)(2);
   sTsFreqDiv    <= sRegArray(rTRGBRD_FREQDIV);
   sTsDutyCycle  <= sRegArray(rTRGBRD_DUTY);
-  
+
   -- GPIO connections ----------------------------------------------------------
   oHK           <= (others => '0');
   oMUX_SEL      <= sRegArray(rTRGBRD_CFG)(2);
   oI2C_SDA      <= '0';
   oI2C_SCL      <= '0';
   oGPIO_1       <= (others => '0');
-  
+
   -- Timestamp clock -----------------------------------------------------------
   ts_clk : clock_divider_2
 	generic map(
@@ -576,9 +580,9 @@ begin
     iFREQ_DIV         => sTsFreqDiv,
     iDUTY_CYCLE       => sTsDutyCycle
 		);
-  
+
   --- I/O synchronization ------------------------------------------------------
-  BCO_CLK_SYNCH : sync_edge
+  TRIG_SYNCH : sync_edge
     generic map (
       pSTAGES => 3
       )
@@ -590,7 +594,20 @@ begin
       oEDGE_R => sExtTrig,
       oEDGE_F => open
       );
-  
+
+  INSPILL_SYNCH : sync_edge
+    generic map (
+      pSTAGES => 3
+      )
+    port map (
+      iCLK    => sClk,
+      iRST    => '0',
+      iD      => ioGPIO_1(0),
+      oQ      => sInSpill,
+      oEDGE_R => open,
+      oEDGE_F => open
+      );
+
   BUSY0_SYNCH : sync_stage
   generic map (
     pSTAGES => 2
@@ -601,7 +618,7 @@ begin
     iD    => iBUSY0,
     oQ    => sBusy0
     );
-    
+
   BUSY1_SYNCH : sync_stage
   generic map (
     pSTAGES => 2
@@ -612,7 +629,7 @@ begin
     iD    => iBUSY1,
     oQ    => sBusy1
     );
-    
+
   BUSY2_SYNCH : sync_stage
   generic map (
     pSTAGES => 2
@@ -623,7 +640,7 @@ begin
     iD    => iBUSY2,
     oQ    => sBusy2
     );
-  
+
   BUSY3_SYNCH : sync_stage
   generic map (
     pSTAGES => 2
@@ -634,7 +651,7 @@ begin
     iD    => iBUSY3,
     oQ    => sBusy3
     );
-  
+
   BUSY4_SYNCH : sync_stage
   generic map (
     pSTAGES => 2
@@ -645,7 +662,7 @@ begin
     iD    => iBUSY4,
     oQ    => sBusy4
     );
-  
+
   BUSY5_SYNCH : sync_stage
   generic map (
     pSTAGES => 2
@@ -656,39 +673,34 @@ begin
     iD    => iBUSY5,
     oQ    => sBusy5
     );
-    
-  --- I/O buffering ------------------------------------------------------------
-  TS_CLK_FFD : process(sClk)
+
+  --- Output buffering ---------------------------------------------------------
+  O_FFD : process(sClk)
   begin
     if rising_edge(sClk) then
-      oTS_CLK  <= sTsClk;
+      oTS_CLK    <= sTsClk;
+      oTS_RST    <= sCountersRst or sDetIntfRst or not sRunMode;
+      oTRIG_FPGA <= sMainTrig;
     end if;
-  end process TS_CLK_FFD;
-  
-  TS_RST_FFD : process(sClk)
-  begin
-    if rising_edge(sClk) then
-      oTS_RST  <= sCountersRst or sDetIntfRst or not sRunMode;
-    end if;
-  end process TS_RST_FFD;
-  
-  
-  TRIG_FFD : process(sClk)
+  end process O_FFD;
+
+  sMainTrig <= sGateTrig;
+  --- Trigger Behaviour --------------------------------------------------------
+  TRIG_PROC : process(sClk)
   begin
     if rising_edge(sClk) then
       sBusyOr <= sBusy0 or sBusy1 or sBusy2 or sBusy3 or sBusy4 or sBusy5;
-      if (sBusyFlag = '0' and sRunFlag = '0') then
-        oTRIG_FPGA  <= sExtTrig;
-      elsif (sBusyFlag = '0' and sRunFlag = '1') then
-        oTRIG_FPGA  <= sExtTrig and sRunMode;
+
+      if (sBusyFlag = '0' and sRunFlag = '1') then
+        sGateTrig  <= sExtTrig and sRunMode;
       elsif (sBusyFlag = '1' and sRunFlag = '0') then
-        oTRIG_FPGA  <= sExtTrig and (not sBusyOr);
+        sGateTrig  <= sExtTrig and (not sBusyOr);
       elsif (sBusyFlag = '1' and sRunFlag = '1') then
-        oTRIG_FPGA  <= sExtTrig and (not sBusyOr) and sRunMode;
-      else
-        oTRIG_FPGA  <= sExtTrig;
+        sGateTrig  <= sExtTrig and (not sBusyOr) and sRunMode;
+      else --sBusyFlag = '0' and sRunFlag = '0'
+        sGateTrig  <= sExtTrig;
       end if;
     end if;
-  end process TRIG_FFD;
+  end process TRIG_PROC;
 
 end architecture;

@@ -134,122 +134,47 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[35]
 #===============================================================================
 # GPIO 1
 #===============================================================================
-#set_location_assignment PIN_Y15 -to oFE_A_TEST
-#set_location_assignment PIN_AC24 -to oFE_B_RESET
-#set_location_assignment PIN_AA15 -to oFE_A_RESET
-#set_location_assignment PIN_AD26 -to oFE_B_TEST
-#set_location_assignment PIN_AG28 -to oFE_A0_HOLD
-#set_location_assignment PIN_AF28 -to oFE_B0_HOLD
-#set_location_assignment PIN_AE25 -to oFE_A1_HOLD
-#set_location_assignment PIN_AF27 -to oFE_B1_HOLD
-#set_location_assignment PIN_AG26 -to oFE_A0_SHIFT
-#set_location_assignment PIN_AH27 -to oFE_B0_SHIFT
-#set_location_assignment PIN_AG25 -to oFE_A1_SHIFT
-#set_location_assignment PIN_AH26 -to oFE_B1_SHIFT
-#set_location_assignment PIN_AH24 -to oFE_A0_CLK
-#set_location_assignment PIN_AF25 -to oFE_B0_CLK
-#set_location_assignment PIN_AG23 -to oFE_A1_CLK
-#set_location_assignment PIN_AF23 -to oFE_B1_CLK
-#set_location_assignment PIN_AG24 -to oNC_A
-#set_location_assignment PIN_AH22 -to oNC_B
-#set_location_assignment PIN_AH21 -to iADC_A_CS_RET
-#set_location_assignment PIN_AG21 -to iADC_B_CS_RET
-#set_location_assignment PIN_AH23 -to iADC_A_SCK_RET
-#set_location_assignment PIN_AA20 -to iADC_B_SCK_RET
-#set_location_assignment PIN_AF22 -to oADC_A_CS
-#set_location_assignment PIN_AE22 -to oADC_B_CS
-#set_location_assignment PIN_AG20 -to oADC_A_SCLK
-#set_location_assignment PIN_AF21 -to oADC_B_SCLK
-#set_location_assignment PIN_AG19 -to iADC_A_SDATA0
-#set_location_assignment PIN_AH19 -to iADC_B_SDATA0
-#set_location_assignment PIN_AG18 -to iADC_A_SDATA1
-#set_location_assignment PIN_AH18 -to iADC_B_SDATA1
-#set_location_assignment PIN_AF18 -to iADC_A_SDATA2
-#set_location_assignment PIN_AF20 -to iADC_B_SDATA2
-#set_location_assignment PIN_AG15 -to iADC_A_SDATA3
-#set_location_assignment PIN_AE20 -to iADC_B_SDATA3
-#set_location_assignment PIN_AE19 -to iADC_A_SDATA4
-#set_location_assignment PIN_AE17 -to iADC_B_SDATA4
-
-
 set_location_assignment PIN_Y15  -to iTS_CLK_CTX
-set_location_assignment PIN_AC24 -to iGPIO_1[0] 
-set_location_assignment PIN_AA15 -to oTRIG_FPGA 
-set_location_assignment PIN_AD26 -to oGPIO_1[0] 
-set_location_assignment PIN_AG28 -to oTS_CLK    
-set_location_assignment PIN_AF28 -to iGPIO_1[1] 
-set_location_assignment PIN_AE25 -to oTS_RST    
-set_location_assignment PIN_AF27 -to oGPIO_1[1] 
-set_location_assignment PIN_AG26 -to oMUX_SEL   
-set_location_assignment PIN_AH27 -to oGPIO_1[2] 
+set_location_assignment PIN_AC24 -to iGPIO_1[0]
+set_location_assignment PIN_AA15 -to oTRIG_FPGA
+set_location_assignment PIN_AD26 -to oGPIO_1[0]
+set_location_assignment PIN_AG28 -to oTS_CLK
+set_location_assignment PIN_AF28 -to iGPIO_1[1]
+set_location_assignment PIN_AE25 -to oTS_RST
+set_location_assignment PIN_AF27 -to oGPIO_1[1]
+set_location_assignment PIN_AG26 -to oMUX_SEL
+set_location_assignment PIN_AH27 -to oGPIO_1[2]
 
-set_location_assignment PIN_AG25 -to oI2C_SDA   
-set_location_assignment PIN_AH26 -to oGPIO_1[3] 
-set_location_assignment PIN_AH24 -to oI2C_SCL   
-set_location_assignment PIN_AF25 -to iGPIO_1[2] 
-set_location_assignment PIN_AG23 -to iBUSY0     
-set_location_assignment PIN_AF23 -to oGPIO_1[4] 
-set_location_assignment PIN_AG24 -to iBUSY1     
-set_location_assignment PIN_AH22 -to iGPIO_1[3] 
-set_location_assignment PIN_AH21 -to iBUSY2     
-set_location_assignment PIN_AG21 -to oGPIO_1[5] 
-set_location_assignment PIN_AH23 -to iBUSY3     
-set_location_assignment PIN_AA20 -to iGPIO_1[4] 
-set_location_assignment PIN_AF22 -to iBUSY4     
-set_location_assignment PIN_AE22 -to oGPIO_1[6] 
-set_location_assignment PIN_AG20 -to iBUSY5     
-set_location_assignment PIN_AF21 -to oGPIO_1[7] 
+set_location_assignment PIN_AG25 -to oI2C_SDA
+set_location_assignment PIN_AH26 -to oGPIO_1[3]
+set_location_assignment PIN_AH24 -to oI2C_SCL
+set_location_assignment PIN_AF25 -to iGPIO_1[2]
+set_location_assignment PIN_AG23 -to iBUSY0
+set_location_assignment PIN_AF23 -to oGPIO_1[4]
+set_location_assignment PIN_AG24 -to iBUSY1
+set_location_assignment PIN_AH22 -to iGPIO_1[3]
+set_location_assignment PIN_AH21 -to iBUSY2
+set_location_assignment PIN_AG21 -to oGPIO_1[5]
+set_location_assignment PIN_AH23 -to iBUSY3
+set_location_assignment PIN_AA20 -to iGPIO_1[4]
+set_location_assignment PIN_AF22 -to iBUSY4
+set_location_assignment PIN_AE22 -to oGPIO_1[6]
+set_location_assignment PIN_AG20 -to iBUSY5
+set_location_assignment PIN_AF21 -to oGPIO_1[7]
 
-set_location_assignment PIN_AG19 -to ioGPIO_1[0]  
-set_location_assignment PIN_AH19 -to oGPIO_1[8] 
-set_location_assignment PIN_AG18 -to ioGPIO_1[1]  
-set_location_assignment PIN_AH18 -to iGPIO_1[5] 
-set_location_assignment PIN_AF18 -to ioGPIO_1[2]  
-set_location_assignment PIN_AF20 -to oGPIO_1[9] 
-set_location_assignment PIN_AG15 -to iTRIG_LEMO 
-set_location_assignment PIN_AE20 -to iGPIO_1[6] 
-set_location_assignment PIN_AE19 -to iTRIG_CTX  
-set_location_assignment PIN_AE17 -to iRST_CTX   
-
-
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_A_TEST
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_B_RESET
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_A_RESET
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_B_TEST
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_A0_HOLD
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_B0_HOLD
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_A1_HOLD
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_B1_HOLD
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_A0_SHIFT
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_B0_SHIFT
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_A1_SHIFT
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_B1_SHIFT
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_A0_CLK
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_B0_CLK
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_A1_CLK
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oFE_B1_CLK
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oNC_A
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oNC_B
-#set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to iADC_A_CS_RET
-#set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to iADC_B_CS_RET
-#set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to iADC_A_SCK_RET
-#set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to iADC_B_SCK_RET
-#set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to oADC_A_CS
-#set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to oADC_B_CS
-#set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to oADC_A_SCLK
-#set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to oADC_B_SCLK
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_A_SDATA0
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_B_SDATA0
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_A_SDATA1
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_B_SDATA1
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_A_SDATA2
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_B_SDATA2
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_A_SDATA3
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_B_SDATA3
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_A_SDATA4
-#set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iADC_B_SDATA4
+set_location_assignment PIN_AG19 -to ioGPIO_1[0]
+set_location_assignment PIN_AH19 -to oGPIO_1[8]
+set_location_assignment PIN_AG18 -to ioGPIO_1[1]
+set_location_assignment PIN_AH18 -to iGPIO_1[5]
+set_location_assignment PIN_AF18 -to ioGPIO_1[2]
+set_location_assignment PIN_AF20 -to oGPIO_1[9]
+set_location_assignment PIN_AG15 -to iTRIG_LEMO
+set_location_assignment PIN_AE20 -to iGPIO_1[6]
+set_location_assignment PIN_AE19 -to iTRIG_CTX
+set_location_assignment PIN_AE17 -to iRST_CTX
 
 
+#Set 3.3V Standard to all the pins
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iTS_CLK_CTX
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iGPIO_1[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oTRIG_FPGA
@@ -260,7 +185,6 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oTS_RST
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oGPIO_1[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oMUX_SEL
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oGPIO_1[2]
-
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oI2C_SDA
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oGPIO_1[3]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oI2C_SCL
@@ -277,7 +201,6 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iBUSY4
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oGPIO_1[6]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iBUSY5
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oGPIO_1[7]
-
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ioGPIO_1[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oGPIO_1[8]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ioGPIO_1[1]
@@ -290,12 +213,51 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iTRIG_CTX
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iRST_CTX
 
 
+#Disable pull-up from busy inputs (if unconnected, the pin shall have 0 value)
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to iBUSY0
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to iBUSY1
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to iBUSY2
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to iBUSY3
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to iBUSY4
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to iBUSY5
+
+#Enable FFD packing on I/O pins
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iTS_CLK_CTX
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iGPIO_1[0]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oTRIG_FPGA
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[0]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oTS_CLK
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iGPIO_1[1]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oTS_RST
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[1]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oMUX_SEL
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[2]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oI2C_SDA
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[3]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oI2C_SCL
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iGPIO_1[2]
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iBUSY0
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[4]
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iBUSY1
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iGPIO_1[3]
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iBUSY2
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[5]
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iBUSY3
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iGPIO_1[4]
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iBUSY4
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[6]
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iBUSY5
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[7]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER  ON -to ioGPIO_1[0]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[8]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER  ON -to ioGPIO_1[1]
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iGPIO_1[5]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER  ON -to ioGPIO_1[2]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to oGPIO_1[9]
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iTRIG_LEMO
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iGPIO_1[6]
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iTRIG_CTX
+set_instance_assignment -name FAST_INPUT_REGISTER ON  -to iRST_CTX
 
 
 #===============================================================================
