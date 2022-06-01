@@ -193,6 +193,7 @@ architecture std of top_paperoTriggerBoard is
   -- Trigger
   signal sIntTrig      : std_logic;
   signal sExtTrig      : std_logic;
+  signal sTrig         : std_logic;
   signal sGateTrig     : std_logic;
   signal sMainTrig     : std_logic;
   signal sInSpill      : std_logic;
@@ -206,6 +207,8 @@ architecture std of top_paperoTriggerBoard is
   signal sBusyFlag    : std_logic;
   signal sRunFlag     : std_logic;
   signal sInSpillFlag : std_logic;
+  signal sIntTrigEn   : std_logic;
+  signal sCal         : std_logic;
 
   -- Timestamp
   signal sTsClk       : std_logic;
@@ -224,7 +227,10 @@ architecture std of top_paperoTriggerBoard is
 
 
 begin
-  -- connection of internal logics ----------------------------
+  --- Combinatorial assignments ------------------------------------------------
+  LED <= (others => '0');
+
+  -- connection of internal logics ---------------------------------------------
   fpga_clk_50   <= FPGA_CLK1_50;
   sClk          <= h2f_clk_50MHz;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
@@ -556,6 +562,8 @@ begin
   sInSpillFlag  <= sRegArray(rTRGBRD_CFG)(2);
   sTsFreqDiv    <= sRegArray(rTRGBRD_FREQDIV);
   sTsDutyCycle  <= sRegArray(rTRGBRD_DUTY);
+  sIntTrigEn    <= sRegArray(rTRIGBUSY_LOGIC)(0);
+  sCal          <= sRegArray(rTRIGBUSY_LOGIC)(1);
 
   -- GPIO connections ----------------------------------------------------------
   oHK           <= (others => '0');
@@ -684,21 +692,27 @@ begin
     end if;
   end process O_FFD;
 
-  sMainTrig <= sGateTrig;
   --- Trigger Behaviour --------------------------------------------------------
+  --Multiplex the wanted trigger
+  sTrig <=  sExtTrig  when (sInSpillFlag = '0' and sIntTrigEn = '0') else
+            sIntTrig  when (sInSpillFlag = '0' and sIntTrigEn = '1') else
+            sGateTrig; --sInSpillFlag = '1'
+  sGateTrig <=  sIntTrig when (sInSpill = '0') else
+                sExtTrig;
   TRIG_PROC : process(sClk)
   begin
     if rising_edge(sClk) then
       sBusyOr <= sBusy0 or sBusy1 or sBusy2 or sBusy3 or sBusy4 or sBusy5;
 
+      --Inhibit trigger with the enabled flags
       if (sBusyFlag = '0' and sRunFlag = '1') then
-        sGateTrig  <= sExtTrig and sRunMode;
+        sMainTrig  <= sTrig and sRunMode;
       elsif (sBusyFlag = '1' and sRunFlag = '0') then
-        sGateTrig  <= sExtTrig and (not sBusyOr);
+        sMainTrig  <= sTrig and (not sBusyOr);
       elsif (sBusyFlag = '1' and sRunFlag = '1') then
-        sGateTrig  <= sExtTrig and (not sBusyOr) and sRunMode;
+        sMainTrig  <= sTrig and (not sBusyOr) and sRunMode;
       else --sBusyFlag = '0' and sRunFlag = '0'
-        sGateTrig  <= sExtTrig;
+        sMainTrig  <= sTrig;
       end if;
     end if;
   end process TRIG_PROC;
