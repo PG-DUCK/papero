@@ -57,10 +57,14 @@ architecture std of TdaqModule is
   signal sHkRdrCnt        : tControlIn;
   signal sHkRdrIntstart   : std_logic;
   signal sF2hFastCnt      : tControlIn;
-  signal sF2hFastMetaData : tF2hMetadata;
   signal sF2hFastBusy     : std_logic;
   signal sF2hFastWarning  : std_logic;
   signal sCrWarning       : std_logic_vector(2 downto 0);
+  signal sMetaDataIn      : tF2hMetadata;
+  signal sMetaDataOut     : tF2hMetadata;
+  signal sMetaDataRd      : std_logic;
+  signal sMetaDataWr      : std_logic;
+  signal sMetaDataErr     : std_logic;
 
   -- Register Array
   signal sRegArray    : tRegArray;
@@ -106,20 +110,19 @@ begin
   sTestUnitCfg            <= sRegArray(rUNITS_EN)(9 downto 8);
   --
   sTrigCfg                <= sRegArray(rTRIGBUSY_LOGIC);
-  --
-  sF2hFastMetaData.detId  <= sRegArray(rDET_ID)(15 downto 0);
-  --
-  sF2hFastMetaData.pktLen <= sRegArray(rPKT_LEN);
 
   -- Metadata assignments
-  sF2hFastMetaData.trigNum <= sTrigCount;
-  sF2hFastMetaData.trigId  <= sTrigId;
-  sF2hFastMetaData.intTime <= iINT_TS;
-  sF2hFastMetaData.extTime <= iEXT_TS;
+  sMetaDataIn.detId   <= sRegArray(rDET_ID)(15 downto 0);
+  sMetaDataIn.pktLen  <= sRegArray(rPKT_LEN);
+  sMetaDataIn.trigNum <= sTrigCount;
+  sMetaDataIn.trigId  <= sTrigId;
+  sMetaDataIn.intTime <= iINT_TS;
+  sMetaDataIn.extTime <= iEXT_TS;
 
   --Ports assignments
   oREG_ARRAY <= sRegArray;
   oBUSY      <= sBusy;
+  oTRIG      <= sTrig;
 
   --!@brief FPGA-HPS communication interfaces
   --!@todo connect sF2hFastBusy to the trigBusyLogic
@@ -138,7 +141,8 @@ begin
       iHK_RDR_INT_START   => sHkRdrIntstart,
       --
       iF2HFAST_CNT        => sF2hFastCnt,
-      iF2HFAST_METADATA   => sF2hFastMetaData,
+      oF2HFAST_MD_RD      => sMetaDataRd,
+      iF2HFAST_METADATA   => sMetaDataOut,
       oF2HFAST_BUSY       => sF2hFastBusy,
       oF2HFAST_WARNING    => sF2hFastWarning,
       --
@@ -200,7 +204,7 @@ begin
       pDEPTH       => pFDI_DEPTH,
       pUSEDW_WIDTH => ceil_log2(pFDI_DEPTH),
       pAEMPTY_VAL  => 2,
-      pAFULL_VAL   => pFDI_DEPTH-10,
+      pAFULL_VAL   => pFDI_DEPTH-640-3,
       pSHOW_AHEAD  => "OFF"
       )
     port map(
@@ -229,7 +233,7 @@ begin
       iEXT_TRIG       => iEXT_TRIG,
       iBUSIES_AND     => iTRG_BUSIES_AND,
       iBUSIES_OR      => iTRG_BUSIES_OR,
-      oTRIG           => oTRIG,
+      oTRIG           => sTrig,
       oTRIG_ID        => sTrigId,
       oTRIG_COUNT     => sTrigCount,
       oEXT_TRIG_COUNT => sExtTrigCount,
@@ -237,6 +241,23 @@ begin
       oTRIG_WHEN_BUSY => sTrigWhenBusyCount,
       oBUSY           => sBusy
       );
+
+  sMetaDataWr <= sTrig;
+  metaDataFifo_i : metaDataFifo
+    generic map(
+      pFIFOs => 7,
+      pWIDTH => 32
+    )
+    port map (
+      iCLK      => iCLK,
+      iRST      => iRST or not sTrigEn,
+      oERR      => sMetaDataErr,
+      iRD       => sMetaDataRd,
+      iWR       => sMetaDataWr,
+      iMETADATA => sMetaDataIn,
+      oMETADATA => sMetaDataOut
+    );
+
 
   -- FPGA-registers mapping
   sFpgaRegIntf.regs(rGW_VER)     <= pGW_VER;
@@ -275,7 +296,7 @@ begin
   sFpgaRegIntf.regs(rPIUMONE)        <= x"c1a0c1a0";
   sFpgaRegIntf.we(rPIUMONE)          <= '1';
 
-  sRegWarning <= x"00000" & "000" & sF2hFastWarning & x"0" & "0" & sCrWarning;
+  sRegWarning <= x"00000" & "00" & sMetaDataErr & sF2hFastWarning & x"0" & "0" & sCrWarning;
   sRegBusy    <= sBusy & "00" & sTestUnitBusy & iTRG_BUSIES_AND & iTRG_BUSIES_OR & sF2hFastBusy
               & iFIFO_F2H_AFULL & iFIFO_F2HFAST_AFULL
               & sFdiFifoOut.aFull & sTrigWhenBusyCount;

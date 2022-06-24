@@ -298,6 +298,7 @@ package paperoPackage is
       iHK_RDR_INT_START   : in  std_logic;
       --# {{F2HFast|F2HFast}}
       iF2HFAST_CNT        : in  tControlIn;
+      oF2HFAST_MD_RD      : out std_logic;
       iF2HFAST_METADATA   : in  tF2hMetadata;
       oF2HFAST_BUSY       : out std_logic;
       oF2HFAST_WARNING    : out std_logic;
@@ -385,6 +386,7 @@ package paperoPackage is
       -- Enable
       iEN          : in  std_logic;  -- Abilitazione del modulo FastData_Transmitter
       -- Settings Packet
+      oMETADATA_RD : out std_logic;
       iMETADATA    : in  tF2hMetadata;  --Packet header information all'FPGA
       -- Fifo Management
       iFIFO_DATA   : in  std_logic_vector(31 downto 0);  -- "Data_Output" della FIFO a monte del FastData_Transmitter
@@ -526,6 +528,21 @@ package paperoPackage is
       );
   end component;
 
+  component metaDataFifo is
+    generic (
+      pFIFOs : natural;
+      pWIDTH : natural
+    );
+    port (
+      iCLK      : in  std_logic;
+      iRST      : in  std_logic;
+      oERR      : out std_logic;
+      iRD       : in  std_logic;
+      iWR       : in  std_logic;
+      iMETADATA : in  tF2hMetadata;
+      oMETADATA : out tF2hMetadata
+    );
+  end component;
 
 
 
