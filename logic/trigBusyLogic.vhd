@@ -96,7 +96,7 @@ begin
       iRST    => iRST,
       iD      => iEXT_TRIG,
       oEDGE_R => sExtTrigSynch
-      );
+      );  
 
   --!@brief Internal trigger counter
   --!@param[in] iCLK  Clock, used on rising edge

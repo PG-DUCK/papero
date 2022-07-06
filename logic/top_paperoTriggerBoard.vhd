@@ -197,6 +197,11 @@ architecture std of top_paperoTriggerBoard is
   signal sGateTrig     : std_logic;
   signal sMainTrig     : std_logic;
   signal sInSpill      : std_logic;
+  
+  --Random Trigger Generator
+  signal sErlangConfig  : tErlangConfig;
+  signal sErlangTrig    : std_logic;
+  signal sPeriodicTrig  : std_logic;
 
   -- Register
   signal sRegArray    : tRegArray;
@@ -564,6 +569,14 @@ begin
   sTsDutyCycle  <= sRegArray(rTRGBRD_DUTY);
   sIntTrigEn    <= sRegArray(rTRIGBUSY_LOGIC)(0);
   sCal          <= sRegArray(rTRIGBUSY_LOGIC)(1);
+  
+  --Random trigger generator assignments
+  sErlangConfig.en          <= sRegArray(rTRGBRD_CFG)(16);
+  sErlangConfig.erlangTrig  <= sRegArray(rTRGBRD_CFG)(17);
+  sErlangConfig.thrshLevel  <= sRegArray(rERLANG_THRSH);
+  sErlangConfig.intBusy     <= sRegArray(rERLANG_INTBUSY);
+  sErlangConfig.pulseWidth  <= sRegArray(rERLANG_DUTY);
+  sErlangConfig.freqDiv     <= sRegArray(rERLANG_FREQDIV);
 
   -- GPIO connections ----------------------------------------------------------
   oHK           <= (others => '0');
@@ -716,5 +729,22 @@ begin
       end if;
     end if;
   end process TRIG_PROC;
+  
+  --!@generate an internal trigger with Erlang distribution
+  sIntTrig <= sErlangTrig when sErlangConfig.erlangTrig = '1' else sPeriodicTrig;
+  trig_gen : erlangRandomTrigger
+  port map(
+    iCLK                => sClk,
+    iRST                => sDetIntfRst,
+    iEN                 => sErlangConfig.en,
+    iEXT_BUSY           => '0',
+    iTHRSH_LEVEL        => sErlangConfig.thrshLevel,
+    iINT_BUSY           => sErlangConfig.intBusy,
+    iPULSE_WIDTH        => sErlangConfig.pulseWidth,
+    iSHAPE_FACTOR       => x"00000001",
+    iFREQ_DIV           => sErlangConfig.freqDiv,
+    oTRIG               => sErlangTrig,
+    oSLOW_CLOCK         => sPeriodicTrig
+  );
 
 end architecture;

@@ -53,14 +53,19 @@ package paperoPackage is
   constant rTRGBRD_CFG     : natural := 9;
   constant rTRGBRD_FREQDIV : natural := 10;
   constant rTRGBRD_DUTY    : natural := 11;
+  constant rERLANG_THRSH   : natural := 12;
+  constant rERLANG_INTBUSY : natural := 13;
+  constant rERLANG_DUTY    : natural := 14;
+  constant rERLANG_FREQDIV : natural := 15;
+  
   --!Register array HPS-RW, FPGA-R
   type tHpsRegArray is array (0 to cHPS_REGISTERS-1) of
     std_logic_vector(cREG_WIDTH-1 downto 0);
   constant cHPS_REG_NULL : tHpsRegArray := (
     x"00000000", x"00000001", x"02faf080", x"000000FF",
     x"0000028A", cFE_CLK_DUTY & cFE_CLK_DIV, cADC_CLK_DUTY & cADC_CLK_DIV , cCFG_PLANE & cTRG2HOLD,
-    cBUSY_LEN & cADC_DELAY, x"00000007", x"00000032", x"00000019",
-    x"00000000", x"00000000", x"00000000", x"00000000"
+    cBUSY_LEN & cADC_DELAY, x"00030007", x"00000032", x"00000019",
+    x"80000000", x"00000001", x"00000032", x"0007A120"
     );                                  --!Null vector for HPS register array
 
   constant rGW_VER           : natural := 0;
@@ -164,6 +169,17 @@ package paperoPackage is
     intTime : std_logic_vector(63 downto 0);  --!Internal Timestamp
     extTime : std_logic_vector(63 downto 0);  --!External Timestamp
   end record tF2hMetadata;
+  
+  --!Erlang Random Trigger configuration
+  type tErlangConfig is record
+    en          : std_logic;                      --!Enable
+    erlangTrig  : std_logic;                      --!Erlang/Periodic type trigger
+    thrshLevel  : std_logic_vector(31 downto 0);  --!Threshold Level to generate trigger
+    intBusy     : std_logic_vector(31 downto 0);  --!Internal Busy between one trigger and another
+    pulseWidth  : std_logic_vector(31 downto 0);  --!Pulse trigger duty cycle
+    freqDiv     : std_logic_vector(31 downto 0);  --!Comparison frequency and period of the periodic trigger
+  end record tErlangConfig;
+  
 
   -- Components ----------------------------------------------------------------
   --!Detects rising and falling edges of the input
@@ -528,9 +544,46 @@ package paperoPackage is
       iFASTDATA_AFULL : in  std_logic
       );
   end component;
-
-
-
+  
+  --!@copydoc erlangRandomTrigger.vhd
+  component erlangRandomTrigger is
+  port(
+    -- Main
+    iCLK            : in std_logic;                       --!Clock
+    iRST            : in std_logic;                       --!Reset
+    iEN             : in std_logic;                       --!randomTrigger module enable
+    -- External Busy
+    iEXT_BUSY       : in std_logic;                       --!Ignore trigger
+    -- Trigger Property    
+    iTHRSH_LEVEL    : in std_logic_vector(31 downto 0);   --!Threshold to generate trigger by randomTrigger module [0 - 12]
+    iPULSE_WIDTH    : in std_logic_vector(31 downto 0);   --!Length of the pulse (in number of iCLK cycles)
+    iINT_BUSY       : in std_logic_vector(31 downto 0);   --!Ignore trigger for "N" clock cycles after trigger
+    iSHAPE_FACTOR   : in std_logic_vector(31 downto 0);   --!Statistic distribution: K=1 -> Exponential, K>7 -> Gaussian
+    iFREQ_DIV       : in std_logic_vector(31 downto 0);   --!Period of periodic (in number of iCLK cycles) and comparison frequency for randomTrigger
+    -- Output
+    oTRIG           : out std_logic;                      --!Trigger
+    oSLOW_CLOCK     : out std_logic                       --!Periodic trigger
+    );
+  end component;
+  
+  --!@copydoc randomTrigger.vhd
+  component randomTrigger is
+  port(
+    iCLK            : in  std_logic;        --!Main clock
+    iRST            : in  std_logic;        --!Main reset
+    iEN             : in  std_logic;        --!Enable Comparison between iTHRESHOLD and pseudocasual 32-bit value
+    -- External Busy
+    iEXT_BUSY       : in std_logic;         --!Ignore trigger
+    -- Settings
+    iTHRESHOLD      : in std_logic_vector(31 downto 0);  --!Threshold to configure trigger rate (low threshold --> High trigger rate)
+    iINT_BUSY       : in std_logic_vector(31 downto 0);  --!Ignore trigger for "N" clock cycles after trigger
+    iSHAPER_T_ON    : in std_logic_vector(31 downto 0);  --!Length of the pulse trigger
+    iFREQ_DIV       : in std_logic_vector(31 downto 0);  --!Slow clock duration (in number of iCLK cycles) to drive PRBS32
+    -- Output
+    oTRIG           : out std_logic;   --!Trigger
+    oSLOW_CLOCK     : out std_logic    --!PRBS32 enable (or trigger with costant frequency)
+    );
+  end component;
 
   -- Functions -----------------------------------------------------------------
   --!@brief Compute the parity bit of an 8-bit data with both polarities

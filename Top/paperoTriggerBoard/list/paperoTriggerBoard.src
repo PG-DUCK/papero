@@ -18,6 +18,7 @@ logic/FastData_Transmitter.vhd
 logic/trigBusyLogic.vhd
 logic/TdaqModule.vhd
 logic/priorityEncoder.vhd
+logic/erlangRandomTrigger.vhd
 
 #Basic functions_md
 logic/edge_detector_md.vhd
@@ -28,6 +29,7 @@ logic/FFD.vhd
 logic/PRBS8.vhd
 logic/PRBS32.vhd
 logic/Variable_PWM_FSM.vhd
+logic/randomTrigger.vhd
 
 #Qsys IPs: regenerate the IP for each new build
 #Add the qip if you want to generate it only once
@@ -50,4 +52,5 @@ logic/msdintf/basic_functions/delay_timer.vhd
 logic/msdintf/basic_functions/counter.vhd
 logic/msdintf/basic_functions/clock_divider.vhd
 logic/msdintf/basic_functions/clock_divider_2.vhd
+logic/msdintf/basic_functions/countGenerator.vhd
 
