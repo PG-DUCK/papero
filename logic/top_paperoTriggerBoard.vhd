@@ -196,7 +196,7 @@ architecture std of top_paperoTriggerBoard is
   signal sTrig         : std_logic;
   signal sGateTrig     : std_logic;
   signal sMainTrig     : std_logic;
-  signal sInSpill      : std_logic;
+  signal sInSpill_b      : std_logic;
   
   --Random Trigger Generator
   signal sErlangConfig  : tErlangConfig;
@@ -624,7 +624,7 @@ begin
       iCLK    => sClk,
       iRST    => '0',
       iD      => ioGPIO_1(0),
-      oQ      => sInSpill,
+      oQ      => sInSpill_b,
       oEDGE_R => open,
       oEDGE_F => open
       );
@@ -710,7 +710,7 @@ begin
   sTrig <=  sExtTrig  when (sInSpillFlag = '0' and sIntTrigEn = '0') else
             sIntTrig  when (sInSpillFlag = '0' and sIntTrigEn = '1') else
             sGateTrig; --sInSpillFlag = '1'
-  sGateTrig <=  sIntTrig when (sInSpill = '0') else
+  sGateTrig <=  sIntTrig when (sInSpill_b = '1') else   -- Usually InSpill is negative logic
                 sExtTrig;
   TRIG_PROC : process(sClk)
   begin
