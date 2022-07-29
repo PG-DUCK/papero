@@ -816,17 +816,17 @@ begin
   sDetIntfCfg.adcIntClkDiv    <= x"0002";
   sDetIntfCfg.adcIntClkDuty   <= x"0001";
   sDetIntfCfg.adcIntConvTime  <= x"203A";
-  sAdcIntExt_b                <= '1';                 --!External/Internal ADC select --> 0=EXT, 1=INT
+  sAdcIntExt_b                <= SW(0);                 --!External/Internal ADC select --> 0=EXT, 1=INT
   oFASTCLK                    <= sAdcIntFastClk;                           
   oRESET_DIGITAL              <= sMultiAdcIntO.RstDig;
   oADC_CONVERT                <= sMultiAdcIntO.AdcConv;
   oSER_SHIFT_CLK              <= sMultiAdcIntO.SerShClk;
   oSER_LOAD                   <= sMultiAdcIntO.SerLoad;
   oSER_SEND                   <= sMultiAdcIntO.SerSend;
-  sMultiAdcIntI(0).SerData    <= '1';   --iSER_A;
+  sMultiAdcIntI(0).SerData    <= iSER_A;
     --sMultiAdcIntI(0).ClkRet     <= iFASTCLK_RET;
     --sMultiAdcIntI(0).SerSendRet <= iSER_SEND_RET;
-  sMultiAdcIntI(1).SerData    <= '1';   --iSER_B;
+  sMultiAdcIntI(1).SerData    <= iSER_B;
     --sMultiAdcIntI(1).ClkRet     <= iFASTCLK_RET;
     --sMultiAdcIntI(1).SerSendRet <= iSER_SEND_RET;
   sDetIntfCfg.adcFastMode     <= sRegArray(rASTRA_PARAM)(24);
