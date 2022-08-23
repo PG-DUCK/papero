@@ -238,7 +238,7 @@ begin
       );
 
   i2c_trig_rx : trigger_rx
-    port (
+    port map(
       clk   => iCLK,
       reset => iRST,
       --
@@ -250,20 +250,20 @@ begin
       crc_status      => sCrcStatus, --out, if '1' crc ok
       end_flag        => sEndFlag, --out, end of I2C transaction
       --
-      ro_sda        => iTRIG_SDA, --in, I2C SDA
-      wire ren_sda  => open,
-      wire de_sda   => open,
-      wire di_sda   => open,
+      ro_sda  => iTRIG_SDA, --in, I2C SDA
+      ren_sda => open,
+      de_sda  => open,
+      di_sda  => open,
       --
-      ro_scl        => iTRIG_SCL, --in, I2C SCL
-      ren_scl       => open,
-      de_scl        => open,
-      di_scl        => open,
+      ro_scl  => iTRIG_SCL, --in, I2C SCL
+      ren_scl => open,
+      de_scl  => open,
+      di_scl  => open,
       --
-      ro_busy       => '0',
-      ren_busy      => open,
-      de_busy       => open,
-      di_bus        => open --out, busy
+      ro_busy   => '0',
+      ren_busy  => open,
+      de_busy   => open,
+      di_busy   => open --out, busy
     );
 
   sExtTrigMux <=  sExtTrig when (sStdTrig = '0') else

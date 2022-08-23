@@ -572,20 +572,20 @@ package paperoPackage is
       crc_status      : out std_logic;
       end_flag        : out std_logic;
       --
-      ro_sda        : in std_logic;
-      wire ren_sda  : out std_logic;
-      wire de_sda   : out std_logic;
-      wire di_sda   : out std_logic;
+      ro_sda  : in  std_logic;
+      ren_sda : out std_logic;
+      de_sda  : out std_logic;
+      di_sda  : out std_logic;
       --
-      ro_scl        : in std_logic;
-      ren_scl       : out std_logic;
-      de_scl        : out std_logic;
-      di_scl        : out std_logic;
+      ro_scl  : in std_logic;
+      ren_scl : out std_logic;
+      de_scl  : out std_logic;
+      di_scl  : out std_logic;
       --
-      ro_busy       : in std_logic;
-      ren_busy      : out std_logic;
-      de_busy       : out std_logic;
-      di_bus        : out std_logic;
+      ro_busy   : in std_logic;
+      ren_busy  : out std_logic;
+      de_busy   : out std_logic;
+      di_busy   : out std_logic
     );
   end component;
 
