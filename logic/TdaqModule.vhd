@@ -27,7 +27,8 @@ entity TdaqModule is
     iINT_TS             : in  std_logic_vector(63 downto 0);  --!Internal timestamp
     iEXT_TS             : in  std_logic_vector(63 downto 0);  --!External timestamp
     --Trigger and Busy logic
-    iEXT_TRIG           : in  std_logic;
+    iTRIG_SDA           : in  std_logic;
+    iTRIG_SCL           : in  std_logic;
     oTRIG               : out std_logic;
     oBUSY               : out std_logic;
     iTRG_BUSIES_AND     : in  std_logic_vector(7 downto 0);
@@ -65,6 +66,7 @@ architecture std of TdaqModule is
   signal sMetaDataRd      : std_logic;
   signal sMetaDataWr      : std_logic;
   signal sMetaDataErr     : std_logic;
+  signal sMetaDataEmpty   : std_logic;
 
   -- Register Array
   signal sRegArray    : tRegArray;
@@ -79,6 +81,7 @@ architecture std of TdaqModule is
   signal sFdiFifoUsedW : std_logic_vector(ceil_log2(pFDI_DEPTH)-1 downto 0);
 
   -- Trigger and Busy logic
+  signal sExtTrig           : std_logic;
   signal sTrigEn            : std_logic;
   signal sTrigId            : std_logic_vector(15 downto 0);
   signal sTrigCount         : std_logic_vector(31 downto 0);
@@ -88,6 +91,15 @@ architecture std of TdaqModule is
   signal sTrigCfg           : std_logic_vector(31 downto 0);
   signal sBusy              : std_logic;
   signal sTrig              : std_logic;
+
+  -- Tianwei trigger
+  signal sExtTrigMux  : std_logic;
+  signal sStdTrig     : std_logic;
+  signal sSsId        : std_logic_vector(7 downto 0);
+  signal sTrigType    : std_logic_vector(7 downto 0);
+  signal sTrigSerial  : std_logic_vector(31 downto 0);
+  signal sCrcStatus   : std_logic;
+  signal sEndFlag     : std_logic;
 
   -- Test unit
   signal sTestUnitEn    : std_logic;
@@ -110,13 +122,14 @@ begin
   sTestUnitCfg            <= sRegArray(rUNITS_EN)(9 downto 8);
   --
   sTrigCfg                <= sRegArray(rTRIGBUSY_LOGIC);
+  sStdTrig                <= sRegArray(rTRIGBUSY_LOGIC)(3); --'0': Use Tianwei I2C; '1': Standard trigger 
 
   -- Metadata assignments
   sMetaDataIn.detId   <= sRegArray(rDET_ID)(15 downto 0);
   sMetaDataIn.pktLen  <= sRegArray(rPKT_LEN);
   sMetaDataIn.trigNum <= sTrigCount;
   sMetaDataIn.trigId  <= sTrigId;
-  sMetaDataIn.intTime <= iINT_TS;
+  sMetaDataIn.intTime <= sTrigSerial & sCrcStatus & "0000000" & sSsId & x"00" & sTrigType;
   sMetaDataIn.extTime <= iEXT_TS;
 
   --Ports assignments
@@ -142,6 +155,7 @@ begin
       --
       iF2HFAST_CNT        => sF2hFastCnt,
       oF2HFAST_MD_RD      => sMetaDataRd,
+      iF2HFAST_MD_EMPTY   => sMetaDataEmpty,
       iF2HFAST_METADATA   => sMetaDataOut,
       oF2HFAST_BUSY       => sF2hFastBusy,
       oF2HFAST_WARNING    => sF2hFastWarning,
@@ -223,6 +237,37 @@ begin
       oQ      => sFdiFifoOut.q
       );
 
+  i2c_trig_rx : trigger_rx
+    port (
+      clk   => iCLK,
+      reset => iRST,
+      --
+      busy_clear      => '0', --in, rising edge to reset busy
+      trigger         => sExtTrig, --out, trigger (beginning of I2C transaction)
+      sub_system_id   => sSsId, --out [7:0]
+      trigger_type    => sTrigType, --out [7:0]
+      trigger_serial  => sTrigSerial, --out [31:0]
+      crc_status      => sCrcStatus, --out, if '1' crc ok
+      end_flag        => sEndFlag, --out, end of I2C transaction
+      --
+      ro_sda        => iTRIG_SDA, --in, I2C SDA
+      wire ren_sda  => open,
+      wire de_sda   => open,
+      wire di_sda   => open,
+      --
+      ro_scl        => iTRIG_SCL, --in, I2C SCL
+      ren_scl       => open,
+      de_scl        => open,
+      di_scl        => open,
+      --
+      ro_busy       => '0',
+      ren_busy      => open,
+      de_busy       => open,
+      di_bus        => open --out, busy
+    );
+
+  sExtTrigMux <=  sExtTrig when (sStdTrig = '0') else
+                  iTRIG_SDA;
   --!@brief Trigger and busy logic
   Trig_Busy : trigBusyLogic
     port map (
@@ -230,7 +275,7 @@ begin
       iRST            => iRST or not sTrigEn,
       iRST_COUNTERS   => iRST_COUNT,
       iCFG            => sTrigCfg,
-      iEXT_TRIG       => iEXT_TRIG,
+      iEXT_TRIG       => sExtTrigMux,
       iBUSIES_AND     => iTRG_BUSIES_AND,
       iBUSIES_OR      => iTRG_BUSIES_OR,
       oTRIG           => sTrig,
@@ -242,7 +287,8 @@ begin
       oBUSY           => sBusy
       );
 
-  sMetaDataWr <= sTrig;
+  sMetaDataWr <=  sEndFlag when (sStdTrig = '0') else
+                  iTRIG_SDA;
   metaDataFifo_i : metaDataFifo
     generic map(
       pFIFOs => 7,
@@ -254,6 +300,7 @@ begin
       oERR      => sMetaDataErr,
       iRD       => sMetaDataRd,
       iWR       => sMetaDataWr,
+      oEMPTY    => sMetaDataEmpty,
       iMETADATA => sMetaDataIn,
       oMETADATA => sMetaDataOut
     );

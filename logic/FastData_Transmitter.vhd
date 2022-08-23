@@ -22,6 +22,7 @@ entity FastData_Transmitter is
     iEN          : in  std_logic;  -- Abilitazione del modulo FastData_Transmitter
     -- Settings Packet
     oMETADATA_RD : out std_logic; -- Read for the metadata fifos
+    iMETADATA_EMPTY : in  std_logic; -- Empty of metadata fifos
     iMETADATA    : in  tF2hMetadata;    --Packet header information
     -- Fifo Management
     iFIFO_DATA   : in  std_logic_vector(31 downto 0);  -- "Data_Output" della FIFO a monte del FastData_Transmitter
@@ -131,7 +132,7 @@ begin
             sBusy      <= '0';  -- Questo è l'unico stato in cui il trasmettitore si può considerare non impegnato in un trasferimento
             sCRC32_rst <= '1';
             if (iEN = '1') then
-              if (iFIFO_EMPTY = '0' and iFIFO_AFULL = '0') then
+              if (iMETADATA_EMPTY = '0' and iFIFO_EMPTY = '0' and iFIFO_AFULL = '0') then
                 sPS <= SOP;
                 oMETADATA_RD   <= '1';
               else

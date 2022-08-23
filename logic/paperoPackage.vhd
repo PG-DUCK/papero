@@ -299,6 +299,7 @@ package paperoPackage is
       --# {{F2HFast|F2HFast}}
       iF2HFAST_CNT        : in  tControlIn;
       oF2HFAST_MD_RD      : out std_logic;
+      iF2HFAST_MD_EMPTY   : in  std_logic;
       iF2HFAST_METADATA   : in  tF2hMetadata;
       oF2HFAST_BUSY       : out std_logic;
       oF2HFAST_WARNING    : out std_logic;
@@ -387,6 +388,7 @@ package paperoPackage is
       iEN          : in  std_logic;  -- Abilitazione del modulo FastData_Transmitter
       -- Settings Packet
       oMETADATA_RD : out std_logic;
+      iMETADATA_EMPTY : in  std_logic;
       iMETADATA    : in  tF2hMetadata;  --Packet header information all'FPGA
       -- Fifo Management
       iFIFO_DATA   : in  std_logic_vector(31 downto 0);  -- "Data_Output" della FIFO a monte del FastData_Transmitter
@@ -439,7 +441,9 @@ package paperoPackage is
       iINT_TS             : in  std_logic_vector(63 downto 0);
       iEXT_TS             : in  std_logic_vector(63 downto 0);
       --# {{TrigBusy|TrigBusy}}
-      iEXT_TRIG           : in  std_logic;
+      iTRIG_SDA           : in  std_logic;
+      iTRIG_SCL           : in  std_logic;
+      --# {{TrigBusy|TrigBusy}}
       oTRIG               : out std_logic;
       oBUSY               : out std_logic;
       iTRG_BUSIES_AND     : in  std_logic_vector(7 downto 0);
@@ -539,12 +543,51 @@ package paperoPackage is
       oERR      : out std_logic;
       iRD       : in  std_logic;
       iWR       : in  std_logic;
+      oEMPTY    : out std_logic;
       iMETADATA : in  tF2hMetadata;
       oMETADATA : out tF2hMetadata
     );
   end component;
 
+  component CRC16_GENERATOR is
+    port (
+      CLOCK       : in  std_logic;
+      RESET       : in  std_logic;    
+      DATA_IN_EN  : in  std_logic;         
+      DATA_IN     : in  std_logic_vector (15 downto 0);
+      CRC_OUT     : out std_logic_vector (15 downto 0)
+    );
+  end component;
 
+  component trigger_rx is
+    port (
+      clk   : in std_logic;
+      reset : in std_logic;
+      --
+      busy_clear      : in std_logic;
+      trigger         : out std_logic;
+      sub_system_id   : out std_logic_vector(7 downto 0);
+      trigger_type    : out std_logic_vector(7 downto 0);
+      trigger_serial  : out std_logic_vector(31 downto 0);
+      crc_status      : out std_logic;
+      end_flag        : out std_logic;
+      --
+      ro_sda        : in std_logic;
+      wire ren_sda  : out std_logic;
+      wire de_sda   : out std_logic;
+      wire di_sda   : out std_logic;
+      --
+      ro_scl        : in std_logic;
+      ren_scl       : out std_logic;
+      de_scl        : out std_logic;
+      di_scl        : out std_logic;
+      --
+      ro_busy       : in std_logic;
+      ren_busy      : out std_logic;
+      de_busy       : out std_logic;
+      di_bus        : out std_logic;
+    );
+  end component;
 
   -- Functions -----------------------------------------------------------------
   --!@brief Compute the parity bit of an 8-bit data with both polarities
