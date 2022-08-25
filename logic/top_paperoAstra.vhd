@@ -822,9 +822,17 @@ begin
       pulse_out => sRegArrayRst
       );
 
+  --!@brief Rising edge to start the configuration only once
+  prgStartEdge : edge_detector
+  port map(
+    iCLK    => sClk,
+    iRST    => '0',
+    iD      => sRegArray(rUNITS_EN)(12),
+    oEDGE_R => sDetIntfCfg.prgStart
+  );
+		
   sRunMode                    <= sRegArray(rGOTO_STATE)(4);
   sDetIntfEn                  <= not sRegArray(rUNITS_EN)(1);
-  sDetIntfCfg.prgStart        <= sRegArray(rUNITS_EN)(12);
   sDetIntfCfg.feClkDuty       <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
   sDetIntfCfg.feClkDiv        <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
   sDetIntfCfg.adcClkDuty      <= sRegArray(rADC_CLK_PARAM)(31 downto 16);
