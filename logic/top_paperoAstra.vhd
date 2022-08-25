@@ -307,6 +307,7 @@ architecture std of top_paperoAstra is
   signal sErrors        : std_logic;
   signal sDebug         : std_logic_vector(7 downto 0);
   signal sPrg           : tPrgIntf;
+  signal sTestPulse     : std_logic;
 
   signal sFeO           : tFpga2FeIntf;
   signal sFeI           : tFe2FpgaIntf;
@@ -379,7 +380,22 @@ begin
 
   --Analog Readout
   oHOLD               <= sFeO.hold_b;
-  oTP                 <= sFeO.test;
+  oTP                 <= sTestPulse when sRegArray(rUNITS_EN)(16) = '1' else 
+                         sFeO.test;
+
+    test_pulse : altera_edge_detector
+    generic map (
+        PULSE_EXT               => 5,
+        EDGE_TYPE               => 1,
+        IGNORE_RST_WHILE_BUSY   => 1
+        ) 
+    port map (
+        clk        => sClk,
+        rst_n      => '0',
+        signal_in  => sMainTrig,
+        pulse_out  => sTestPulse
+        );
+  
 
   --Analog Multiplexer
   oMUX_SHIFT_CLK      <= sFeo.shiftClk;
@@ -970,7 +986,7 @@ begin
     end if;
   end process;
   
-  --!Blinking LED '7' <--> sClk <--> 
+  --!Blinking LED '7' <--> sClk
   LEDR(7) <= sLed(7);
   blink_proc_7 : process (sClk)
   begin
@@ -987,7 +1003,7 @@ begin
     end if;
   end process;
   
-  --!Blinking LED '5' <--> oBUSY
+  --!Blinking LED '5' <--> sMainTrig
   LEDR(5) <= sLed(5);
   blink_proc_5 : process (sClk)
   begin
