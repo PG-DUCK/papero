@@ -567,7 +567,7 @@ begin
   sInSpillFlag  <= sRegArray(rTRGBRD_CFG)(2);
   sTsFreqDiv    <= sRegArray(rTRGBRD_FREQDIV);
   sTsDutyCycle  <= sRegArray(rTRGBRD_DUTY);
-  sIntTrigEn    <= sRegArray(rTRIGBUSY_LOGIC)(0);
+  sIntTrigEn    <= not sRegArray(rTRIGBUSY_LOGIC)(0);
   sCal          <= sRegArray(rTRIGBUSY_LOGIC)(1);
   
   --Random trigger generator assignments

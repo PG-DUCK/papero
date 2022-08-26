@@ -64,8 +64,8 @@ package paperoPackage is
   constant cHPS_REG_NULL : tHpsRegArray := (
     x"00000000", x"00000001", x"02faf080", x"000000FF",
     x"0000028A", cFE_CLK_DUTY & cFE_CLK_DIV, cADC_CLK_DUTY & cADC_CLK_DIV , cCFG_PLANE & cTRG2HOLD,
-    cBUSY_LEN & cADC_DELAY, x"00030007", x"00000032", x"00000019",
-    x"80000000", x"00000001", x"00000032", x"0007A120"
+    cBUSY_LEN & cADC_DELAY, x"00010003", x"00000032", x"00000019",
+    x"80000000", x"00000001", x"00000032", x"02faf080"
     );                                  --!Null vector for HPS register array
 
   constant rGW_VER           : natural := 0;
