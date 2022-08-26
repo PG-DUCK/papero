@@ -202,7 +202,7 @@ begin
 
 
   -- Next State Evaluation
-  delta_proc : process (ps, fifo_wait_request, fifo_wait_request_HH, CR_DATA_in, payload_done, fast_payload_done, false_payload)
+  delta_proc : process (ps, fifo_wait_request, fifo_wait_request_HH, CR_DATA_in, payload_done, fast_payload_done, false_payload, estimated_CRC32)
   begin
     case ps is
       when RESET =>  -- Sei in RESET. Se nella FIFO c'è qualcosa passa a SYNCH, altrimenti rimani qui.
@@ -306,7 +306,7 @@ begin
   warning_enable      <= '1' when ps = warning       else '0';
 
   -- Output Process. Processo per la determinzazione dei valori sulle porte d'uscita del Config_Receiver.
-  output_proc : process (ps, synch_enable_R, synch_pulse, synch_pulse_HH, start_packet_enable_R, rebound_enable_R, length_enable_R, fwv_enable_R, header_enable_R, payload_enable_WRT, false_payload, data, address, data_valid, cofee_enable_R, crc_enable_R, warning_enable_R, header_missed, cofee_missed, crc_missed)
+  output_proc : process (ps, synch_enable_R, synch_pulse, synch_pulse_HH, start_packet_enable_R, rebound_enable_R, length_enable_R, fwv_enable_R, header_enable_R, payload_enable_WRT, false_payload, data, address, data_valid, cofee_enable_R, crc_enable_R, warning_enable_R, header_missed, cofee_missed, crc_missed, fwv_missed)
   begin
     case ps is
       when RESET =>

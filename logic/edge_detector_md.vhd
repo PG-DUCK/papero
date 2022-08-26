@@ -41,6 +41,7 @@ begin
 
 
   -- Data Flow per il controllo del reset vettoriale
+  zero <= (others => '0');
   iRST_vector <= zero - iRST;
 
   -- Data Flow per il controllo dei fronti di salita/discesa

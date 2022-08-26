@@ -256,6 +256,8 @@ begin
   fpga_clk_50   <= FPGA_CLK1_50;
   sClk          <= h2f_clk_50MHz;
   stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
+  
+  LED <= (others => '0');
 
   fpga_debounced_buttons_n <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
 
@@ -563,8 +565,8 @@ begin
       iINT_TS             => sIntTsCount,
       iEXT_TS             => sExtTsCount,
       --
-      iTRIG_SDA           => iTRIG_SDA,
-      iTRIG_SCL           => iTRIG_SCL,
+      iTRIG_SDA           => sI2cSda,
+      iTRIG_SCL           => sI2cScl,
       --
       oTRIG               => sMainTrig,
       oBUSY               => sMainBusy,

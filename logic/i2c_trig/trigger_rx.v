@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------------------------
 // --
-// --      IDE                        : ISE 14.7 
+// --      IDE                        : ISE 14.7
 // --      Component name             : trigger_rx
 // --      Author and copyright       : Tianwei Bao
 // --      E-mail                     : baotw@ihep.ac.cn
@@ -10,8 +10,8 @@
 // --      Format                     : DOS/WINDOWS UTF-8 W/O BOM
 // --      Change log:                : v0.1 20201202 initial version
 // --                                 : v0.2 20201228 crc16-kermit integrated
-// --                                 : v0.3 20201210 implementation of busy clear logic 
-// --                                 : v0.4 20210310 async logic elements optimazation 
+// --                                 : v0.3 20201210 implementation of busy clear logic
+// --                                 : v0.4 20210310 async logic elements optimazation
 
 module trigger_rx
 (
@@ -20,8 +20,8 @@ input clk,//system clock,10MHz-100MHz recommended
 input reset,//high effective
 
 //system interface
-input busy_clear,//positive edge sensitive, must be enabled to clear "busy" to 0 when the sub-system is ready to accept a new trigger 
-output wire trigger,//positive edge,indicating that the trigger arrives, and the DAQ could start to catch data
+input busy_clear,//positive edge sensitive, must be enabled to clear "busy" to 0 when the sub-system is ready to accept a new trigger
+output reg trigger,//positive edge,indicating that the trigger arrives, and the DAQ could start to catch data
 output reg [7:0] sub_system_id,
 output reg [7:0] trigger_type,
 output reg [31:0] trigger_serial,
@@ -84,16 +84,36 @@ assign di_sda  = 1'BZ;      //
 assign scl     = ro_scl;    //scl input
 assign ren_scl = 0;         //disable receiver
 assign de_scl  = 0;         //enable driver
-assign di_sCL  = 1'BZ;      //
+assign di_scl  = 1'BZ;      //
 
 
 assign ren_busy = 1;        //enable receiver
 assign de_busy  = 1;        //disable driver
 assign di_busy  = busy;     //busy output
 
-assign trigger=trigger_out;
+//assign trigger=trigger_out;
 
- always@(negedge sda , posedge reset )//start detection
+//always@(negedge sda , posedge reset )//start detection
+//begin
+//    if(reset==1)
+//        begin
+//            trigger_out<=0;
+//        end
+//    else
+//        begin
+//            if((scl==1)&&(stop==0))
+//                begin
+//                   trigger_out<=1;
+//                end
+//            else
+//                begin
+//                   trigger_out<=0;
+//                end
+//
+//        end
+//end
+
+always@(posedge clk)//start detection
 begin
     if(reset==1)
         begin
@@ -101,15 +121,15 @@ begin
         end
     else
         begin
-            if((scl==1)&&(stop==0))
+            if((sda_reg2==1)&&(sda_reg==0)&&(scl==1)&&(stop==0)) //sda falling, scl 1, stop 0
                 begin
-                   trigger_out<=1; 
+                   trigger_out<=1;
                 end
             else
                 begin
-                   trigger_out<=0; 
+                   trigger_out<=0;
                 end
-               
+
         end
 end
 
@@ -139,19 +159,20 @@ begin
             scl_reg<=1;
             sda_reg<=1;
             scl_reg2<=1;
-            sda_reg2<=1; 
+            sda_reg2<=1;
             trigger_out_reg<=0;
-            trigger_out_reg2<=0;            
-            
+            trigger_out_reg2<=0;
+            trigger<=0;
         end
     else
         begin
             scl_reg<=scl;
-            scl_reg2<=scl_reg;            
+            scl_reg2<=scl_reg;
             sda_reg<=sda;
             sda_reg2<=sda_reg;
             trigger_out_reg<=trigger_out;
             trigger_out_reg2<=trigger_out_reg;
+            trigger<=trigger_out;
         end
 end
 
@@ -166,27 +187,27 @@ begin
         begin
             if(stop==1)
                 begin
-                   count_scl<=0; 
+                   count_scl<=0;
                 end
             else
                 begin
                     if((scl_reg==1)&&(scl_reg2==0))
                         begin
-                            
+
                             if(count_scl==4'D9)
                                 begin
                                     data[7:0]<={data[6:0],sda_reg};
                                     count_scl<=1;
                                 end
-                            else if(count_scl==4'D8)    
+                            else if(count_scl==4'D8)
                                 begin
                                     data[7:0]<=0;
-                                    count_scl<=count_scl+1;
+                                    count_scl<=count_scl+4'D1;
                                 end
                             else if(count_scl<4'D9)
                                 begin
                                     data[7:0]<={data[6:0],sda_reg};
-                                    count_scl<=count_scl+1;
+                                    count_scl<=count_scl+4'D1;
                                 end
 
                         end
@@ -220,7 +241,7 @@ begin
         end
 end
 
-always@(posedge clk)// DI2C package decoder 
+always@(posedge clk)// DI2C package decoder
 begin
     if(reset==1)
         begin
@@ -233,7 +254,7 @@ begin
             end_flag<=0;
             sub_system_id<=0;
             trigger_type<=0;
-            trigger_serial<=0;           
+            trigger_serial<=0;
         end
     else
         begin
@@ -265,24 +286,24 @@ begin
                         begin
                             state_i2c<=st_sub_system_id;
                         end
-                end     
+                end
             st_trigger_type:
                 begin
                     if((count_scl==4'D8)&&(scl_reg==1)&&(scl_reg2==0))
                         begin
-                            state_i2c<=st_trigger_serial_step0; 
+                            state_i2c<=st_trigger_serial_step0;
                             trigger_type[7:0]<=data[7:0];
                         end
                     else
                         begin
                             state_i2c<=st_trigger_type;
                         end
-                end   
+                end
             st_trigger_serial_step0:
                 begin
                     if((count_scl==4'D8)&&(scl_reg==1)&&(scl_reg2==0))
                         begin
-                            state_i2c<=st_trigger_serial_step1; 
+                            state_i2c<=st_trigger_serial_step1;
                             trigger_serial[31:24]<=data[7:0];
                             crc_data[15:0]<={sub_system_id[7:0],trigger_type[7:0]};
                             crc_en<=1;
@@ -291,25 +312,25 @@ begin
                         begin
                             state_i2c<=st_trigger_serial_step0;
                         end
-                end 
+                end
             st_trigger_serial_step1:
                 begin
                     crc_en<=0;
                     if((count_scl==4'D8)&&(scl_reg==1)&&(scl_reg2==0))
                         begin
-                            state_i2c<=st_trigger_serial_step2; 
+                            state_i2c<=st_trigger_serial_step2;
                             trigger_serial[23:16]<=data[7:0];
                         end
                     else
                         begin
                             state_i2c<=st_trigger_serial_step1;
                         end
-                end 
+                end
             st_trigger_serial_step2:
                 begin
                     if((count_scl==4'D8)&&(scl_reg==1)&&(scl_reg2==0))
                         begin
-                            state_i2c<=st_trigger_serial_step3; 
+                            state_i2c<=st_trigger_serial_step3;
                             trigger_serial[15:8]<=data[7:0];
                             crc_data[15:0]<=trigger_serial[31:16];
                             crc_en<=1;
@@ -318,61 +339,61 @@ begin
                         begin
                             state_i2c<=st_trigger_serial_step2;
                         end
-                end 
+                end
             st_trigger_serial_step3:
                 begin
-                    crc_en<=0;                    
+                    crc_en<=0;
                     if((count_scl==4'D8)&&(scl_reg==1)&&(scl_reg2==0))
                         begin
-                            state_i2c<=st_crc_step0; 
+                            state_i2c<=st_crc_step0;
                             trigger_serial[7:0]<=data[7:0];
                         end
                     else
                         begin
                             state_i2c<=st_trigger_serial_step3;
                         end
-                end  
+                end
             st_crc_step0:
                 begin
                     if((count_scl==4'D8)&&(scl_reg==1)&&(scl_reg2==0))
                         begin
-                            state_i2c<=st_crc_step1; 
+                            state_i2c<=st_crc_step1;
                             crc_recv[15:8]<=data[7:0];
                             crc_data[15:0]<=trigger_serial[15:0];
-                            crc_en<=1;                         
+                            crc_en<=1;
                         end
                     else
                         begin
                             state_i2c<=st_crc_step0;
                         end
-                end    
+                end
             st_crc_step1:
                 begin
                     crc_en<=0;
                     if((count_scl==4'D8)&&(scl_reg==1)&&(scl_reg2==0))
                         begin
-                            state_i2c<=st_crc_check; 
+                            state_i2c<=st_crc_check;
                             crc_recv[7:0]<=data[7:0];
                         end
                     else
                         begin
                             state_i2c<=st_crc_step1;
                         end
-                end 
+                end
             st_crc_check:
                 begin
                     state_i2c<=st_idle;
                     end_flag<=1;
                     if(crc_recv[15:0]==crc_out[15:0])
                         begin
-                           crc_status<=1; 
+                           crc_status<=1;
                         end
                     else
                         begin
                            crc_status<=0;
                         end
                 end
- 
+
             endcase
         end
 end
@@ -383,9 +404,9 @@ assign crc_clk=(~clk);
 crc16_generator inst_crc16_generator //crc16-kermit check
 (
 .clock(crc_clk),
-.reset(crc_reset),     
+.reset(crc_reset),
 .data_in_en(crc_en),
-.data_in(crc_in), 
+.data_in(crc_in),
 .crc_out(crc_out)
 );
 
