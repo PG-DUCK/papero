@@ -24,6 +24,7 @@ entity DetectorInterface is
     oCNT              : out tControlIntfOut;     --!Control signals in output
     iASTRA_CONFIG     : in  astraConfig;         --!Configuration from the control registers
     iADC_INT_EXT_b    : in  std_logic;           --!External/Internal ADC select --> 0=EXT, 1=INT
+    iPRG_ASTRA_RST    : in  std_logic;           --!PRG reset
     -- ASTRA and AD7276 output ports
     oPRG              : out tPrgIntf;            --!Output signals to ASTRA PRG
     oFE               : out tFpga2FeIntf;        --!Output signals to ASTRA
@@ -123,6 +124,7 @@ begin
   port map (
     iCLK            => iCLK,
     iRST            => iRST,
+    iPRG_ASTRA_RST  => iPRG_ASTRA_RST,
     oFLAG           => open,
     iEN             => iEN,
     iWE             => iASTRA_CONFIG.prgStart,

@@ -308,6 +308,7 @@ architecture std of top_paperoAstra is
   signal sDebug         : std_logic_vector(7 downto 0);
   signal sPrg           : tPrgIntf;
   signal sTestPulse     : std_logic;
+  signal sAstraPrgRst   : std_logic;
 
   signal sFeO           : tFpga2FeIntf;
   signal sFeI           : tFe2FpgaIntf;
@@ -380,7 +381,7 @@ begin
 
   --Analog Readout
   oHOLD               <= sFeO.hold_b;
-  oTP                 <= sTestPulse when sRegArray(rUNITS_EN)(16) = '1' else 
+  oTP                 <= sTestPulse when sRegArray(rUNITS_EN)(16) = '1' else -- Send test pulse every main trigger
                          sFeO.test;
 
     test_pulse : altera_edge_detector
@@ -827,11 +828,12 @@ begin
   port map(
     iCLK    => sClk,
     iRST    => '0',
-    iD      => sRegArray(rUNITS_EN)(12),
+    iD      => sRegArray(rUNITS_EN)(12), -- PRG write local config
     oEDGE_R => sDetIntfCfg.prgStart
   );
 		
   sRunMode                    <= sRegArray(rGOTO_STATE)(4);
+  sAstraPrgRst                <= sRegArray(rUNITS_EN)(13); --PRG RESET
   sDetIntfEn                  <= not sRegArray(rUNITS_EN)(1);
   sDetIntfCfg.feClkDuty       <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
   sDetIntfCfg.feClkDiv        <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
@@ -879,6 +881,7 @@ begin
       oCNT              => sDetIntfCntOut,
       iASTRA_CONFIG     => sDetIntfCfg,
       iADC_INT_EXT_b    => sAdcIntExt_b,
+      iPRG_ASTRA_RST    => sAstraPrgRst,
       oPRG              => sPrg,
       oFE               => sFeO,
       iFE               => sFeI,

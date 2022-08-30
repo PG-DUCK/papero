@@ -519,6 +519,7 @@ package paperoPackage is
       oCNT              : out tControlIntfOut;
       iASTRA_CONFIG     : in  astraConfig;
       iADC_INT_EXT_b    : in  std_logic;
+      iPRG_ASTRA_RST    : in std_logic;
       --# {{ASTRA, AD7276 output|ASTRA, AD7276 output}}
       oPRG              : out tPrgIntf;
       oFE               : out tFpga2FeIntf;
