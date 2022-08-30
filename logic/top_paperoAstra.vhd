@@ -866,9 +866,9 @@ begin
   sDetIntfCfg.adcDelay        <= sRegArray(rBUSYADC_PARAM)(15 downto 0);
   sDetIntfCfg.prgClkDuty      <= sRegArray(rPRG_CLK_PARAM)(31 downto 16);
   sDetIntfCfg.prgClkDiv       <= sRegArray(rPRG_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.chMask          <= sRegArray(rMASK_A) & sRegArray(rMASK_B);
-  sDetIntfCfg.chTpEn          <= sRegArray(rTPEN_A) & sRegArray(rTPEN_B);
-  sDetIntfCfg.chDisc          <= sRegArray(rDISC_A) & sRegArray(rDISC_B);
+  sDetIntfCfg.chMask          <= sRegArray(rMASK_B) & sRegArray(rMASK_A);
+  sDetIntfCfg.chTpEn          <= sRegArray(rTPEN_B) & sRegArray(rTPEN_A);
+  sDetIntfCfg.chDisc          <= sRegArray(rDISC_B) & sRegArray(rDISC_A);
   --!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
   AstraInterface : DetectorInterface
     port map (
