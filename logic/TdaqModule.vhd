@@ -94,7 +94,7 @@ architecture std of TdaqModule is
 
   -- Tianwei trigger
   signal sExtTrigMux  : std_logic;
-  signal sStdTrig     : std_logic;
+  signal sI2cTrig     : std_logic;
   signal sSsId        : std_logic_vector(7 downto 0);
   signal sTrigType    : std_logic_vector(7 downto 0);
   signal sTrigSerial  : std_logic_vector(31 downto 0);
@@ -122,7 +122,7 @@ begin
   sTestUnitCfg            <= sRegArray(rUNITS_EN)(9 downto 8);
   --
   sTrigCfg                <= sRegArray(rTRIGBUSY_LOGIC);
-  sStdTrig                <= sRegArray(rTRIGBUSY_LOGIC)(3); --'0': Use Tianwei I2C; '1': Standard trigger 
+  sI2cTrig                <= sRegArray(rTRIGBUSY_LOGIC)(3); --'0': Standard trigger; '1': Tianwei I2C
 
   -- Metadata assignments
   sMetaDataIn.detId   <= sRegArray(rDET_ID)(15 downto 0);
@@ -237,6 +237,7 @@ begin
       oQ      => sFdiFifoOut.q
       );
 
+  --Used only for trigger rx; busy is generated independently
   i2c_trig_rx : trigger_rx
     port map(
       clk   => iCLK,
@@ -266,7 +267,7 @@ begin
       di_busy   => open --out, busy
     );
 
-  sExtTrigMux <=  sExtTrig when (sStdTrig = '0') else
+  sExtTrigMux <=  sExtTrig when (sI2cTrig = '1') else
                   iTRIG_SDA;
   --!@brief Trigger and busy logic
   Trig_Busy : trigBusyLogic
@@ -287,7 +288,7 @@ begin
       oBUSY           => sBusy
       );
 
-  sMetaDataWr <=  sEndFlag when (sStdTrig = '0') else
+  sMetaDataWr <=  sEndFlag when (sI2cTrig = '1') else
                   iTRIG_SDA;
   metaDataFifo_i : metaDataFifo
     generic map(
