@@ -395,7 +395,7 @@ begin
         ) 
     port map (
         clk        => sClk,
-        rst_n      => '0',
+        rst_n      => '1',
         signal_in  => sMainTrig,
         pulse_out  => sTestPulse
         );
