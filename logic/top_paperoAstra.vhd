@@ -308,6 +308,7 @@ architecture std of top_paperoAstra is
   signal sDebug         : std_logic_vector(7 downto 0);
   signal sPrg           : tPrgIntf;
   signal sTestPulse     : std_logic;
+  signal sTp            : std_logic;
   signal sAstraPrgRst   : std_logic;
 
   signal sFeO           : tFpga2FeIntf;
@@ -363,7 +364,8 @@ begin
   oHK(14) <= sMultiAdcIntO.SerShClk; --Digital channel Shift Clock   <--> PIN_AF9
   oHK(15) <= sMultiAdcIntO.SerLoad;  --Serializer Load               <--> PIN_AF10
   oHK(16) <= sMultiAdcIntO.SerSend;  --Serializer Send               <--> PIN_AE7
-  oHK(22 downto 17) <= (others => '0'); --PIN_AD10, PIN_AD9, PIN_AD7, PIN_AE12, PIN_AE11, PIN_AE9
+  oHK(17) <= sTp;                    --Test Pulse                    <--> PIN_AE9
+  oHK(22 downto 18) <= (others => '0'); --PIN_AD10, PIN_AD9, PIN_AD7, PIN_AE12, PIN_AE11
 
   --Local configurations
   oPRG_BIT_A <= sPrg.bitA;
@@ -381,8 +383,9 @@ begin
 
   --Analog Readout
   oHOLD               <= sFeO.hold_b;
-  oTP                 <= sTestPulse when sRegArray(rUNITS_EN)(16) = '1' else -- Send test pulse every main trigger
+  sTp                 <= sTestPulse when sRegArray(rUNITS_EN)(16) = '1' else -- Send test pulse every main trigger
                          sFeO.test;
+  oTP <= sTp;
 
     test_pulse : altera_edge_detector
     generic map (
