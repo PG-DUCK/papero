@@ -196,7 +196,8 @@ architecture std of top_paperoTriggerBoard is
   signal sTrig         : std_logic;
   signal sGateTrig     : std_logic;
   signal sMainTrig     : std_logic;
-  signal sInSpill_b      : std_logic;
+  signal sInSpill_b    : std_logic;
+  signal sI2CExtTrig   : std_logic;
   
   --Random Trigger Generator
   signal sErlangConfig  : tErlangConfig;
@@ -214,6 +215,7 @@ architecture std of top_paperoTriggerBoard is
   signal sInSpillFlag : std_logic;
   signal sIntTrigEn   : std_logic;
   signal sCal         : std_logic;
+  signal sI2C         : std_logic;
 
   -- Timestamp
   signal sTsClk       : std_logic;
@@ -565,6 +567,7 @@ begin
   sBusyFlag     <= sRegArray(rTRGBRD_CFG)(0);
   sRunFlag      <= sRegArray(rTRGBRD_CFG)(1);
   sInSpillFlag  <= sRegArray(rTRGBRD_CFG)(2);
+  sI2C          <= sRegArray(rTRIGBUSY_LOGIC)(3);
   sTsFreqDiv    <= sRegArray(rTRGBRD_FREQDIV);
   sTsDutyCycle  <= sRegArray(rTRGBRD_DUTY);
   sIntTrigEn    <= not sRegArray(rTRIGBUSY_LOGIC)(0);
@@ -580,7 +583,7 @@ begin
 
   -- GPIO connections ----------------------------------------------------------
   oHK           <= (others => '0');
-  oMUX_SEL      <= sRegArray(rTRGBRD_CFG)(2);
+  oMUX_SEL      <= not sI2C;
   oI2C_SDA      <= '0';
   oI2C_SCL      <= '0';
   oGPIO_1       <= (others => '0');
@@ -603,16 +606,29 @@ begin
 		);
 
   --- I/O synchronization ------------------------------------------------------
-  TRIG_SYNCH : sync_edge
+  -- TRIG_SYNCH : sync_edge
+    -- generic map (
+      -- pSTAGES => 3
+      -- )
+    -- port map (
+      -- iCLK    => sClk,
+      -- iRST    => '0',
+      -- iD      => iTRIG_LEMO,
+      -- oQ      => open,
+      -- oEDGE_R => sExtTrig,
+      -- oEDGE_F => open
+      -- );
+      
+  I2C_EXT_TRIG_SYNCH : sync_edge
     generic map (
       pSTAGES => 3
       )
     port map (
       iCLK    => sClk,
       iRST    => '0',
-      iD      => iTRIG_LEMO,
-      oQ      => open,
-      oEDGE_R => sExtTrig,
+      iD      => ioGPIO_1(1),
+      oQ      => sI2CExtTrig,
+      oEDGE_R => open,
       oEDGE_F => open
       );
 
@@ -699,26 +715,28 @@ begin
   O_FFD : process(sClk)
   begin
     if rising_edge(sClk) then
-      oTS_CLK    <= sTsClk;
+      oTS_CLK    <= sMainTrig;
       oTS_RST    <= sCountersRst or sDetIntfRst or not sRunMode;
-      oTRIG_FPGA <= sMainTrig;
+      oTRIG_FPGA <= sTsClk;
     end if;
   end process O_FFD;
 
   --- Trigger Behaviour --------------------------------------------------------
   --Multiplex the wanted trigger
-  sTrig <=  sExtTrig  when (sInSpillFlag = '0' and sIntTrigEn = '0') else
+  sTrig <=  sI2CExtTrig  when (sInSpillFlag = '0' and sIntTrigEn = '0') else
             sIntTrig  when (sInSpillFlag = '0' and sIntTrigEn = '1') else
             sGateTrig; --sInSpillFlag = '1'
   sGateTrig <=  sIntTrig when (sInSpill_b = '1') else   -- Usually InSpill is negative logic
-                sExtTrig;
+                sI2CExtTrig;
   TRIG_PROC : process(sClk)
   begin
     if rising_edge(sClk) then
       sBusyOr <= sBusy0 or sBusy1 or sBusy2 or sBusy3 or sBusy4 or sBusy5;
 
       --Inhibit trigger with the enabled flags
-      if (sBusyFlag = '0' and sRunFlag = '1') then
+      if (sI2C = '1') then
+        sMainTrig <= '0';
+      elsif (sBusyFlag = '0' and sRunFlag = '1') then
         sMainTrig  <= sTrig and sRunMode;
       elsif (sBusyFlag = '1' and sRunFlag = '0') then
         sMainTrig  <= sTrig and (not sBusyOr);
