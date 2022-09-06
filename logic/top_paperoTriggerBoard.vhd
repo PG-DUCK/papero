@@ -214,7 +214,6 @@ architecture std of top_paperoTriggerBoard is
   signal sRunFlag     : std_logic;
   signal sInSpillFlag : std_logic;
   signal sIntTrigEn   : std_logic;
-  signal sCal         : std_logic;
   signal sI2C         : std_logic;
 
   -- Timestamp
@@ -565,13 +564,12 @@ begin
   -- Combinatorial assignment --------------------------------------------------
   sRunMode      <= sRegArray(rGOTO_STATE)(4);
   sBusyFlag     <= sRegArray(rTRGBRD_CFG)(0);
-  sRunFlag      <= sRegArray(rTRGBRD_CFG)(1);
+  sRunFlag      <= sRegArray(rPKT_LEN)(8);
   sInSpillFlag  <= sRegArray(rTRGBRD_CFG)(2);
-  sI2C          <= sRegArray(rTRIGBUSY_LOGIC)(3);
+  sI2C          <= sRegArray(rPKT_LEN)(4);
   sTsFreqDiv    <= sRegArray(rTRGBRD_FREQDIV);
   sTsDutyCycle  <= sRegArray(rTRGBRD_DUTY);
-  sIntTrigEn    <= not sRegArray(rTRIGBUSY_LOGIC)(0);
-  sCal          <= sRegArray(rTRIGBUSY_LOGIC)(1);
+  sIntTrigEn    <= sRegArray(rPKT_LEN)(0);
   
   --Random trigger generator assignments
   sErlangConfig.en          <= sRegArray(rTRGBRD_CFG)(16);
@@ -579,7 +577,7 @@ begin
   sErlangConfig.thrshLevel  <= sRegArray(rERLANG_THRSH);
   sErlangConfig.intBusy     <= sRegArray(rERLANG_INTBUSY);
   sErlangConfig.pulseWidth  <= sRegArray(rERLANG_DUTY);
-  sErlangConfig.freqDiv     <= sRegArray(rERLANG_FREQDIV);
+  sErlangConfig.freqDiv     <= sRegArray(rTRIGBUSY_LOGIC)(31 downto 4) & "0000";
 
   -- GPIO connections ----------------------------------------------------------
   oHK           <= (others => '0');
