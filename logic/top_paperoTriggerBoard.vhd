@@ -572,8 +572,8 @@ begin
   sIntTrigEn    <= sRegArray(rPKT_LEN)(0);
   
   --Random trigger generator assignments
-  sErlangConfig.en          <= sRegArray(rTRGBRD_CFG)(16);
-  sErlangConfig.erlangTrig  <= sRegArray(rTRGBRD_CFG)(17);
+  sErlangConfig.en          <= '1';
+  sErlangConfig.erlangTrig  <= '0';
   sErlangConfig.thrshLevel  <= sRegArray(rERLANG_THRSH);
   sErlangConfig.intBusy     <= sRegArray(rERLANG_INTBUSY);
   sErlangConfig.pulseWidth  <= sRegArray(rERLANG_DUTY);
