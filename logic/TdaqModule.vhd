@@ -293,7 +293,7 @@ begin
                   iTRIG_SDA;
   MD_WR_ED : edge_detector
     port map(
-      iCLK    => sClk,
+      iCLK    => iCLK,
       iRST    => '0',
       iD      => sMetaDataWr,
       oEDGE_R => sMetaDataWrRe
