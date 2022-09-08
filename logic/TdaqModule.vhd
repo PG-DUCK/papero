@@ -65,6 +65,7 @@ architecture std of TdaqModule is
   signal sMetaDataOut     : tF2hMetadata;
   signal sMetaDataRd      : std_logic;
   signal sMetaDataWr      : std_logic;
+  signal sMetaDataWrRe    : std_logic;
   signal sMetaDataErr     : std_logic;
   signal sMetaDataEmpty   : std_logic;
 
@@ -290,6 +291,13 @@ begin
 
   sMetaDataWr <=  sEndFlag when (sI2cTrig = '1') else
                   iTRIG_SDA;
+  MD_WR_ED : edge_detector
+    port map(
+      iCLK    => sClk,
+      iRST    => '0',
+      iD      => sMetaDataWr,
+      oEDGE_R => sMetaDataWrRe
+    );
   metaDataFifo_i : metaDataFifo
     generic map(
       pFIFOs => 7,
@@ -300,7 +308,7 @@ begin
       iRST      => iRST or not sTrigEn,
       oERR      => sMetaDataErr,
       iRD       => sMetaDataRd,
-      iWR       => sMetaDataWr,
+      iWR       => sMetaDataWrRe,
       oEMPTY    => sMetaDataEmpty,
       iMETADATA => sMetaDataIn,
       oMETADATA => sMetaDataOut
