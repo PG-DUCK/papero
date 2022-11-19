@@ -218,6 +218,7 @@ architecture std of top_paperoTriggerBoard is
 
   -- Timestamp
   signal sTsClk       : std_logic;
+  signal sTsClkBuf    : std_logic;
   signal sTsRst       : std_logic;
   signal sTsFreqDiv   : std_logic_vector(31 downto 0);
   signal sTsDutyCycle : std_logic_vector(31 downto 0);
@@ -580,8 +581,14 @@ begin
   sErlangConfig.freqDiv     <= sRegArray(rTRIGBUSY_LOGIC)(31 downto 4) & "0000";
 
   -- GPIO connections ----------------------------------------------------------
-  oHK           <= (others => '0');
-  oMUX_SEL      <= not sI2C;
+  oHK(34 downto 0) <= (others => '0');
+  oHK(35)       <= sTsClkBuf;
+  --oMUX_SEL      <= not sI2C;
+  oMUX_SEL      <=  '0' when (sI2C = '1' and sIntTrigEn = '0') else
+                    '1' when (sI2C = '1' and sIntTrigEn = '1') else
+                    '1' when (sI2C = '0' and sIntTrigEn = '0') else
+                    '1' when (sI2C = '0' and sIntTrigEn = '1') else
+                    '0';
   oI2C_SDA      <= '0';
   oI2C_SCL      <= '0';
   oGPIO_1       <= (others => '0');
@@ -716,6 +723,7 @@ begin
       oTS_CLK    <= sMainTrig;
       oTS_RST    <= sCountersRst or sDetIntfRst or not sRunMode;
       oTRIG_FPGA <= sTsClk;
+      sTsClkBuf  <= sTsClk;
     end if;
   end process O_FFD;
 
@@ -733,7 +741,7 @@ begin
 
       --Inhibit trigger with the enabled flags
       if (sI2C = '1') then
-        sMainTrig <= '0';
+        sMainTrig <= sTrig;
       elsif (sBusyFlag = '0' and sRunFlag = '1') then
         sMainTrig  <= sTrig and sRunMode;
       elsif (sBusyFlag = '1' and sRunFlag = '0') then
