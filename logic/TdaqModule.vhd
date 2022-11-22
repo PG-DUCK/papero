@@ -242,7 +242,7 @@ begin
   i2c_trig_rx : trigger_rx
     port map(
       clk   => iCLK,
-      reset => iRST,
+      reset => iRST or not sTrigEn or not sI2cTrig,
       --
       busy_clear      => '0', --in, rising edge to reset busy
       trigger         => sExtTrig, --out, trigger (beginning of I2C transaction)
