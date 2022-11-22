@@ -243,6 +243,7 @@ begin
     port map(
       clk   => iCLK,
       reset => iRST or not sTrigEn or not sI2cTrig,
+      iBusy => sBusy,
       --
       busy_clear      => '0', --in, rising edge to reset busy
       trigger         => sExtTrig, --out, trigger (beginning of I2C transaction)

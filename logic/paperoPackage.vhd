@@ -563,6 +563,7 @@ package paperoPackage is
     port (
       clk   : in std_logic;
       reset : in std_logic;
+      iBusy : in std_logic;
       --
       busy_clear      : in std_logic;
       trigger         : out std_logic;
