@@ -160,7 +160,7 @@ architecture std of top_papero is
   signal sH2fFifoOut : tFifoCsrOut;
 
   -- TDAQ Module
-  signal sExtTrig      : std_logic;
+  signal sExtTrigSynch : std_logic;
   signal sMainTrig     : std_logic;
   signal sMainBusy     : std_logic;
   signal sTrgBusiesAnd : std_logic_vector(7 downto 0);
@@ -188,6 +188,7 @@ architecture std of top_papero is
 
   signal sBcoClkReplica : std_logic;
   signal sBcoClkSynch   : std_logic;
+  signal sBcoRstReplica : std_logic;
   signal sBcoRstSynch   : std_logic;
   signal sBusy          : std_logic;
   signal sErrors        : std_logic;
@@ -220,7 +221,7 @@ begin
       oHK(25) <= sF2hFastFifoOut.full;
       oHK(24) <= sF2hFifoOut.empty;
       oHK(23) <= sF2hFastFifoOut.empty;
-      oHK(22) <= sBcoRstSynch;
+      oHK(22) <= sBcoRstReplica;
       oHK(21) <= sBcoClkReplica;
     end if;
   end process IOFFD;
@@ -260,7 +261,7 @@ begin
       iINT_TS             => sIntTsCount,
       iEXT_TS             => sExtTsCount,
       --
-      iEXT_TRIG           => iEXT_TRIG,
+      iEXT_TRIG           => sExtTrigSynch,
       oTRIG               => sMainTrig,
       oBUSY               => sMainBusy,
       iTRG_BUSIES_AND     => sTrgBusiesAnd,
@@ -352,7 +353,20 @@ begin
       iCLK => sClk,
       iRST => '0',
       iD   => iBCO_RST,
-      oQ   => sBcoRstSynch
+      oQ   => sBcoRstReplica,
+      oEDGE_F => sBcoRstSynch
+      );
+
+  --!@brief Synch the trigger to the local clock domain and take the rising edge
+  EXT_TRIG_SYNCH : sync_edge
+    generic map (
+      pSTAGES => 3
+      )
+    port map (
+      iCLK    => sClk,
+      iRST    => '0',
+      iD      => iEXT_TRIG,
+      oEDGE_R => sExtTrigSynch
       );
 
   sIntTsEn  <= '1';
