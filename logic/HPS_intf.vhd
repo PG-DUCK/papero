@@ -8,6 +8,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 use work.paperoPackage.all;
+use work.basic_package.all;
 
 --!@copydoc HPS_intf.vhd
 entity HPS_intf is
