@@ -64,7 +64,9 @@ architecture std of TdaqModule is
   signal sMetaDataOut     : tF2hMetadata;
   signal sMetaDataRd      : std_logic;
   signal sMetaDataWr      : std_logic;
+  signal sMetaDataWrRe    : std_logic;
   signal sMetaDataErr     : std_logic;
+  signal sMetaDataEmpty   : std_logic;
 
   -- Register Array
   signal sRegArray    : tRegArray;
@@ -142,6 +144,7 @@ begin
       --
       iF2HFAST_CNT        => sF2hFastCnt,
       oF2HFAST_MD_RD      => sMetaDataRd,
+      iF2HFAST_MD_EMPTY   => sMetaDataEmpty,
       iF2HFAST_METADATA   => sMetaDataOut,
       oF2HFAST_BUSY       => sF2hFastBusy,
       oF2HFAST_WARNING    => sF2hFastWarning,
@@ -243,6 +246,13 @@ begin
       );
 
   sMetaDataWr <= sTrig;
+  MD_WR_ED : edge_detector
+    port map(
+      iCLK    => iCLK,
+      iRST    => '0',
+      iD      => sMetaDataWr,
+      oEDGE_R => sMetaDataWrRe
+    );
   metaDataFifo_i : metaDataFifo
     generic map(
       pFIFOs => 7,
@@ -253,7 +263,8 @@ begin
       iRST      => iRST or not sTrigEn,
       oERR      => sMetaDataErr,
       iRD       => sMetaDataRd,
-      iWR       => sMetaDataWr,
+      iWR       => sMetaDataWrRe,
+      oEMPTY    => sMetaDataEmpty,
       iMETADATA => sMetaDataIn,
       oMETADATA => sMetaDataOut
     );
