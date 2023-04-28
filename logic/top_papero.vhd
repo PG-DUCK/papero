@@ -1,5 +1,12 @@
 --!@file top_papero.vhd
---!brief Top module of the papero FPGA gateware
+--!@brief Example of top module of the papero FPGA gateware.
+--!@details
+--!
+--!Instantiates HPS, the TDAQ module, and the ancillatry electronics.
+--!To add a detector readout:
+--!  - Connect the detector interface to the fast interface of the TDAQ module.
+--!  - Add the needed pin to the ports and the papero_pins.qsf file.
+--!
 --!@todo Add reset to the HPS-FPGA fifos
 --!@author Matteo D'Antonio, matteo.dantonio@studenti.unipg.it
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
@@ -12,7 +19,6 @@ use ieee.std_logic_unsigned.all;
 use work.intel_package.all;
 use work.paperoPackage.all;
 use work.basic_package.all;
-use work.FOOTpackage.all;
 
 
 --!@copydoc top_papero.vhd
@@ -100,45 +106,9 @@ entity top_papero is
     SW : in std_logic_vector(3 downto 0);
 
     --- GPIO -------------------------------------------------------------------
-    --Detector side A
-    oNC_A          : out std_logic;     --GPIO1-16
-    oFE_A_TEST     : out std_logic;     --GPIO1-0
-    oFE_A_RESET    : out std_logic;     --GPIO1-2
-    oFE_A0_HOLD    : out std_logic;     --GPIO1-4
-    oFE_A0_SHIFT   : out std_logic;     --GPIO1-8
-    oFE_A0_CLK     : out std_logic;     --GPIO1-12
-    oFE_A1_HOLD    : out std_logic;     --GPIO1-6
-    oFE_A1_SHIFT   : out std_logic;     --GPIO1-10
-    oFE_A1_CLK     : out std_logic;     --GPIO1-14
-    oADC_A_CS      : out std_logic;     --GPIO1-22
-    oADC_A_SCLK    : out std_logic;     --GPIO1-24
-    iADC_A_CS_RET  : in  std_logic;     --GPIO1-18
-    iADC_A_SCK_RET : in  std_logic;     --GPIO1-20
-    iADC_A_SDATA0  : in  std_logic;     --GPIO1-26
-    iADC_A_SDATA1  : in  std_logic;     --GPIO1-28
-    iADC_A_SDATA2  : in  std_logic;     --GPIO1-30
-    iADC_A_SDATA3  : in  std_logic;     --GPIO1-32
-    iADC_A_SDATA4  : in  std_logic;     --GPIO1-34
-    --Detector side B
-    oNC_B          : out std_logic;     --GPIO1-17
-    oFE_B_TEST     : out std_logic;     --GPIO1-3
-    oFE_B_RESET    : out std_logic;     --GPIO1-1
-    oFE_B0_HOLD    : out std_logic;     --GPIO1-5
-    oFE_B0_SHIFT   : out std_logic;     --GPIO1-9
-    oFE_B0_CLK     : out std_logic;     --GPIO1-13
-    oFE_B1_HOLD    : out std_logic;     --GPIO1-7
-    oFE_B1_SHIFT   : out std_logic;     --GPIO1-11
-    oFE_B1_CLK     : out std_logic;     --GPIO1-15
-    oADC_B_CS      : out std_logic;     --GPIO1-23
-    oADC_B_SCLK    : out std_logic;     --GPIO1-25
-    iADC_B_CS_RET  : in  std_logic;     --GPIO1-19
-    iADC_B_SCK_RET : in  std_logic;     --GPIO1-21
-    iADC_B_SDATA0  : in  std_logic;     --GPIO1-27
-    iADC_B_SDATA1  : in  std_logic;     --GPIO1-29
-    iADC_B_SDATA2  : in  std_logic;     --GPIO1-31
-    iADC_B_SDATA3  : in  std_logic;     --GPIO1-33
-    iADC_B_SDATA4  : in  std_logic;     --GPIO1-35
-    --Central Acquisition side
+    GPIO_1 : in std_logic_vector(35 downto 0);
+
+    --Central Acquisition side (GPIO_0)
     iBCO_CLK       : in  std_logic;     --GPIO0-16
     iBCO_RST       : in  std_logic;     --GPIO0-0
     iEXT_TRIG      : in  std_logic;     --GPIO0-32
@@ -167,50 +137,30 @@ architecture std of top_papero is
   signal sRegAddrInt, sRegAddrSyn : std_logic_vector(31 downto 0);
   signal sRegContentInt, sRegContentSyn : std_logic_vector(31 downto 0);
 
-  -- Ausiliari
-  signal fpga_debounced_buttons_n : std_logic_vector(1 downto 0);  -- debounced_bottons in logica positiva
-  signal hps_fpga_reset_n_synch   : std_logic;  -- segnale interno di RESET in logica positiva
+  -- Auxiliaries
+  signal fpga_debounced_buttons_n : std_logic_vector(1 downto 0);  -- debounced buttons (positive logic)
+  signal hps_fpga_reset_n_synch   : std_logic;  -- RESET (positive logic)
   signal hps_cold_rst_n           : std_logic;
   signal hps_warm_rst_n           : std_logic;
   signal hps_debug_rst_n          : std_logic;
   signal sClk                     : std_logic;  -- FPGA clock
-  signal h2f_clk_50MHz            : std_logic;  -- user clock (50 MHz) from HPS
-  signal h2f_clk_96MHz            : std_logic;  -- user clock (96 MHz) from HPS
+  signal h2f_clk_50MHz            : std_logic;  -- User clock (50 MHz) from HPS
+  signal h2f_clk_96MHz            : std_logic;  -- User clock (96 MHz) from HPS
 
-  -- fifo FPGA --> HPS contenente dati scientifici
-  signal fast_fifo_f2h_data_in      : std_logic_vector(31 downto 0);  -- Data
-  signal fast_fifo_f2h_wr_en        : std_logic;  -- Write Enable
-  signal fast_fifo_f2h_full         : std_logic;  -- Fifo Full
-  signal fast_fifo_f2h_afull        : std_logic;  -- Fifo Almost Full
-  signal fast_fifo_f2h_addr_csr     : std_logic_vector(2 downto 0);
-  signal fast_fifo_f2h_rd_en_csr    : std_logic;
-  signal fast_fifo_f2h_data_in_csr  : std_logic_vector(31 downto 0);
-  signal fast_fifo_f2h_wr_en_csr    : std_logic;
-  signal fast_fifo_f2h_data_out_csr : std_logic_vector(31 downto 0);
+  -- FPGA --> HPS FIFO for detector output (FastFIFO)
+  signal sF2hFastFifoIn  : tFifoCsrIn;
+  signal sF2hFastFifoOut : tFifoCsrOut;
 
-  -- fifo FPGA --> HPS contenente dati di telemetria
-  signal fifo_f2h_data_in      : std_logic_vector(31 downto 0);  -- Data
-  signal fifo_f2h_wr_en        : std_logic;  -- Write Enable
-  signal fifo_f2h_full         : std_logic;  -- Fifo Full
-  signal fifo_f2h_afull        : std_logic;  -- Fifo Almost Full
-  signal fifo_f2h_addr_csr     : std_logic_vector(2 downto 0);
-  signal fifo_f2h_rd_en_csr    : std_logic;
-  signal fifo_f2h_data_in_csr  : std_logic_vector(31 downto 0);
-  signal fifo_f2h_wr_en_csr    : std_logic;
-  signal fifo_f2h_data_out_csr : std_logic_vector(31 downto 0);
+  -- FPGA --> HPS FIFO for telemetries
+  signal sF2hFifoIn  : tFifoCsrIn;
+  signal sF2hFifoOut : tFifoCsrOut;
 
   -- fifo HPS --> FPGA contenente dati di configurazione
-  signal fifo_h2f_data_out     : std_logic_vector(31 downto 0);  -- Data
-  signal fifo_h2f_rd_en        : std_logic;                      -- Read Enable
-  signal fifo_h2f_empty        : std_logic;                      -- Fifo Empty
-  signal fifo_h2f_addr_csr     : std_logic_vector(2 downto 0);
-  signal fifo_h2f_rd_en_csr    : std_logic;
-  signal fifo_h2f_data_in_csr  : std_logic_vector(31 downto 0);
-  signal fifo_h2f_wr_en_csr    : std_logic;
-  signal fifo_h2f_data_out_csr : std_logic_vector(31 downto 0);
+  signal sH2fFifoIn  : tFifoCsrIn;
+  signal sH2fFifoOut : tFifoCsrOut;
 
   -- TDAQ Module
-  signal sExtTrig      : std_logic;
+  signal sExtTrigSynch : std_logic;
   signal sMainTrig     : std_logic;
   signal sMainBusy     : std_logic;
   signal sTrgBusiesAnd : std_logic_vector(7 downto 0);
@@ -228,36 +178,237 @@ architecture std of top_papero is
   --Detector interface
   signal sDetIntfRst    : std_logic;
   signal sDetIntfEn     : std_logic;
-  signal sDetIntfCntOut : tControlIntfOut;
-  signal sDetIntfCfg    : msd_config;
   signal sDetIntfQ      : std_logic_vector(cREG_WIDTH-1 downto 0);
   signal sDetIntfWe     : std_logic;
   signal sDetIntfAfull  : std_logic;
-  signal sFeA           : tFpga2FeIntf;
-  signal sFeB           : tFpga2FeIntf;
-  signal sAdcA          : tFpga2AdcIntf;
-  signal sAdcB          : tFpga2AdcIntf;
-  signal sMultiAdc      : tMultiAdc2FpgaIntf;
 
   signal sCountersRst   : std_logic;
   signal sRegArrayRst   : std_logic;
   signal sRunMode       : std_logic;
 
-  signal sMultiAdcSynch : tMultiAdc2FpgaIntf;
+  signal sBcoClkReplica : std_logic;
   signal sBcoClkSynch   : std_logic;
+  signal sBcoRstReplica : std_logic;
   signal sBcoRstSynch   : std_logic;
   signal sBusy          : std_logic;
   signal sErrors        : std_logic;
   signal sDebug         : std_logic_vector(7 downto 0);
 
 begin
-  -- connection of internal logics ----------------------------
+  -----------------------------------------------------------------------------
+  -- Sequential assignments ---------------------------------------------------
+  -----------------------------------------------------------------------------
+  IOFFD : process(sClk)
+  begin
+    if rising_edge(sClk) then
+      oBUSY <= sMainBusy;
+      oTRIG <= sMainTrig;
+      --Auxiliaries
+      LED(7) <= sMainBusy;
+      LED(6) <= sMainTrig;
+      LED(5) <= sF2hFifoOut.afull;
+      LED(4) <= sF2hFastFifoOut.afull;
+      LED(3) <= sF2hFifoOut.full;
+      LED(2) <= sF2hFastFifoOut.full;
+      LED(1) <= sF2hFifoOut.empty;
+      LED(0) <= sF2hFastFifoOut.empty;
+      
+      oHK(30) <= sMainBusy;
+      oHK(29) <= sMainTrig;
+      oHK(28) <= sF2hFifoOut.afull;
+      oHK(27) <= sF2hFastFifoOut.afull;
+      oHK(26) <= sF2hFifoOut.full;
+      oHK(25) <= sF2hFastFifoOut.full;
+      oHK(24) <= sF2hFifoOut.empty;
+      oHK(23) <= sF2hFastFifoOut.empty;
+      oHK(22) <= sBcoRstReplica;
+      oHK(21) <= sBcoClkReplica;
+    end if;
+  end process IOFFD;
+
+
+  -----------------------------------------------------------------------------
+  -- Combinatorial Assignments ------------------------------------------------
+  -----------------------------------------------------------------------------
   fpga_clk_50   <= FPGA_CLK1_50;
   sClk          <= h2f_clk_50MHz;
-  stm_hw_events <= "000000000000000" & SW & fpga_led_internal & fpga_debounced_buttons;
+  stm_hw_events <= "000000000000000" & SW & fpga_led_internal &
+                    fpga_debounced_buttons;
 
-  fpga_debounced_buttons_n <= not fpga_debounced_buttons;  -- I bottoni dell'FPGA lavorano in logica negata, i nostri moduli in logica positiva
+  --FPGA buttons work in negated logic, opposite to the internal modules
+  fpga_debounced_buttons_n <= not fpga_debounced_buttons;
+  oHK(20 downto 0) <= (others => '0');
 
+  
+  -----------------------------------------------------------------------------
+  -- FPGA TDAQ Modules --------------------------------------------------------
+  -----------------------------------------------------------------------------
+
+  --!@brief Wrapper for all of the Trigger and Data Acquisition modules
+  TdaqModule_i : TdaqModule
+    generic map (
+      pFDI_WIDTH => cFDI_WIDTH,
+      pFDI_DEPTH => cFDI_DEPTH,
+      pGW_VER    => PAPERO_SHA
+      )
+    port map (
+      iCLK                => sClk,
+      --
+      iRST                => sDetIntfRst,
+      iRST_COUNT          => sCountersRst,
+      iRST_REG            => sRegArrayRst,
+      oREG_ARRAY          => sRegArray,
+      iINT_TS             => sIntTsCount,
+      iEXT_TS             => sExtTsCount,
+      --
+      iEXT_TRIG           => sExtTrigSynch,
+      oTRIG               => sMainTrig,
+      oBUSY               => sMainBusy,
+      iTRG_BUSIES_AND     => sTrgBusiesAnd,
+      iTRG_BUSIES_OR      => sTrgBusiesOr,
+      --
+      iFASTDATA_DATA      => sDetIntfQ,
+      iFASTDATA_WE        => sDetIntfWe,
+      oFASTDATA_AFULL     => sDetIntfAfull,
+      --
+      iFIFO_H2F_EMPTY     => sH2fFifoOut.empty,
+      iFIFO_H2F_DATA      => sH2fFifoOut.q,
+      oFIFO_H2F_RE        => sH2fFifoIn.rd,
+      --
+      iFIFO_F2H_AFULL     => sF2hFifoOut.afull,
+      oFIFO_F2H_WE        => sF2hFifoIn.wr,
+      oFIFO_F2H_DATA      => sF2hFifoIn.data,
+      --
+      iFIFO_F2HFAST_AFULL => sF2hFastFifoOut.afull,
+      oFIFO_F2HFAST_WE    => sF2hFastFifoIn.wr,
+      oFIFO_F2HFAST_DATA  => sF2hFastFifoIn.data
+      );
+
+  sTrgBusiesAnd   <= (others => '0');
+  sTrgBusiesOr    <= (0 => sDetIntfAfull, others => '0');
+  sDetIntfEn      <= not sRegArray(rUNITS_EN)(1);
+  sRunMode        <= sRegArray(rGOTO_STATE)(4);
+
+  --!@brief Generate reset pulse for the detector interface
+  pulse_detIntf_reset : altera_edge_detector
+    generic map(
+      PULSE_EXT             => 5,
+      EDGE_TYPE             => 1,
+      IGNORE_RST_WHILE_BUSY => 0
+      )
+    port map (
+      clk       => sClk,
+      rst_n     => hps_fpga_reset_n_synch,
+      signal_in => sRegArray(rGOTO_STATE)(0),
+      pulse_out => sDetIntfRst
+      );
+  --!@brief Generate reset pulse for the time-stamp counters
+  pulse_counters_reset : altera_edge_detector
+    generic map(
+      PULSE_EXT             => 1,
+      EDGE_TYPE             => 1,
+      IGNORE_RST_WHILE_BUSY => 0
+      )
+    port map (
+      clk       => sClk,
+      rst_n     => hps_fpga_reset_n_synch,
+      signal_in => sRegArray(rGOTO_STATE)(1),
+      pulse_out => sCountersRst
+      );
+  --!@brief Generate reset pulse for register array
+  pulse_regArray_reset : altera_edge_detector
+    generic map(
+      PULSE_EXT             => 5,
+      EDGE_TYPE             => 1,
+      IGNORE_RST_WHILE_BUSY => 0
+      )
+    port map (
+      clk       => sClk,
+      rst_n     => hps_fpga_reset_n_synch,
+      signal_in => sRegArray(rGOTO_STATE)(2),
+      pulse_out => sRegArrayRst
+      );
+  
+
+  -----------------------------------------------------------------------------
+  --- I/O synchronization and buffering ---------------------------------------
+  -----------------------------------------------------------------------------
+  BCO_CLK_SYNCH : sync_edge
+    generic map (
+      pSTAGES => 3
+      )
+    port map (
+      iCLK    => sClk,
+      iRST    => '0',
+      iD      => iBCO_CLK,
+      oQ      => sBcoClkReplica,
+      oEDGE_R => sBcoClkSynch
+      );
+
+  BCO_RST_SYNCH : sync_edge
+    generic map (
+      pSTAGES => 3
+      )
+    port map (
+      iCLK => sClk,
+      iRST => '0',
+      iD   => iBCO_RST,
+      oQ   => sBcoRstReplica,
+      oEDGE_F => sBcoRstSynch
+      );
+
+  --!@brief Synch the trigger to the local clock domain and take the rising edge
+  EXT_TRIG_SYNCH : sync_edge
+    generic map (
+      pSTAGES => 3
+      )
+    port map (
+      iCLK    => sClk,
+      iRST    => '0',
+      iD      => iEXT_TRIG,
+      oEDGE_R => sExtTrigSynch
+      );
+
+  sIntTsEn  <= '1';
+  sIntTsRst <= sCountersRst or sDetIntfRst
+               or not sRunMode;
+  --!@brief Internal timestamp counter
+  intTimestampCounter : counter
+    generic map (
+      pOVERLAP  => "Y",
+      pBUSWIDTH => 64
+      )
+    port map (
+      iCLK   => sClk,
+      iEN    => sIntTsEn,
+      iRST   => sIntTsRst,
+      iLOAD  => '0',
+      iDATA  => (others => '0'),
+      oCOUNT => sIntTsCount
+      );
+
+  sExtTsEn  <= sBcoClkSynch;
+  sExtTsRst <= sBcoRstSynch or sCountersRst
+               or sDetIntfRst or not sRunMode;
+  --!@brief External timestamp counter
+  extTimestampCounter : counter
+    generic map (
+      pOVERLAP  => "Y",
+      pBUSWIDTH => 64
+      )
+    port map (
+      iCLK   => sClk,
+      iEN    => sExtTsEn,
+      iRST   => sExtTsRst,
+      iLOAD  => '0',
+      iDATA  => (others => '0'),
+      oCOUNT => sExtTsCount
+      );
+
+  -----------------------------------------------------------------------------
+  -- HPS instance + ancillary -------------------------------------------------
+  -----------------------------------------------------------------------------
+  
   hps_cold_rst_n  <= not hps_cold_reset;
   hps_warm_rst_n  <= not hps_warm_reset;
   hps_debug_rst_n <= not hps_debug_reset;
@@ -357,36 +508,36 @@ begin
     --Fifo Partion
     fast_fifo_fpga_to_hps_clk_clk          => sClk,  -- fast_fifo_fpga_to_hps_clk.clk
     fast_fifo_fpga_to_hps_rst_reset_n      => '1',  -- fast_fifo_fpga_to_hps_rst.reset_n
-    fast_fifo_fpga_to_hps_in_writedata     => fast_fifo_f2h_data_in,  --       fifo_fpga_to_hps_in.writedata
-    fast_fifo_fpga_to_hps_in_write         => fast_fifo_f2h_wr_en,  --                          .write
-    fast_fifo_fpga_to_hps_in_waitrequest   => fast_fifo_f2h_full,  --                          .waitrequest
-    fast_fifo_fpga_to_hps_in_csr_address   => fast_fifo_f2h_addr_csr,  --   fifo_fpga_to_hps_in_csr.address
-    fast_fifo_fpga_to_hps_in_csr_read      => fast_fifo_f2h_rd_en_csr,  --                          .read
-    fast_fifo_fpga_to_hps_in_csr_writedata => fast_fifo_f2h_data_in_csr,  --                          .writedata
-    fast_fifo_fpga_to_hps_in_csr_write     => fast_fifo_f2h_wr_en_csr,  --                          .write
-    fast_fifo_fpga_to_hps_in_csr_readdata  => fast_fifo_f2h_data_out_csr,  --                          .readdata
+    fast_fifo_fpga_to_hps_in_writedata     => sF2hFastFifoIn.data,  --       fifo_fpga_to_hps_in.writedata
+    fast_fifo_fpga_to_hps_in_write         => sF2hFastFifoIn.wr,  --                          .write
+    fast_fifo_fpga_to_hps_in_waitrequest   => sF2hFastFifoOut.full,  --                          .waitrequest
+    fast_fifo_fpga_to_hps_in_csr_address   => sF2hFastFifoIn.csrAddr,  --   fifo_fpga_to_hps_in_csr.address
+    fast_fifo_fpga_to_hps_in_csr_read      => sF2hFastFifoIn.csrRd,  --                          .read
+    fast_fifo_fpga_to_hps_in_csr_writedata => sF2hFastFifoIn.csrData,  --                          .writedata
+    fast_fifo_fpga_to_hps_in_csr_write     => sF2hFastFifoIn.csrWr,  --                          .write
+    fast_fifo_fpga_to_hps_in_csr_readdata  => sF2hFastFifoOut.csrQ,  --                          .readdata
 
     fifo_fpga_to_hps_clk_clk          => sClk,  --         fifo_fpga_to_hps_clk.clk
     fifo_fpga_to_hps_rst_reset_n      => '1',  --         fifo_fpga_to_hps_rst.reset_n
-    fifo_fpga_to_hps_in_writedata     => fifo_f2h_data_in,  --     fast_fifo_fpga_to_hps_in.writedata
-    fifo_fpga_to_hps_in_write         => fifo_f2h_wr_en,  --                             .write
-    fifo_fpga_to_hps_in_waitrequest   => fifo_f2h_full,  --                             .waitrequest
-    fifo_fpga_to_hps_in_csr_address   => fifo_f2h_addr_csr,  -- fast_fifo_fpga_to_hps_in_csr.address
-    fifo_fpga_to_hps_in_csr_read      => fifo_f2h_rd_en_csr,  --                             .read
-    fifo_fpga_to_hps_in_csr_writedata => fifo_f2h_data_in_csr,  --                             .writedata
-    fifo_fpga_to_hps_in_csr_write     => fifo_f2h_wr_en_csr,  --                             .write
-    fifo_fpga_to_hps_in_csr_readdata  => fifo_f2h_data_out_csr,  --                             .readdata
+    fifo_fpga_to_hps_in_writedata     => sF2hFifoIn.data,  --     fast_fifo_fpga_to_hps_in.writedata
+    fifo_fpga_to_hps_in_write         => sF2hFifoIn.wr,  --                             .write
+    fifo_fpga_to_hps_in_waitrequest   => sF2hFifoOut.full,  --                             .waitrequest
+    fifo_fpga_to_hps_in_csr_address   => sF2hFifoIn.csrAddr,  -- fast_fifo_fpga_to_hps_in_csr.address
+    fifo_fpga_to_hps_in_csr_read      => sF2hFifoIn.csrRd,  --                             .read
+    fifo_fpga_to_hps_in_csr_writedata => sF2hFifoIn.csrData,  --                             .writedata
+    fifo_fpga_to_hps_in_csr_write     => sF2hFifoIn.csrWr,  --                             .write
+    fifo_fpga_to_hps_in_csr_readdata  => sF2hFifoOut.csrQ,  --                             .readdata
 
     fifo_hps_to_fpga_clk_clk           => sClk,  --    fifo_hps_to_fpga_clk.clk
     fifo_hps_to_fpga_rst_reset_n       => '1',  --    fifo_hps_to_fpga_rst.reset_n
-    fifo_hps_to_fpga_out_readdata      => fifo_h2f_data_out,  --     fifo_fpga_to_hps_in.writedata
-    fifo_hps_to_fpga_out_read          => fifo_h2f_rd_en,  --                        .write
-    fifo_hps_to_fpga_out_waitrequest   => fifo_h2f_empty,  --                        .waitrequest
-    fifo_hps_to_fpga_out_csr_address   => fifo_h2f_addr_csr,  -- fifo_fpga_to_hps_in_csr.address
-    fifo_hps_to_fpga_out_csr_read      => fifo_h2f_rd_en_csr,  --                        .read
-    fifo_hps_to_fpga_out_csr_writedata => fifo_h2f_data_in_csr,  --                        .writedata
-    fifo_hps_to_fpga_out_csr_write     => fifo_h2f_wr_en_csr,  --                        .write
-    fifo_hps_to_fpga_out_csr_readdata  => fifo_h2f_data_out_csr  --                        .readdata
+    fifo_hps_to_fpga_out_readdata      => sH2fFifoOut.q,  --     fifo_fpga_to_hps_in.writedata
+    fifo_hps_to_fpga_out_read          => sH2fFifoIn.rd,  --                        .write
+    fifo_hps_to_fpga_out_waitrequest   => sH2fFifoOut.empty,  --                        .waitrequest
+    fifo_hps_to_fpga_out_csr_address   => sH2fFifoIn.csrAddr,  -- fifo_fpga_to_hps_in_csr.address
+    fifo_hps_to_fpga_out_csr_read      => sH2fFifoIn.csrRd,  --                        .read
+    fifo_hps_to_fpga_out_csr_writedata => sH2fFifoIn.csrData,  --                        .writedata
+    fifo_hps_to_fpga_out_csr_write     => sH2fFifoIn.csrWr,  --                        .write
+    fifo_hps_to_fpga_out_csr_readdata  => sH2fFifoOut.csrQ  --                        .readdata
     );
 
   --!@brief Debounce logic to clean out glitches within 1ms
@@ -412,7 +563,6 @@ begin
       source     => hps_reset_req
       );
 
-  --!@brief Edge detector
   pulse_cold_reset : altera_edge_detector
     generic map(
       PULSE_EXT             => 6,
@@ -426,7 +576,6 @@ begin
       pulse_out => hps_cold_reset
       );
 
-  --!@brief Edge detector
   pulse_warm_reset : altera_edge_detector
     generic map (
       PULSE_EXT             => 2,
@@ -440,7 +589,6 @@ begin
       pulse_out => hps_warm_reset
       );
 
-  --!@brief Edge detector
   pulse_debug_reset : altera_edge_detector
     generic map(
       PULSE_EXT             => 32,
@@ -466,6 +614,7 @@ begin
       oQ   => hps_fpga_reset_n_synch
       );
 
+  --Patch to readout a single reg address
   RegAddrSync_proc : process (sClk)
   begin
     if (rising_edge(sClk)) then
@@ -483,247 +632,39 @@ begin
   end process RegContSync_proc;
 
   -- Continuosly read the level_fifo of FIFO HK
-  fifo_f2h_addr_csr  <= "000"; -- fast_fifo_f2h_data_out_csr = Level_Fifo
-  fifo_f2h_rd_en_csr <= '1';   -- Update usedw at every clock cycle
+  sF2hFifoIn.csrWr <= '0';
+  sF2hFifoIn.csrData <= (others => '0');
+  sF2hFifoIn.csrAddr <= "000"; -- sF2hFifoOut.csrQ = Level_Fifo
+  sF2hFifoIn.csrRd   <= '1';   -- Update usedw at every clock cycle
   --!@brief Generate the Almost Full of the F2H housekeeping FIFO with the csr
-  F2H_HK_AFull_proc : process (fifo_f2h_data_out_csr)
+  F2H_FIFO_AFULL_PROC : process (sF2hFifoOut.csrQ)
   begin
-    if (fifo_f2h_data_out_csr > cF2H_AFULL - 1) then
-      fifo_f2h_afull <= '1';
+    if (sF2hFifoOut.csrQ > cF2H_AFULL - 1) then
+      sF2hFifoOut.afull <= '1';
     else
-      fifo_f2h_afull <= '0';
+      sF2hFifoOut.afull <= '0';
     end if;
-  end process;
+  end process F2H_FIFO_AFULL_PROC;
 
   -- Continuosly read the level_fifo of FIFO Fast_Data
-  fast_fifo_f2h_addr_csr  <= "000"; -- fast_fifo_f2h_data_out_csr = Level_Fifo
-  fast_fifo_f2h_rd_en_csr <= '1';   -- Update usedw at every clock cycle
+  sF2hFastFifoIn.csrWr <= '0';
+  sF2hFastFifoIn.csrData <= (others => '0');
+  sF2hFastFifoIn.csrAddr <= "000"; -- sF2hFastFifoOut.csrQ = Level_Fifo
+  sF2hFastFifoIn.csrRd   <= '1';   -- Update usedw at every clock cycle
   --!@brief Generate the Almost Full of the F2H Fast-Data FIFO with the csr
-  F2H_Scientific_AFull_proc : process (fast_fifo_f2h_data_out_csr)
+  F2H_FASTFIFO_AFULL_PROC : process (sF2hFastFifoOut.csrQ)
   begin
-    if (fast_fifo_f2h_data_out_csr > cFastF2H_AFULL) then
-      fast_fifo_f2h_afull <= '1';
+    if (sF2hFastFifoOut.csrQ > cFastF2H_AFULL) then
+      sF2hFastFifoOut.afull <= '1';
     else
-      fast_fifo_f2h_afull <= '0';
+      sF2hFastFifoOut.afull <= '0';
     end if;
-  end process;
+  end process F2H_FASTFIFO_AFULL_PROC;
 
-  sIntTsEn  <= '1';
-  sIntTsRst <= sCountersRst or sDetIntfRst
-               or not sRunMode;
-  --!@brief Internal timestamp counter
-  intTimestampCounter : counter
-    generic map (
-      pOVERLAP  => "Y",
-      pBUSWIDTH => 64
-      )
-    port map (
-      iCLK   => sClk,
-      iEN    => sIntTsEn,
-      iRST   => sIntTsRst,
-      iLOAD  => '0',
-      iDATA  => (others => '0'),
-      oCOUNT => sIntTsCount
-      );
-
-  sExtTsEn  <= sBcoClkSynch;
-  sExtTsRst <= sBcoRstSynch or sCountersRst
-               or sDetIntfRst or not sRunMode;
-  --!@brief External timestamp counter
-  extTimestampCounter : counter
-    generic map (
-      pOVERLAP  => "Y",
-      pBUSWIDTH => 64
-      )
-    port map (
-      iCLK   => sClk,
-      iEN    => sExtTsEn,
-      iRST   => sExtTsRst,
-      iLOAD  => '0',
-      iDATA  => (others => '0'),
-      oCOUNT => sExtTsCount
-      );
-
-  --!@brief Wrapper for all of the Trigger and Data Acquisition modules
-  sTrgBusiesAnd   <= (others => '0');
-  sTrgBusiesOr    <= (0 => sDetIntfCntOut.busy, 1 => sDetIntfAfull, others => '0');
-  TdaqModule_i : TdaqModule
-    generic map (
-      pFDI_WIDTH => cFDI_WIDTH,
-      pFDI_DEPTH => cFDI_DEPTH,
-      pGW_VER    => PAPERO_SHA
-      )
-    port map (
-      iCLK                => sClk,
-      --
-      iRST                => sDetIntfRst,
-      iRST_COUNT          => sCountersRst,
-      iRST_REG            => sRegArrayRst,
-      oREG_ARRAY          => sRegArray,
-      iINT_TS             => sIntTsCount,
-      iEXT_TS             => sExtTsCount,
-      --
-      iEXT_TRIG           => iEXT_TRIG,
-      oTRIG               => sMainTrig,
-      oBUSY               => sMainBusy,
-      iTRG_BUSIES_AND     => sTrgBusiesAnd,
-      iTRG_BUSIES_OR      => sTrgBusiesOr,
-      --
-      iFASTDATA_DATA      => sDetIntfQ,
-      iFASTDATA_WE        => sDetIntfWe,
-      oFASTDATA_AFULL     => sDetIntfAfull,
-      --
-      iFIFO_H2F_EMPTY     => fifo_h2f_empty,
-      iFIFO_H2F_DATA      => fifo_h2f_data_out,
-      oFIFO_H2F_RE        => fifo_h2f_rd_en,
-      --
-      iFIFO_F2H_AFULL     => fifo_f2h_afull,
-      oFIFO_F2H_WE        => fifo_f2h_wr_en,
-      oFIFO_F2H_DATA      => fifo_f2h_data_in,
-      --
-      iFIFO_F2HFAST_AFULL => fast_fifo_f2h_afull,
-      oFIFO_F2HFAST_WE    => fast_fifo_f2h_wr_en,
-      oFIFO_F2HFAST_DATA  => fast_fifo_f2h_data_in
-      );
-
-  --!@brief Generate reset pulse for register array
-  pulse_detIntf_reset : altera_edge_detector
-    generic map(
-      PULSE_EXT             => 5,
-      EDGE_TYPE             => 1,
-      IGNORE_RST_WHILE_BUSY => 0
-      )
-    port map (
-      clk       => sClk,
-      rst_n     => hps_fpga_reset_n_synch,
-      signal_in => sRegArray(rGOTO_STATE)(0),
-      pulse_out => sDetIntfRst
-      );
-  --!@brief Generate reset pulse for register array
-  pulse_counters_reset : altera_edge_detector
-    generic map(
-      PULSE_EXT             => 1,
-      EDGE_TYPE             => 1,
-      IGNORE_RST_WHILE_BUSY => 0
-      )
-    port map (
-      clk       => sClk,
-      rst_n     => hps_fpga_reset_n_synch,
-      signal_in => sRegArray(rGOTO_STATE)(1),
-      pulse_out => sCountersRst
-      );
-  --!@brief Generate reset pulse for register array
-  pulse_regArray_reset : altera_edge_detector
-    generic map(
-      PULSE_EXT             => 5,
-      EDGE_TYPE             => 1,
-      IGNORE_RST_WHILE_BUSY => 0
-      )
-    port map (
-      clk       => sClk,
-      rst_n     => hps_fpga_reset_n_synch,
-      signal_in => sRegArray(rGOTO_STATE)(2),
-      pulse_out => sRegArrayRst
-      );
-  sRunMode                 <= sRegArray(rGOTO_STATE)(4);
-  sDetIntfEn               <= not sRegArray(rUNITS_EN)(1);
-  sDetIntfCfg.feClkDuty    <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
-  sDetIntfCfg.feClkDiv     <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.adcClkDuty   <= sRegArray(rADC_CLK_PARAM)(31 downto 16);
-  sDetIntfCfg.adcClkDiv    <= sRegArray(rADC_CLK_PARAM)(15 downto 0);
-  sDetIntfCfg.cfgPlane     <= sRegArray(rMSD_PARAM)(31 downto 16);
-  sDetIntfCfg.intTrgPeriod <= (others => '0');
-  sDetIntfCfg.trg2Hold     <= sRegArray(rMSD_PARAM)(15 downto 0);
-  sDetIntfCfg.extendBusy   <= sRegArray(rBUSYADC_PARAM)(31 downto 16);
-  sDetIntfCfg.adcDelay     <= sRegArray(rBUSYADC_PARAM)(15 downto 0);
-  --!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
-  --!@todo Connect error, compl flags
-  MsdInterface : DetectorInterface
-    port map (
-      iCLK            => sClk,
-      iRST            => sDetIntfRst, --See the instance description
-      iEN             => sDetIntfEn,
-      iTRIG           => sMainTrig,
-      oCNT            => sDetIntfCntOut,  --Temporary
-      iMSD_CONFIG     => sDetIntfCfg,
-      oFE0            => sFeA,
-      oADC0           => sAdcA,
-      oFE1            => sFeB,
-      oADC1           => sAdcB,
-      iMULTI_ADC      => sMultiAdcSynch,
-      oFASTDATA_DATA  => sDetIntfQ,
-      oFASTDATA_WE    => sDetIntfWe,
-      iFASTDATA_AFULL => sDetIntfAfull
-      );
-
-  -- GPIO connections ----------------------------------------------------------
-  oNC_A              <= '0';
-  oFE_A_TEST         <= sFeA.TestOn;
-  oFE_A_RESET        <= sFeA.DRst;
-  oFE_A0_HOLD        <= not sFeA.Hold;
-  oFE_A0_SHIFT       <= sFeA.ShiftIn;
-  oFE_A0_CLK         <= not sFeA.Clk;
-  oFE_A1_HOLD        <= sFeA.Hold;
-  oFE_A1_SHIFT       <= sFeA.ShiftIn;
-  oFE_A1_CLK         <= sFeA.Clk;
-  oADC_A_CS          <= sAdcA.Cs;
-  oADC_A_SCLK        <= sAdcA.Sclk;
-  sMultiAdc(0).SData <= iADC_A_SDATA0;
-  sMultiAdc(1).SData <= iADC_A_SDATA1;
-  sMultiAdc(2).SData <= iADC_A_SDATA2;
-  sMultiAdc(3).SData <= iADC_A_SDATA3;
-  sMultiAdc(4).SData <= iADC_A_SDATA4;
-  --Detector side B
-  oNC_B              <= '0';
-  oFE_B_TEST         <= sFeB.TestOn;
-  oFE_B_RESET        <= sFeB.DRst;
-  oFE_B0_HOLD        <= not sFeB.Hold;
-  oFE_B0_SHIFT       <= sFeB.ShiftIn;
-  oFE_B0_CLK         <= not sFeB.Clk;
-  oFE_B1_HOLD        <= sFeB.Hold;
-  oFE_B1_SHIFT       <= sFeB.ShiftIn;
-  oFE_B1_CLK         <= sFeB.Clk;
-  oADC_B_CS          <= sAdcB.Cs;
-  oADC_B_SCLK        <= sAdcB.Sclk;
-  sMultiAdc(5).SData <= iADC_B_SDATA0;
-  sMultiAdc(6).SData <= iADC_B_SDATA1;
-  sMultiAdc(7).SData <= iADC_B_SDATA2;
-  sMultiAdc(8).SData <= iADC_B_SDATA3;
-  sMultiAdc(9).SData <= iADC_B_SDATA4;
-
-  oHK <= (others => '0'); --!@todo Add actual signals for debug
-
-  --- I/O synchronization and buffering ----------------------------------------
-  BCO_CLK_SYNCH : sync_edge
-    generic map (
-      pSTAGES => 3
-      )
-    port map (
-      iCLK    => sClk,
-      iRST    => '0',
-      iD      => iBCO_CLK,
-      oEDGE_R => sBcoClkSynch
-      );
-
-  BCO_RST_SYNCH : sync_edge
-    generic map (
-      pSTAGES => 3
-      )
-    port map (
-      iCLK => sClk,
-      iRST => '0',
-      iD   => iBCO_RST,
-      oQ   => sBcoRstSynch
-      );
-
-  sMultiAdcSynch <= sMultiAdc;
-  IOFFD : process(sClk)
-  begin
-    if rising_edge(sClk) then
-      oBUSY <= sMainBusy;
-      oTRIG <= sMainTrig;
-    --!@todo synchronize also the ADC incoming data and the CD and SCLK ret
-    end if;
-  end process IOFFD;
+  --Default values for CSR interface of H2F FIFO
+  sH2fFifoIn.csrWr <= '0';
+  sH2fFifoIn.csrRd <= '0';
+  sH2fFifoIn.csrData <= (others => '0');
+  sH2fFifoIn.csrAddr <= (others => '0');
 
 end architecture;

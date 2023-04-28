@@ -22,6 +22,7 @@ entity metaDataFifo is
     oERR      : out std_logic;
     iRD       : in  std_logic;
     iWR       : in  std_logic;
+    oEMPTY    : out std_logic;
     iMETADATA : in  tF2hMetadata;
     oMETADATA : out tF2hMetadata
     );
@@ -57,6 +58,7 @@ begin
   oMETADATA.extTime(63 downto 32) <= sQ(5);
   oMETADATA.extTime(31 downto 0)  <= sQ(6);
 
+  oEMPTY <= sEmpty(0); --FIFOs are read in parallel: take only the first empty
   --!@brief Generate multiple FIFOs to sample the metadata values
   METADATA_FIFO_GENERATE : for i in 0 to pFIFOs-1 generate
     sOverflow(i)  <= sFull(i) and iWR;
