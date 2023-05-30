@@ -292,10 +292,10 @@ set_location_assignment PIN_AF10 -to oHK[15]
 set_location_assignment PIN_AE7 -to  oHK[16]
 set_location_assignment PIN_AE9 -to  oHK[17]
 set_location_assignment PIN_AE11 -to oHK[18]
-set_location_assignment PIN_AE12 -to oHK[19]
-set_location_assignment PIN_AD7 -to  oHK[20]
-set_location_assignment PIN_AD9 -to  oHK[21]
-set_location_assignment PIN_AD10 -to oHK[22]
+set_location_assignment PIN_AE12 -to iCAL_PULSE
+set_location_assignment PIN_AD7 -to  oHK[19]
+set_location_assignment PIN_AD9 -to  oHK[20]
+set_location_assignment PIN_AD10 -to oHK[21]
 set_location_assignment PIN_AD11 -to iBCO_RST
 set_location_assignment PIN_AD12 -to oBUSY
 set_location_assignment PIN_AC9 -to  oEXT_TRIG
@@ -329,23 +329,10 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[15]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[16]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[17]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[18]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iCAL_PULSE
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[19]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[20]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[21]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[22]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[23]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[24]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[25]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[26]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[27]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[28]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[29]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[30]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[31]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[32]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[33]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[34]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oHK[35]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to iBCO_RST
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oBUSY
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to oEXT_TRIG

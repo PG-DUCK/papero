@@ -120,7 +120,7 @@ entity top_paperoAstra is
     HEX5 : out std_logic_vector(6 downto 0);
 
     --- GPIO -------------------------------------------------------------------
-    oHK : out std_logic_vector(22 downto 0);
+    oHK : out std_logic_vector(21 downto 0);
     iBCO_RST : in std_logic;
     iBCO_CLK : in std_logic;
     iEXT_TRIG : in std_logic;
@@ -136,6 +136,7 @@ entity top_paperoAstra is
     oEXT_TRIG_RED : out std_logic;
 
     oTRIG : out std_logic;
+    iCAL_PULSE : in std_logic;
 
     --- HSMC -------------------------------------------------------------------
     --HSMC_SCL        : out    std_logic;
@@ -308,6 +309,7 @@ architecture std of top_paperoAstra is
   signal sDebug         : std_logic_vector(7 downto 0);
   signal sPrg           : tPrgIntf;
   signal sTestPulse     : std_logic;
+  signal sIntTestPulse     : std_logic;
   signal sTp            : std_logic;
   signal sAstraPrgRst   : std_logic;
 
@@ -315,19 +317,19 @@ architecture std of top_paperoAstra is
   signal sFeI           : tFe2FpgaIntf;
   signal sExtAdcO       : tFpga2AdcIntf;
   signal sExtAdcI       : tMultiAdc2FpgaIntf;
-  
+
   --Detector interface (ASTRA Internal ADCs)
   signal sAdcIntExt_b   : std_logic;
   signal sAdcIntFastClk : std_logic;
   signal sMultiAdcIntO  : tFpga2AstraAdc;
   signal sMultiAdcIntI  : tMultiAstraAdc2Fpga;
-  
+
   --others
   signal sCounterA                : std_logic_vector(25 downto 0) := (others => '0');
   signal sCounterB                : std_logic_vector(25 downto 0) := (others => '0');
   signal sLed                     : std_logic_vector(9 downto 0);
-  
-  
+
+
 begin
 
   --HSMC_SCL  <= '0';
@@ -341,7 +343,7 @@ begin
   --oHSMC_RX_B_p <= (others => '0');
   --oHSMC_TX_C_n <= (others => '0');
   --oHSMC_TX_C_p <= (others => '0');
-  
+
   --!PIN test
   --!Main Signals
   oHK(0) <= sMainTrig;  --General Trigger <--> PIN_AH2
@@ -365,7 +367,10 @@ begin
   oHK(15) <= sMultiAdcIntO.SerLoad;  --Serializer Load               <--> PIN_AF10
   oHK(16) <= sMultiAdcIntO.SerSend;  --Serializer Send               <--> PIN_AE7
   oHK(17) <= sTp;                    --Test Pulse                    <--> PIN_AE9
-  oHK(22 downto 18) <= (others => '0'); --PIN_AD10, PIN_AD9, PIN_AD7, PIN_AE12, PIN_AE11
+  oHK(18) <= fpga_debounced_buttons_n(0); --Debug                    <--> PIN_AE11
+  oHK(19) <= iFASTOR_A; --PIN_AD7
+  oHK(20) <= iFASTOR_B; --PIN_AD9
+  oHK(21) <= '0'; --PIN_AD10
 
   --Local configurations
   oPRG_BIT_A <= sPrg.bitA;
@@ -383,23 +388,38 @@ begin
 
   --Analog Readout
   oHOLD               <= sFeO.hold_b;
-  sTp                 <= sTestPulse when sRegArray(rUNITS_EN)(16) = '1' else -- Send test pulse every main trigger
+  sTp                 <= sTestPulse when sRegArray(rUNITS_EN)(16) = '1' else -- Send test pulse every CAL pulse
                          sFeO.test;
   oTP <= sTp;
 
-    test_pulse : altera_edge_detector
-    generic map (
-        PULSE_EXT               => 5,
-        EDGE_TYPE               => 1,
-        IGNORE_RST_WHILE_BUSY   => 1
-        ) 
-    port map (
-        clk        => sClk,
-        rst_n      => '1',
-        signal_in  => sMainTrig,
-        pulse_out  => sTestPulse
-        );
-  
+  test_pulse : altera_edge_detector
+  generic map (
+    PULSE_EXT               => 5,
+    EDGE_TYPE               => 1,
+    IGNORE_RST_WHILE_BUSY   => 1
+  )
+  port map (
+    clk        => sClk,
+    rst_n      => '1',
+    signal_in  => iCAL_PULSE, --PIN_AE12
+    pulse_out  => sIntTestPulse
+  );
+
+  TP_extender : pulse_extender
+          generic map(
+            pWIDTH   => 16,
+            pLENGTH  => 4000,
+            pPOL_IN  => '1',
+            pPOL_OUT => '1'
+          )
+          port map(
+            iCLK    => sClk,
+            iRST    => sDetIntfRst,
+            iEN     => '1',
+            iPULSE  => sIntTestPulse,
+            oPULSE  => sTestPulse
+          );
+
 
   --Analog Multiplexer
   oMUX_SHIFT_CLK      <= sFeo.shiftClk;
@@ -763,7 +783,7 @@ begin
       iINT_TS             => sIntTsCount,
       iEXT_TS             => sExtTsCount,
       --
-      iEXT_TRIG           => iEXT_TRIG,
+      iEXT_TRIG           => iEXT_TRIG or fpga_debounced_buttons_n(0),
       oTRIG               => sMainTrig,
       oBUSY               => sMainBusy,
       iTRG_BUSIES_AND     => sTrgBusiesAnd,
@@ -834,7 +854,7 @@ begin
     iD      => sRegArray(rUNITS_EN)(12), -- PRG write local config
     oEDGE_R => sDetIntfCfg.prgStart
   );
-		
+
   sRunMode                    <= sRegArray(rGOTO_STATE)(4);
   sAstraPrgRst                <= sRegArray(rUNITS_EN)(13); --PRG RESET
   sDetIntfEn                  <= not sRegArray(rUNITS_EN)(1);
@@ -846,7 +866,7 @@ begin
   sDetIntfCfg.adcIntClkDuty   <= x"0001";
   sDetIntfCfg.adcIntConvTime  <= x"203A";
   sAdcIntExt_b                <= SW(0);                 --!External/Internal ADC select --> 0=EXT, 1=INT
-  oFASTCLK                    <= sAdcIntFastClk;                           
+  oFASTCLK                    <= sAdcIntFastClk;
   oRESET_DIGITAL              <= sMultiAdcIntO.RstDig;
   oADC_CONVERT                <= sMultiAdcIntO.AdcConv;
   oSER_SHIFT_CLK              <= sMultiAdcIntO.SerShClk;
@@ -928,14 +948,14 @@ begin
       oBUSY     <= sMainBusy;
       oBUSY_RED <= sMainBusy;
       oTRIG     <= sMainTrig;
-      
+
       oBCO_CLK      <= iBCO_CLK;
       oBCO_CLK_RED  <= iBCO_CLK_RED;
       oEXT_TRIG     <= iEXT_TRIG;
       oEXT_TRIG_RED <= iEXT_TRIG_RED;
     end if;
   end process IOFFD;
-  
+
   --!Return from ASTRA
   iFASTCLK_RET_A : sync_stage
     generic map (
@@ -947,7 +967,7 @@ begin
       iD   => sAdcIntFastClk,
       oQ   => sMultiAdcIntI(0).ClkRet
       );
-  
+
   iFASTCLK_RET_B : sync_stage
     generic map (
       pSTAGES => 2
@@ -958,7 +978,7 @@ begin
       iD   => sAdcIntFastClk,
       oQ   => sMultiAdcIntI(1).ClkRet
       );
-      
+
   iSER_SEND_RET_A : sync_stage
     generic map (
       pSTAGES => 2
@@ -969,7 +989,7 @@ begin
       iD   => sMultiAdcIntO.SerSend,
       oQ   => sMultiAdcIntI(0).SerSendRet
       );
-      
+
   iSER_SEND_RET_B : sync_stage
     generic map (
       pSTAGES => 2
@@ -980,8 +1000,8 @@ begin
       iD   => sMultiAdcIntO.SerSend,
       oQ   => sMultiAdcIntI(1).SerSendRet
       );
-  
-  
+
+
   ------------------Signal Check------------------
   --!Blinking LED '9' <--> fpga_clk_50
   LEDR(9) <= sLed(9);
@@ -999,7 +1019,7 @@ begin
       end if;
     end if;
   end process;
-  
+
   --!Blinking LED '7' <--> sClk
   LEDR(7) <= sLed(7);
   blink_proc_7 : process (sClk)
@@ -1016,7 +1036,7 @@ begin
       end if;
     end if;
   end process;
-  
+
   --!Blinking LED '5' <--> sMainTrig
   LEDR(5) <= sLed(5);
   blink_proc_5 : process (sClk)

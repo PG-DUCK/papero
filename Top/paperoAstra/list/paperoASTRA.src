@@ -43,6 +43,7 @@ logic/ASTRAintf/basic_functions/sync_stage.vhd
 logic/ASTRAintf/basic_functions/sync_edge.vhd
 logic/ASTRAintf/basic_functions/shift_register.vhd
 logic/ASTRAintf/basic_functions/pulse_generator.vhd
+logic/ASTRAintf/basic_functions/pulse_extender.vhd
 logic/ASTRAintf/basic_functions/parametric_fifo_synch.vhd
 logic/ASTRAintf/basic_functions/parametric_fifo_dp.vhd
 logic/ASTRAintf/basic_functions/edge_detector.vhd
