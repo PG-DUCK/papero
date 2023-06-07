@@ -312,6 +312,9 @@ architecture std of top_paperoAstra is
   signal sIntTestPulse     : std_logic;
   signal sTp            : std_logic;
   signal sAstraPrgRst   : std_logic;
+  signal sFastOrA       : std_logic;
+  signal sFastOrB       : std_logic;
+  signal sAstraTrig     : std_logic;
 
   signal sFeO           : tFpga2FeIntf;
   signal sFeI           : tFe2FpgaIntf;
@@ -368,9 +371,9 @@ begin
   oHK(16) <= sMultiAdcIntO.SerSend;  --Serializer Send               <--> PIN_AE7
   oHK(17) <= sTp;                    --Test Pulse                    <--> PIN_AE9
   oHK(18) <= fpga_debounced_buttons_n(0); --Debug                    <--> PIN_AE11
-  oHK(19) <= iFASTOR_A; --PIN_AD7
-  oHK(20) <= iFASTOR_B; --PIN_AD9
-  oHK(21) <= '0'; --PIN_AD10
+  oHK(19) <= sFastOrA; --PIN_AD7
+  oHK(20) <= sFastOrB; --PIN_AD9
+  oHK(21) <= iEXT_TRIG or fpga_debounced_buttons_n(0) or sAstraTrig; --PIN_AD10
 
   --Local configurations
   oPRG_BIT_A <= sPrg.bitA;
@@ -383,8 +386,9 @@ begin
   --<= iFASTCLK_RET;
 
   --Discriminator OR output
-  --<= iFASTOR_A;
-  --<= iFASTOR_B;
+  sFastOrA  <= not iFASTOR_A; --FIXME: ASTRA drivers label inverted
+  sFastOrB  <= not iFASTOR_B; --FIXME: ASTRA drivers label inverted
+  sAstraTrig <= sFastOrA or sFastOrB;
 
   --Analog Readout
   oHOLD               <= sFeO.hold_b;
@@ -433,11 +437,6 @@ begin
   --Serializer A and B
   --oRESET_DIGITAL      <= '0';
 
-  --<= iSER_A;
-  --<= iSER_B;
-  --oSER_SEND           <= '0';
-  --oSER_LOAD           <= '0';
-  --oSER_SHIFT_CLK      <= '0';
   --<= iSER_SHIFT_CLK_RET;
   --<= iSER_SEND_RET;
 
@@ -783,7 +782,7 @@ begin
       iINT_TS             => sIntTsCount,
       iEXT_TS             => sExtTsCount,
       --
-      iEXT_TRIG           => iEXT_TRIG or fpga_debounced_buttons_n(0),
+      iEXT_TRIG           => iEXT_TRIG or fpga_debounced_buttons_n(0) or sAstraTrig,
       oTRIG               => sMainTrig,
       oBUSY               => sMainBusy,
       iTRG_BUSIES_AND     => sTrgBusiesAnd,
@@ -856,7 +855,7 @@ begin
   );
 
   sRunMode                    <= sRegArray(rGOTO_STATE)(4);
-  sAstraPrgRst                <= sRegArray(rUNITS_EN)(13); --PRG RESET
+  sAstraPrgRst                <= not sRegArray(rUNITS_EN)(13); --PRG RESET
   sDetIntfEn                  <= not sRegArray(rUNITS_EN)(1);
   sDetIntfCfg.feClkDuty       <= sRegArray(rFE_CLK_PARAM)(31 downto 16);
   sDetIntfCfg.feClkDiv        <= sRegArray(rFE_CLK_PARAM)(15 downto 0);
@@ -872,10 +871,10 @@ begin
   oSER_SHIFT_CLK              <= sMultiAdcIntO.SerShClk;
   oSER_LOAD                   <= sMultiAdcIntO.SerLoad;
   oSER_SEND                   <= sMultiAdcIntO.SerSend;
-  sMultiAdcIntI(0).SerData    <= iSER_A;
+  sMultiAdcIntI(0).SerData    <= not iSER_A;  --FIXME: ASTRA drivers label inverted
     --sMultiAdcIntI(0).ClkRet     <= iFASTCLK_RET;
     --sMultiAdcIntI(0).SerSendRet <= iSER_SEND_RET;
-  sMultiAdcIntI(1).SerData    <= iSER_B;
+  sMultiAdcIntI(1).SerData    <= not iSER_B;  --FIXME: ASTRA drivers label inverted
     --sMultiAdcIntI(1).ClkRet     <= iFASTCLK_RET;
     --sMultiAdcIntI(1).SerSendRet <= iSER_SEND_RET;
   sDetIntfCfg.adcFastMode     <= sRegArray(rASTRA_PARAM)(24);
