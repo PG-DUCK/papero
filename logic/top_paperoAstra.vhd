@@ -891,6 +891,8 @@ begin
   sDetIntfCfg.chMask          <= sRegArray(rMASK_B) & sRegArray(rMASK_A);
   sDetIntfCfg.chTpEn          <= sRegArray(rTPEN_B) & sRegArray(rTPEN_A);
   sDetIntfCfg.chDisc          <= sRegArray(rDISC_B) & sRegArray(rDISC_A);
+  sDetIntfCfg.testMode        <= '0'; --sRegArray(rUNITS_EN)(15);
+  sDetIntfCfg.testCh          <= x"FF"; --canale 22 --sRegArray(rUNITS_EN)(); --8 bit
   --!@brief Detector interface. **Reset shall be longer than 2 clock cycles**
   AstraInterface : DetectorInterface
     port map (

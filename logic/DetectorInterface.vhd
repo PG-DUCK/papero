@@ -100,6 +100,8 @@ begin
     iADC_INT_CLK_DIV 	  => iASTRA_CONFIG.adcIntClkDiv,    --!Fast clock duration (in number of iCLK cycles) to drive ADC counter and serializer
     iADC_INT_CLK_DUTY   => iASTRA_CONFIG.adcIntClkDuty,   --!Duty cycle fast clock duration (in number of iCLK cycles)
     iADC_INT_CONV_TIME  => iASTRA_CONFIG.adcIntConvTime,  --!Conversion time (in number of iCLK cycles)
+    iCNT_Test           => iASTRA_CONFIG.testMode,  --!Enable interface test-mode: freeze one channel in output
+    iCNT_TEST_CH        => iASTRA_CONFIG.testCh,    --!Channel to be frozen in output
     -- FE interface
     oFE                 => oFE,            --!Output signals to ASTRA
     iFE                 => iFE,            --!Return signals from ASTRA
